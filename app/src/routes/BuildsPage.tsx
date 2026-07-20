@@ -9,13 +9,21 @@ import { Field } from "@/components/spectrum/Field";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
 import { Tip } from "@/components/spectrum/Tip";
 import { toast } from "@/components/Toaster";
+import { useDockerReconnect } from "@/hooks/useDockerReconnect";
 import { useUIStore } from "@/stores/uiStore";
 
 export function BuildsPage() {
   const qc = useQueryClient();
   const openRunSheet = useUIStore((s) => s.openRunSheet);
+  const { reconnect, pending: reconnecting } = useDockerReconnect();
 
-  const builders = useQuery({ queryKey: ["builders"], queryFn: api.builders, retry: false });
+  const status = useQuery({ queryKey: ["status"], queryFn: api.status });
+  const builders = useQuery({
+    queryKey: ["builders"],
+    queryFn: api.builders,
+    retry: false,
+    enabled: !!status.data?.docker.connected,
+  });
 
   const [context, setContext] = useState(".");
   const [dockerfile, setDockerfile] = useState("Dockerfile");
@@ -28,6 +36,10 @@ export function BuildsPage() {
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<Awaited<ReturnType<typeof api.registrySearch>>>([]);
   const [pulling, setPulling] = useState<string | null>(null);
+  const [pullLog, setPullLog] = useState("");
+  const [pullSheetOpen, setPullSheetOpen] = useState(false);
+
+  const dockerOk = !!status.data?.docker.connected;
 
   const runBuild = async () => {
     setBuilding(true);
@@ -69,11 +81,17 @@ export function BuildsPage() {
 
   const pullRef = async (ref: string) => {
     setPulling(ref);
+    setPullLog("");
+    setPullSheetOpen(true);
     try {
-      await api.pullImageStream(ref, () => {});
+      await api.pullImageStream(ref, (chunk) => {
+        setPullLog((prev) => (prev + chunk).slice(-200_000));
+      });
+      setPullLog((p) => p + "\nPull complete.\n");
       await qc.invalidateQueries({ queryKey: ["images"] });
       toast.success("Pulled", { description: ref });
     } catch (e: any) {
+      setPullLog((p) => p + `\n${e?.message || "pull failed"}\n`);
       toast.error("Pull failed", { description: e?.message });
     } finally {
       setPulling(null);
@@ -84,23 +102,48 @@ export function BuildsPage() {
 
   return (
     <PageShell title="Builds" description="Build images, list builders, and search Docker Hub.">
+      {!dockerOk && status.isSuccess ? (
+        <div
+          className={style({
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            marginBottom: 24,
+            paddingX: 16,
+            paddingY: 12,
+            borderRadius: "xl",
+            backgroundColor: "gray-100",
+          })}
+        >
+          <div className={style({ minWidth: 0 })}>
+            <Text styles={style({ font: "body", fontWeight: "medium" })}>Docker is offline</Text>
+            <Text styles={style({ font: "body-xs", color: "neutral-subdued", display: "block", marginTop: 2 })}>
+              {status.data?.docker.error || "Attach an engine to build or search."}
+            </Text>
+          </div>
+          <Button size="S" variant="accent" isPending={reconnecting} onPress={() => void reconnect()}>
+            Retry connection
+          </Button>
+        </div>
+      ) : null}
+
       <div className={style({ display: "flex", flexDirection: "column", gap: 32, minWidth: 0 })}>
         <section className={style({ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 })}>
           <Text styles={style({ font: "title-sm", margin: 0 })}>Builders</Text>
-          {builders.isLoading ? (
+          {!dockerOk ? (
+            <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
+              Connect Docker to list buildx builders.
+            </Text>
+          ) : builders.isLoading ? (
             <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>Loading builders…</Text>
           ) : builderList.length === 0 ? (
             <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
-              No builders — docker buildx ls returned nothing, or the engine is offline.
+              No builders — docker buildx ls returned nothing.
             </Text>
           ) : (
-            <div
-              className={style({
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 8,
-              })}
-            >
+            <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
               {builderList.map((b) => (
                 <div
                   key={b.name}
@@ -165,8 +208,9 @@ export function BuildsPage() {
             </div>
             <div>
               <Button
+                variant="accent"
                 onPress={() => void runBuild()}
-                isDisabled={building || !context.trim()}
+                isDisabled={building || !context.trim() || !dockerOk}
                 isPending={building}
               >
                 {building ? "Building…" : "Build"}
@@ -189,7 +233,7 @@ export function BuildsPage() {
               <Button
                 variant="secondary"
                 onPress={() => void runSearch()}
-                isDisabled={searching || !searchQ.trim()}
+                isDisabled={searching || !searchQ.trim() || !dockerOk}
                 isPending={searching}
               >
                 Search
@@ -208,10 +252,11 @@ export function BuildsPage() {
                       display: "flex",
                       alignItems: "center",
                       gap: 12,
+                      paddingX: 12,
                       paddingY: 8,
-                      borderBottomWidth: 1,
-                      borderStyle: "solid",
-                      borderColor: "gray-200",
+                      borderRadius: "lg",
+                      backgroundColor: "gray-100",
+                      minWidth: 0,
                     })}
                   >
                     <div className={style({ flexGrow: 1, minWidth: 0 })}>
@@ -250,7 +295,7 @@ export function BuildsPage() {
                         size="S"
                         variant="secondary"
                         onPress={() => void pullRef(r.name)}
-                        isDisabled={pulling === r.name}
+                        isDisabled={pulling === r.name || !dockerOk}
                         isPending={pulling === r.name}
                       >
                         Pull
@@ -287,6 +332,21 @@ export function BuildsPage() {
         }
       >
         <TerminalBlock copyValue={buildLog}>{buildLog || "Waiting for buildkit…"}</TerminalBlock>
+      </GlassSheet>
+
+      <GlassSheet
+        open={pullSheetOpen}
+        onOpenChange={setPullSheetOpen}
+        title={pulling ? `Pulling ${pulling}` : "Pull output"}
+        description="Live progress from the Docker engine"
+        mono
+        footer={
+          <Button variant="secondary" fillStyle="outline" onPress={() => setPullSheetOpen(false)}>
+            Close
+          </Button>
+        }
+      >
+        <TerminalBlock copyValue={pullLog}>{pullLog || "Waiting for layers…"}</TerminalBlock>
       </GlassSheet>
     </PageShell>
   );

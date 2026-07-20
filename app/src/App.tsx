@@ -47,8 +47,10 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
+    let url = BROWSER_SIDECAR;
+
     (async () => {
-      let url = await resolveSidecarUrl();
+      url = await resolveSidecarUrl();
       setApiBaseUrl(url);
       for (let i = 0; i < 60 && !cancelled; i++) {
         try {
@@ -56,7 +58,6 @@ export default function App() {
           if (!cancelled) setReady(true);
           return;
         } catch {
-          // Sidecar may still be binding, or Tauri may have moved to an ephemeral port.
           if (isTauriShell() && i > 0 && i % 4 === 0) {
             const next = await invokeSidecarUrl();
             if (next && next !== url) {
@@ -69,14 +70,51 @@ export default function App() {
         }
       }
       if (!cancelled) {
-        setMessage("Sidecar unavailable — UI will retry in background");
+        setMessage("Sidecar unavailable — retrying in background");
         setReady(true);
       }
     })();
+
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // After forced ready, keep probing so a late sidecar still attaches.
+  useEffect(() => {
+    if (!ready) return;
+    let cancelled = false;
+    let url = BROWSER_SIDECAR;
+
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        if (isTauriShell()) {
+          const next = await invokeSidecarUrl();
+          if (next && next !== url) {
+            url = next;
+            setApiBaseUrl(url);
+          }
+        }
+        await api.health();
+        await queryClient.invalidateQueries({ queryKey: ["status"] });
+      } catch {
+        /* keep looping */
+      }
+    };
+
+    void (async () => {
+      url = await resolveSidecarUrl();
+      setApiBaseUrl(url);
+    })();
+
+    const id = window.setInterval(() => void tick(), 8000);
+    void tick();
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [ready]);
 
   if (!ready) {
     return (

@@ -51,6 +51,24 @@ func (s *Server) handleDockerDiagnose(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.docker.Diagnose(r.Context()))
 }
 
+func (s *Server) handleDockerReconnect(w http.ResponseWriter, r *http.Request) {
+	err := s.docker.Reconnect()
+	s.audit.Log("docker.reconnect", s.docker.ActiveHost(), s.docker.ActiveContext(), err)
+	if err != nil {
+		writeErr(w, http.StatusServiceUnavailable, err)
+		return
+	}
+	ctx := r.Context()
+	pingErr := s.docker.Ping(ctx)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":            pingErr == nil,
+		"connected":     pingErr == nil,
+		"error":         errString(pingErr),
+		"activeContext": s.docker.ActiveContext(),
+		"host":          s.docker.ActiveHost(),
+	})
+}
+
 func (s *Server) handleVolumeFiles(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	path := r.URL.Query().Get("path")

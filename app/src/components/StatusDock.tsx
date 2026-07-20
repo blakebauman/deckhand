@@ -163,9 +163,11 @@ export function StatusDock() {
     navigate({ to: "/containers" });
   };
 
-  const dockerTip = dockerOk
-    ? "Open Docker dashboard"
-    : status.data?.docker.error || "Docker unreachable — start the Docker engine";
+  const dockerTip = statusDown
+    ? "Sidecar status unavailable"
+    : dockerOk
+      ? "Open Docker dashboard"
+      : status.data?.docker.error || "Docker unreachable — start the engine, then retry from Settings";
 
   const k8sTip = k8sOk
     ? `Open Kubernetes · ${status.data?.kubernetes.version || "cluster"}`
@@ -211,11 +213,13 @@ export function StatusDock() {
           <RuntimeChip
             label="Docker"
             ok={dockerOk && !statusDown}
+            // Sidecar up + engine down is soft (monotone); sidecar down is hard red.
+            warn={!statusDown && !dockerOk}
             detail={statusDown || !dockerOk ? "offline" : "engine"}
-            tip={statusDown ? "Sidecar status unavailable" : dockerTip}
+            tip={dockerTip}
             onClick={() => {
               setMode("docker");
-              navigate({ to: "/" });
+              navigate({ to: statusDown || !dockerOk ? "/settings" : "/" });
             }}
           />
           <RuntimeChip

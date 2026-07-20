@@ -10,6 +10,7 @@ import { HelpHint } from "@/components/HelpHint";
 import { EmptyState, PageShell } from "@/components/PageShell";
 import { ChartPanel, RunningAreaChart } from "@/components/charts/SpectrumChartsPanel";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
+import { useDockerReconnect } from "@/hooks/useDockerReconnect";
 import { useMetricsStore } from "@/stores/metricsStore";
 
 const jumpLinks = [
@@ -22,6 +23,7 @@ const jumpLinks = [
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const { reconnect, pending: reconnecting } = useDockerReconnect();
   const dash = useQuery({
     queryKey: ["docker-dashboard"],
     queryFn: api.dockerDashboard,
@@ -35,6 +37,8 @@ export function DashboardPage() {
   const clearRunning = useMetricsStore((s) => s.clearRunning);
   const runningHistory = useMetricsStore((s) => s.runningHistory);
   const engineContext = contexts.data?.current;
+  const dockerOffline = status.isSuccess && !status.data?.docker.connected;
+  const statusLoading = status.isLoading || status.isPending;
 
   useEffect(() => {
     clearRunning();
@@ -66,10 +70,25 @@ export function DashboardPage() {
       title="Dashboard"
       description="What’s running on this engine — jump to resources when you need the lists."
     >
-      {!status.data?.docker.connected ? (
+      {statusLoading ? (
+        <EmptyState title="Checking engine…" description="Waiting for sidecar status." />
+      ) : dockerOffline ? (
         <EmptyState
           title="Docker is offline"
-          description="Start the Docker engine, then come back. Deckhand will reconnect automatically."
+          description={
+            status.data?.docker.error ||
+            "Start Docker Desktop, Colima, or another engine, then retry attach."
+          }
+          action={
+            <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" })}>
+              <Button size="S" variant="accent" isPending={reconnecting} onPress={() => void reconnect()}>
+                Retry connection
+              </Button>
+              <Button size="S" variant="secondary" onPress={() => navigate({ to: "/settings" })}>
+                Open Settings
+              </Button>
+            </div>
+          }
         />
       ) : (
         <div className={style({ display: "flex", flexDirection: "column", gap: 32 })}>
