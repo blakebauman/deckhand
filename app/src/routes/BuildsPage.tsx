@@ -4,7 +4,6 @@ import { Button, Text } from "@react-spectrum/s2";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
-import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
 import { PageShell } from "@/components/PageShell";
 import { Field } from "@/components/spectrum/Field";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
@@ -81,71 +80,70 @@ export function BuildsPage() {
     }
   };
 
+  const builderList = builders.data || [];
+
   return (
     <PageShell title="Builds" description="Build images, list builders, and search Docker Hub.">
-      <div
-        className={style({
-          display: "grid",
-          gridTemplateColumns: {
-            default: "1fr",
-            lg: "280px 1fr",
-          },
-          gap: 24,
-          minHeight: 0,
-        })}
-      >
-        <ListPane
-          title="Builders"
-          loading={builders.isLoading}
-          empty={
-            <ListEmpty
-              title="No builders"
-              description="docker buildx ls returned nothing, or the engine is offline."
-            />
-          }
-        >
-          {(builders.data || []).map((b) => (
-            <ListItem key={b.name} active={false}>
-              <div className={style({ font: "body", fontWeight: "medium", truncate: true })}>
-                {b.name}
-              </div>
-              <div
-                className={style({
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  marginTop: 4,
-                  alignItems: "center",
-                })}
-              >
-                {b.driver ? <StatusBadge tone="muted">{b.driver}</StatusBadge> : null}
-                {b.status ? (
-                  <StatusBadge tone={b.status === "running" ? "success" : "muted"}>
-                    {b.status}
-                  </StatusBadge>
-                ) : null}
-                {b.nodes != null ? (
-                  <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
-                    {b.nodes} node{b.nodes === 1 ? "" : "s"}
+      <div className={style({ display: "flex", flexDirection: "column", gap: 32, minWidth: 0 })}>
+        <section className={style({ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 })}>
+          <Text styles={style({ font: "title-sm", margin: 0 })}>Builders</Text>
+          {builders.isLoading ? (
+            <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>Loading builders…</Text>
+          ) : builderList.length === 0 ? (
+            <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
+              No builders — docker buildx ls returned nothing, or the engine is offline.
+            </Text>
+          ) : (
+            <div
+              className={style({
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+              })}
+            >
+              {builderList.map((b) => (
+                <div
+                  key={b.name}
+                  className={style({
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    paddingX: 12,
+                    paddingY: 8,
+                    borderRadius: "lg",
+                    backgroundColor: "gray-100",
+                    minWidth: 0,
+                  })}
+                >
+                  <span className={style({ font: "body", fontWeight: "medium", truncate: true })}>
+                    {b.name}
                   </span>
-                ) : null}
-              </div>
-            </ListItem>
-          ))}
-        </ListPane>
+                  {b.driver ? <StatusBadge tone="muted">{b.driver}</StatusBadge> : null}
+                  {b.status ? (
+                    <StatusBadge tone={b.status === "running" ? "success" : "muted"}>
+                      {b.status}
+                    </StatusBadge>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
-        <div className={style({ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 })}>
-          <section
-            className={style({
-              backgroundColor: "layer-1",
-              borderRadius: "xl",
-              padding: 20,
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-            })}
-          >
-            <Text styles={style({ font: "ui", fontWeight: "medium" })}>Build image</Text>
+        <div
+          className={style({
+            display: "grid",
+            gridTemplateColumns: {
+              default: "1fr",
+              md: "1fr 1fr",
+            },
+            gap: 32,
+            alignItems: "start",
+            minWidth: 0,
+          })}
+        >
+          <section className={style({ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 })}>
+            <Text styles={style({ font: "title-sm", margin: 0 })}>Build image</Text>
             <Field value={context} onChange={setContext} placeholder="context path" aria-label="Context path" />
             <div
               className={style({
@@ -176,17 +174,8 @@ export function BuildsPage() {
             </div>
           </section>
 
-          <section
-            className={style({
-              backgroundColor: "layer-1",
-              borderRadius: "xl",
-              padding: 20,
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-            })}
-          >
-            <Text styles={style({ font: "ui", fontWeight: "medium" })}>Registry search</Text>
+          <section className={style({ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 })}>
+            <Text styles={style({ font: "title-sm", margin: 0 })}>Registry search</Text>
             <div className={style({ display: "flex", gap: 8, alignItems: "end" })}>
               <Field
                 value={searchQ}
@@ -208,9 +197,9 @@ export function BuildsPage() {
             </div>
             <div className={style({ display: "flex", flexDirection: "column", gap: 4 })}>
               {results.length === 0 ? (
-                <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0 })}>
+                <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
                   Search Hub for public images, then pull.
-                </p>
+                </Text>
               ) : (
                 results.map((r) => (
                   <div
@@ -243,18 +232,17 @@ export function BuildsPage() {
                         </span>
                       </div>
                       {r.description ? (
-                        <p
+                        <div
                           className={style({
                             font: "body-xs",
                             color: "neutral-subdued",
-                            margin: 0,
                             marginTop: 2,
                             truncate: true,
                           })}
                           title={r.description}
                         >
                           {r.description}
-                        </p>
+                        </div>
                       ) : null}
                     </div>
                     <Tip label={`Pull ${r.name}`}>
@@ -269,7 +257,12 @@ export function BuildsPage() {
                       </Button>
                     </Tip>
                     <Tip label="Run after pull">
-                      <Button size="S" variant="secondary" fillStyle="outline" onPress={() => openRunSheet(r.name)}>
+                      <Button
+                        size="S"
+                        variant="secondary"
+                        fillStyle="outline"
+                        onPress={() => openRunSheet(r.name)}
+                      >
                         Run
                       </Button>
                     </Tip>
