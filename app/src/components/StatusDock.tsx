@@ -360,14 +360,14 @@ export function StatusDock() {
                 aria-label="Activity idle"
                 onClick={() => dockerOk && setSheetOpen(true)}
               >
-                <StatusHalo tone={dockerOk ? "ok" : "idle"} size="sm" />
+                <StatusHalo tone="idle" size="sm" />
                 <Text
                   styles={style({
                     font: "ui-xs",
                     color: "neutral-subdued",
                   })}
                 >
-                  {dockerOk ? "Listening…" : "local-first"}
+                  {dockerOk ? "No activity" : "local-first"}
                 </Text>
               </button>
             </TipTop>
