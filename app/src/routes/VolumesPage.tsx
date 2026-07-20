@@ -7,7 +7,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { InspectFields, LabelChips } from "@/components/InspectFields";
-import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
+import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
 import { Field } from "@/components/spectrum/Field";
 import { RowMenu } from "@/components/spectrum/RowMenu";
@@ -93,6 +93,8 @@ export function VolumesPage() {
         {filtered.map((v) => (
           <RowMenu
             key={v.Name}
+            active={selected === v.Name}
+            onSelect={() => setSelected(v.Name)}
             items={[
               { id: "open", label: "Open", onAction: () => setSelected(v.Name) },
               { id: "copy-name", label: "Copy name", onAction: () => void copyText(v.Name) },
@@ -108,12 +110,10 @@ export function VolumesPage() {
               },
             ]}
           >
-            <ListItem active={selected === v.Name} onClick={() => setSelected(v.Name)}>
-              <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>{v.Name}</div>
-              <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, marginTop: 2, minWidth: 0 })}>
-                {v.Driver}
-              </div>
-            </ListItem>
+            <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>{v.Name}</div>
+            <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+              {v.Driver}
+            </div>
           </RowMenu>
         ))}
       </ListPane>

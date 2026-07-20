@@ -20,6 +20,7 @@ import { PageShell } from "@/components/PageShell";
 import { SettingRow, SettingSection } from "@/components/SettingRow";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
 import { toast } from "@/components/Toaster";
+import { modKeyLabel } from "@/lib/hotkeys";
 import { isTauriShell } from "@/lib/platform";
 import { APP_VERSION } from "@/lib/version";
 import { useUIStore } from "@/stores/uiStore";
@@ -34,6 +35,8 @@ export function SettingsPage() {
   const setShowStoppedContainers = useUIStore((s) => s.setShowStoppedContainers);
   const confirmPrune = useUIStore((s) => s.confirmPrune);
   const setConfirmPrune = useUIStore((s) => s.setConfirmPrune);
+  const sidebarTooltips = useUIStore((s) => s.sidebarTooltips);
+  const setSidebarTooltips = useUIStore((s) => s.setSidebarTooltips);
   const [launchAtLogin, setLaunchAtLoginState] = useState(false);
   const [launchBusy, setLaunchBusy] = useState(false);
   const desktop = isTauriShell();
@@ -171,9 +174,26 @@ export function SettingsPage() {
             <ToggleButton id="dark">Dark</ToggleButton>
           </ToggleButtonGroup>
         </SettingRow>
-        <SettingRow label="Shortcuts" description="Palette and soft refresh">
-          <span className={style({ font: "code-xs", color: "neutral-subdued" })}>⌘K · ⌘R</span>
+        <SettingRow
+          label="Shortcuts"
+          description={desktop ? "App menu and keyboard" : "Keyboard shortcuts"}
+        >
+          <span className={style({ font: "code-xs", color: "neutral-subdued" })}>
+            {modKeyLabel()}K · {modKeyLabel()}R
+          </span>
         </SettingRow>
+        <SettingRow
+          title="Sidebar tooltips"
+          description="Show labels when hovering the icon rail"
+          htmlFor="pref-sidebar-tips"
+          action={
+            <Switch
+              id="pref-sidebar-tips"
+              isSelected={sidebarTooltips}
+              onChange={setSidebarTooltips}
+            />
+          }
+        />
       </SettingSection>
 
       <SettingSection title="Preferences" description="Defaults for run, lists, and destructive actions">

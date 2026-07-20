@@ -22,7 +22,7 @@ import { ContainerMonitor } from "@/components/ContainerMonitor";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { ExecTerminal } from "@/components/ExecTerminal";
-import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
+import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
 import { RowMenu } from "@/components/spectrum/RowMenu";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
@@ -154,6 +154,7 @@ export function ContainersPage() {
                   <Button
                     size="S"
                     variant="secondary"
+                    fillStyle="outline"
                     onPress={() =>
                       act(() => api.bulkContainers(selectedIds, "stop"), "Containers stopped").then(() =>
                         setChecked({}),
@@ -164,7 +165,7 @@ export function ContainersPage() {
                   </Button>
                 </Tip>
                 <Tip label="Force-remove selected containers">
-                  <Button size="S" variant="negative" onPress={() => setConfirmBulk(true)}>
+                  <Button size="S" variant="negative" fillStyle="outline" onPress={() => setConfirmBulk(true)}>
                     Remove
                   </Button>
                 </Tip>
@@ -182,6 +183,15 @@ export function ContainersPage() {
         {filtered.map((c) => (
           <RowMenu
             key={c.id}
+            active={selected === c.id}
+            onSelect={() => setSelected(c.id)}
+            leading={
+              <Checkbox
+                aria-label={`Select ${containerName(c.names)}`}
+                isSelected={!!checked[c.id]}
+                onChange={(v) => setChecked((prev) => ({ ...prev, [c.id]: v }))}
+              />
+            }
             items={[
               { id: "open", label: "Open", onAction: () => setSelected(c.id) },
               { id: "start", label: "Start", onAction: () => void act(() => api.startContainer(c.id), "Started") },
@@ -212,34 +222,17 @@ export function ContainersPage() {
               </>
             }
           >
-            <div className={style({ display: "flex", alignItems: "center", gap: 4, width: "full", minWidth: 0 })}>
-              <div
-                className={style({ paddingStart: 4, flexShrink: 0 })}
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
-              >
-                <Checkbox
-                  aria-label={`Select ${containerName(c.names)}`}
-                  isSelected={!!checked[c.id]}
-                  onChange={(v) => setChecked((prev) => ({ ...prev, [c.id]: v }))}
-                />
-              </div>
-              <div className={style({ flexGrow: 1, minWidth: 0 })}>
-                <ListItem active={selected === c.id} onClick={() => setSelected(c.id)}>
-                  <div
-                    className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}
-                    title={containerName(c.names)}
-                  >
-                    {containerName(c.names)}
-                  </div>
-                  <div
-                    className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, marginTop: 2 })}
-                    title={c.image}
-                  >
-                    {c.image}
-                  </div>
-                </ListItem>
-              </div>
+            <div
+              className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}
+              title={containerName(c.names)}
+            >
+              {containerName(c.names)}
+            </div>
+            <div
+              className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}
+              title={c.image}
+            >
+              {c.image}
             </div>
           </RowMenu>
         ))}
@@ -277,17 +270,37 @@ export function ContainersPage() {
                 <StatusBadge tone="accent">GPU</StatusBadge>
               ) : null}
             </div>
-            <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
-              <Button size="S" onPress={() => act(() => api.startContainer(selected!), "Started")}>
+            <div
+              className={style({
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: 8,
+              })}
+            >
+              <Button
+                size="S"
+                variant="secondary"
+                fillStyle="outline"
+                isDisabled={!!running}
+                onPress={() => act(() => api.startContainer(selected!), "Started")}
+              >
                 Start
               </Button>
-              <Button size="S" variant="secondary" onPress={() => act(() => api.stopContainer(selected!), "Stopped")}>
+              <Button
+                size="S"
+                variant="secondary"
+                fillStyle="outline"
+                isDisabled={!running}
+                onPress={() => act(() => api.stopContainer(selected!), "Stopped")}
+              >
                 Stop
               </Button>
               <Button
                 size="S"
                 variant="secondary"
                 fillStyle="outline"
+                isDisabled={!running}
                 onPress={() => act(() => api.restartContainer(selected!), "Restarted")}
               >
                 Restart
@@ -357,7 +370,7 @@ export function ContainersPage() {
                   Open in browser
                 </Button>
               </Tip>
-              <Button size="S" variant="negative" onPress={() => setConfirmRemove(true)}>
+              <Button size="S" variant="negative" fillStyle="outline" onPress={() => setConfirmRemove(true)}>
                 Remove
               </Button>
             </div>

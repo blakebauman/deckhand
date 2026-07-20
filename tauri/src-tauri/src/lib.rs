@@ -6,9 +6,9 @@ use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 use tauri::{
-    menu::{Menu, MenuItem},
+    menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager, WindowEvent,
+    Emitter, Manager, WindowEvent,
 };
 use tauri_plugin_autostart::MacosLauncher;
 
@@ -173,10 +173,41 @@ pub fn run() {
         .setup(|app| {
             let show = MenuItem::with_id(app, "show", "Open Deckhand", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show, &quit])?;
+            let tray_menu = Menu::with_items(app, &[&show, &quit])?;
+
+            // Native app menu so ⌘K / Ctrl+K is registered with the OS (macOS menu bar).
+            let command_palette = MenuItem::with_id(
+                app,
+                "command-palette",
+                "Command Palette",
+                true,
+                Some("CmdOrCtrl+K"),
+            )?;
+            let app_submenu = Submenu::with_items(
+                app,
+                "Deckhand",
+                true,
+                &[
+                    &command_palette,
+                    &PredefinedMenuItem::separator(app)?,
+                    &PredefinedMenuItem::quit(app, Some("Quit Deckhand"))?,
+                ],
+            )?;
+            let app_menu = Menu::with_items(app, &[&app_submenu])?;
+            app.set_menu(app_menu)?;
+
+            app.on_menu_event(|app, event| {
+                if event.id().as_ref() == "command-palette" {
+                    if let Some(win) = app.get_webview_window("main") {
+                        let _ = win.show();
+                        let _ = win.set_focus();
+                    }
+                    let _ = app.emit("deckhand://command-palette", ());
+                }
+            });
 
             let _tray = TrayIconBuilder::new()
-                .menu(&menu)
+                .menu(&tray_menu)
                 .tooltip("Deckhand")
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show" => {

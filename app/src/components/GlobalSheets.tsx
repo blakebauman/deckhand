@@ -58,7 +58,7 @@ export function GlobalSheets() {
           </Button>
         }
       >
-        <DiskUsagePanel />
+        <DiskUsagePanel hideTitle />
       </GlassSheet>
     </>
   );

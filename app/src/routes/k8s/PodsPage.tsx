@@ -8,7 +8,7 @@ import { ConsolePanel } from "@/components/ConsolePanel";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { ExecTerminal } from "@/components/ExecTerminal";
-import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
+import { ListEmpty, ListPane } from "@/components/ListPane";
 import { RowMenu } from "@/components/spectrum/RowMenu";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
 import { useUIStore } from "@/stores/uiStore";
@@ -50,6 +50,8 @@ export function PodsPage() {
           {filtered.map((p) => (
             <RowMenu
               key={p.metadata.uid}
+              active={selected === p.metadata.name}
+              onSelect={() => setSelected(p.metadata.name)}
               items={[
                 { id: "open", label: "Open", onAction: () => setSelected(p.metadata.name) },
                 { id: "copy", label: "Copy name", onAction: () => void copyText(p.metadata.name) },
@@ -70,11 +72,9 @@ export function PodsPage() {
                 </StatusBadge>
               }
             >
-              <ListItem active={selected === p.metadata.name} onClick={() => setSelected(p.metadata.name)}>
-                <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
-                  {p.metadata.name}
-                </div>
-              </ListItem>
+              <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+                {p.metadata.name}
+              </div>
             </RowMenu>
           ))}
         </ListPane>

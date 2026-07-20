@@ -1,34 +1,36 @@
 import { useEffect, useState } from "react";
-import { Heading, InlineAlert, Content, StatusLight, Text } from "@react-spectrum/s2";
+import { Badge, Heading, InlineAlert, Content, Text } from "@react-spectrum/s2";
 import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
 import Pause from "@react-spectrum/s2/icons/Pause";
 import { api, type ContainerStats } from "@/lib/api";
-import { AreaChart, MetricCard, WaveBars } from "@/components/charts/MetricChart";
+import { LiveSparkline } from "@/components/charts/LiveSparkline";
+import { MetricCard, WaveBars } from "@/components/charts/MetricChart";
+import { useEasedNumber } from "@/hooks/useEasedSeries";
+import { useLiveStats } from "@/hooks/useLiveStats";
 import { formatBytes } from "@/lib/utils";
 
-const HISTORY = 48;
-
-/** Live runtime metrics with charts (docker stats / cgroup). */
+/** Live runtime metrics (docker stats / cgroup) — SVG sparklines, not Vega. */
 export function ContainerMonitor({ containerId, running }: { containerId: string; running?: boolean }) {
-  const [sample, setSample] = useState<ContainerStats | null>(null);
-  const [cpuHist, setCpuHist] = useState<number[]>([]);
-  const [memHist, setMemHist] = useState<number[]>([]);
-  const [netHist, setNetHist] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [connected, setConnected] = useState(false);
+  const { sampleLabel, hist, pushSample } = useLiveStats(!!running);
+  // Match sparkline tip duration so headline spikes land with the chart.
+  const cpuEased = useEasedNumber(sampleLabel?.cpu ?? 0, 280);
+  const memEased = useEasedNumber(sampleLabel?.mem ?? 0, 280);
+  const netEased = useEasedNumber(sampleLabel?.netRate ?? 0, 280);
 
   useEffect(() => {
     if (!containerId || !running) {
-      setSample(null);
-      setCpuHist([]);
-      setMemHist([]);
-      setNetHist([]);
+      setConnected(false);
       setError(running === false ? "Container is not running" : null);
       return;
     }
 
     const ac = new AbortController();
     setError(null);
+    setConnected(false);
     let prevNet = 0;
+    let skipFirstCpu = true;
 
     (async () => {
       try {
@@ -48,13 +50,24 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
             if (!trimmed) continue;
             try {
               const next = JSON.parse(trimmed) as ContainerStats;
-              setSample(next);
-              setCpuHist((h) => [...h, next.cpuPercent].slice(-HISTORY));
-              setMemHist((h) => [...h, next.memoryPercent].slice(-HISTORY));
               const netTotal = next.netRx + next.netTx;
               const delta = prevNet > 0 ? Math.max(0, netTotal - prevNet) : 0;
               prevNet = netTotal;
-              setNetHist((h) => [...h, delta].slice(-HISTORY));
+              pushSample({
+                cpuPercent: next.cpuPercent,
+                memoryPercent: next.memoryPercent,
+                memoryUsage: next.memoryUsage,
+                memoryLimit: next.memoryLimit,
+                netRx: next.netRx,
+                netTx: next.netTx,
+                blockRead: next.blockRead,
+                blockWrite: next.blockWrite,
+                pids: next.pids,
+                netDelta: delta,
+                skipCpu: skipFirstCpu,
+              });
+              skipFirstCpu = false;
+              setConnected(true);
             } catch {
               /* skip */
             }
@@ -66,7 +79,7 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
     })();
 
     return () => ac.abort();
-  }, [containerId, running]);
+  }, [containerId, running, pushSample]);
 
   if (!running) {
     return (
@@ -79,9 +92,12 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
           gap: 12,
           backgroundColor: "layer-1",
           borderRadius: "xl",
+          borderWidth: 1,
+          borderStyle: "solid",
+          borderColor: "gray-200",
           paddingX: 32,
           paddingY: 40,
-          minHeight: 240,
+          minHeight: 280,
           textAlign: "center",
         })}
       >
@@ -114,7 +130,7 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
     );
   }
 
-  if (!sample) {
+  if (!connected || !sampleLabel) {
     return (
       <div
         className={style({
@@ -125,30 +141,31 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
           gap: 16,
           backgroundColor: "layer-1",
           borderRadius: "xl",
+          borderWidth: 1,
+          borderStyle: "solid",
+          borderColor: "gray-200",
           paddingX: 24,
           paddingY: 32,
-          minHeight: 240,
+          minHeight: 280,
         })}
       >
         <WaveBars values={[0.2, 0.45, 0.3, 0.7, 0.4, 0.55, 0.85, 0.35, 0.5, 0.65, 0.4, 0.6]} max={1} />
-        <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
-          <StatusLight size="S" variant="notice" />
-          <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
-            Connecting to stats stream…
-          </Text>
-        </div>
+        <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
+          Connecting to stats stream…
+        </Text>
       </div>
     );
   }
 
   return (
-    <div className={style({ display: "flex", flexDirection: "column", gap: 12 })}>
+    <div className={style({ display: "flex", flexDirection: "column", gap: 16 })}>
       <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
-        <StatusLight size="S" variant="positive" />
+        <Badge variant="positive">Live</Badge>
         <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>
-          Live Docker stats · CPU, memory, net, and block I/O
+          Docker stats stream · updates ~1s
         </Text>
       </div>
+
       <div
         className={style({
           display: "grid",
@@ -159,37 +176,56 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
           gap: 12,
         })}
       >
-        <MetricCard label="CPU" value={`${sample.cpuPercent.toFixed(2)}%`} hint="total usage">
-          <AreaChart values={cpuHist} />
+        <MetricCard label="CPU" value={`${cpuEased.toFixed(1)}%`} hint="cgroup usage">
+          <LiveSparkline values={hist.cpu} unit="%" label="CPU" tone="accent" />
         </MetricCard>
         <MetricCard
           label="Memory"
-          value={`${sample.memoryPercent.toFixed(1)}%`}
-          hint={`${formatBytes(sample.memoryUsage)} / ${formatBytes(sample.memoryLimit)}`}
+          value={`${memEased.toFixed(1)}%`}
+          hint={`${formatBytes(sampleLabel.memUsage)} / ${formatBytes(sampleLabel.memLimit)}`}
         >
-          <AreaChart values={memHist} max={100} />
+          <LiveSparkline values={hist.mem} unit="%" label="Memory" />
         </MetricCard>
       </div>
+
       <div
         className={style({
           display: "grid",
           gridTemplateColumns: {
             default: "1fr",
-            sm: "1fr 1fr",
-            xl: "1fr 1fr 1fr",
+            lg: "1fr 1fr",
           },
           gap: 12,
         })}
       >
-        <MetricCard label="Net I/O" value={`${formatBytes(sample.netRx)} ↓`} hint={`${formatBytes(sample.netTx)} ↑`}>
-          <WaveBars values={netHist} />
-        </MetricCard>
         <MetricCard
-          label="Block I/O"
-          value={`${formatBytes(sample.blockRead)} R`}
-          hint={`${formatBytes(sample.blockWrite)} W`}
-        />
-        <MetricCard label="PIDs" value={String(sample.pids)} hint="process count" />
+          label="Network"
+          value={`${formatBytes(netEased)}/s`}
+          hint={`${formatBytes(sampleLabel.netRx)} ↓ · ${formatBytes(sampleLabel.netTx)} ↑ total`}
+        >
+          <LiveSparkline
+            values={hist.net}
+            label="Throughput"
+            height={72}
+            formatValue={(n) => `${formatBytes(n)}/s`}
+          />
+        </MetricCard>
+
+        <div
+          className={style({
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 12,
+            minWidth: 0,
+          })}
+        >
+          <MetricCard
+            label="Block I/O"
+            value={`${formatBytes(sampleLabel.blockRead)} R`}
+            hint={`${formatBytes(sampleLabel.blockWrite)} W`}
+          />
+          <MetricCard label="PIDs" value={String(sampleLabel.pids)} hint="processes" />
+        </div>
       </div>
     </div>
   );

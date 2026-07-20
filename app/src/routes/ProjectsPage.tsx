@@ -6,7 +6,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { HelpHint } from "@/components/HelpHint";
-import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
+import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
 import { Area, Field } from "@/components/spectrum/Field";
 import { RowMenu } from "@/components/spectrum/RowMenu";
@@ -273,6 +273,8 @@ export function ProjectsPage() {
           return (
             <RowMenu
               key={key}
+              active={selectedKey === key}
+              onSelect={() => setSelectedKey(key)}
               items={[
                 { id: "open", label: "Open", onAction: () => setSelectedKey(key) },
                 ...(p.path || p.configFiles?.length
@@ -290,17 +292,15 @@ export function ProjectsPage() {
               ]}
               suffix={<StatusBadge tone={p.running ? "success" : "muted"}>{label}</StatusBadge>}
             >
-              <ListItem active={selectedKey === key} onClick={() => setSelectedKey(key)}>
-                <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
-                  {p.name}
-                </div>
-                <div
-                  className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, marginTop: 2 })}
-                  title={p.path || "no compose file"}
-                >
-                  {p.path || "no compose file"}
-                </div>
-              </ListItem>
+              <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+                {p.name}
+              </div>
+              <div
+                className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}
+                title={p.path || "no compose file"}
+              >
+                {p.path || "no compose file"}
+              </div>
             </RowMenu>
           );
         })}

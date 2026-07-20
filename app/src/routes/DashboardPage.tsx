@@ -171,6 +171,9 @@ export function DashboardPage() {
                 flexDirection: "column",
                 backgroundColor: "layer-1",
                 borderRadius: "xl",
+                borderWidth: 1,
+                borderStyle: "solid",
+                borderColor: "gray-200",
                 paddingX: 20,
                 paddingY: 16,
                 minWidth: 0,
@@ -218,13 +221,31 @@ export function DashboardPage() {
                 flexDirection: "column",
                 backgroundColor: "layer-1",
                 borderRadius: "xl",
+                borderWidth: 1,
+                borderStyle: "solid",
+                borderColor: "gray-200",
                 paddingX: 20,
                 paddingY: 16,
                 minWidth: 0,
                 height: "full",
               })}
+              style={{ minHeight: 320 }}
             >
-              <DiskUsagePanel compact />
+              <div
+                className={style({
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 12,
+                  flexShrink: 0,
+                })}
+              >
+                <Text styles={style({ font: "detail", fontWeight: "medium", color: "neutral-subdued" })}>
+                  Engine disk
+                </Text>
+                <HelpHint label="From docker system df — reclaimable is unused layers, stopped containers, and idle cache" />
+              </div>
+              <DiskUsagePanel compact hideTitle />
             </div>
           </div>
         </div>

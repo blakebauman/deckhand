@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
-import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
+import { ListEmpty, ListPane } from "@/components/ListPane";
 import { SettingRow } from "@/components/SettingRow";
 import { toast } from "@/components/Toaster";
 import { RowMenu } from "@/components/spectrum/RowMenu";
@@ -58,6 +58,8 @@ export function DeploymentsPage() {
           {filtered.map((d) => (
             <RowMenu
               key={d.metadata.uid}
+              active={selected === d.metadata.name}
+              onSelect={() => setSelected(d.metadata.name)}
               items={[
                 { id: "open", label: "Open", onAction: () => setSelected(d.metadata.name) },
                 { id: "copy", label: "Copy name", onAction: () => void copyText(d.metadata.name) },
@@ -101,11 +103,9 @@ export function DeploymentsPage() {
                 </StatusBadge>
               }
             >
-              <ListItem active={selected === d.metadata.name} onClick={() => setSelected(d.metadata.name)}>
-                <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
-                  {d.metadata.name}
-                </div>
-              </ListItem>
+              <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+                {d.metadata.name}
+              </div>
             </RowMenu>
           ))}
         </ListPane>

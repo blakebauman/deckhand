@@ -25,6 +25,7 @@ import Tools from "@react-spectrum/s2/icons/Tools";
 import ViewList from "@react-spectrum/s2/icons/ViewList";
 import Cloud from "@react-spectrum/s2/icons/Cloud";
 import { api } from "@/lib/api";
+import { isTauriShell } from "@/lib/platform";
 import { useUIStore } from "@/stores/uiStore";
 import { containerName, shortId } from "@/lib/utils";
 
@@ -407,7 +408,7 @@ export function CommandPalette({
   );
 }
 
-/** Global ⌘K / Ctrl+K listener + palette host. */
+/** Global ⌘K / Ctrl+K listener + palette host (Tauri menu emits the same toggle). */
 export function CommandPaletteHost({
   onRunContainer,
   onOpenPrune,
@@ -415,18 +416,42 @@ export function CommandPaletteHost({
   onRunContainer?: () => void;
   onOpenPrune?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const open = useUIStore((s) => s.commandPaletteOpen);
+  const setOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const toggle = useUIStore((s) => s.toggleCommandPalette);
 
   useEffect(() => {
+    let last = 0;
+    const fire = () => {
+      const now = Date.now();
+      // Dedupe webview keydown + native menu accelerator on the same press.
+      if (now - last < 80) return;
+      last = now;
+      toggle();
+    };
+
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setOpen((v) => !v);
-      }
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "k") return;
+      if (e.altKey || e.shiftKey || e.repeat) return;
+      e.preventDefault();
+      fire();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+
+    let unlisten: (() => void) | undefined;
+    if (isTauriShell()) {
+      void import("@tauri-apps/api/event").then(({ listen }) =>
+        listen("deckhand://command-palette", () => fire()).then((fn) => {
+          unlisten = fn;
+        }),
+      );
+    }
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      unlisten?.();
+    };
+  }, [toggle]);
 
   return (
     <CommandPalette

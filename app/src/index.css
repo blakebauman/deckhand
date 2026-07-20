@@ -154,6 +154,31 @@ body {
   border-right: none;
 }
 
+/* Sidebar rail tooltips — wider than S2’s 160px default; match app chrome in dark. */
+.dh-rail-tooltip {
+  max-width: 240px !important;
+}
+
+html[data-color-scheme="dark"] .dh-rail-tooltip {
+  background-color: #2c2c2c !important;
+  color: #f5f5f5 !important;
+}
+
+html[data-color-scheme="dark"] .dh-rail-tooltip svg {
+  fill: #2c2c2c !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-color-scheme="light"]) .dh-rail-tooltip {
+    background-color: #2c2c2c !important;
+    color: #f5f5f5 !important;
+  }
+
+  html:not([data-color-scheme="light"]) .dh-rail-tooltip svg {
+    fill: #2c2c2c !important;
+  }
+}
+
 /* Interactive chrome that uses native buttons + Spectrum tokens */
 button.dh-chip:hover,
 .dh-list-item:hover:not(.dh-list-item-selected) {
