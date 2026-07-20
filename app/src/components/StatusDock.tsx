@@ -251,6 +251,11 @@ export function StatusDock() {
             alignItems: "center",
             justifyContent: "end",
             gap: 8,
+            // Hairline lives here (not on the sidebar) — separates engine chips from activity.
+            borderStartWidth: 1,
+            borderStyle: "solid",
+            borderColor: "gray-300",
+            paddingStart: 12,
           })}
         >
           {latest ? (
