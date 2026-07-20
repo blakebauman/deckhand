@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - [Bun](https://bun.sh) (or npm)
-- Go (see `sidecar/go.mod`; CI uses 1.23.x)
+- Go (see `sidecar/go.mod`)
 - Rust / Cargo (for Tauri)
 - A running Docker Engine (compatible API on the local socket or `DOCKER_HOST`)
 - Optional: kubeconfig, `helm` CLI, Firecracker (Linux)
@@ -58,18 +58,37 @@ bun run dev:sidecar
 
 ## Packaging
 
+Local:
+
 ```bash
-bun run build:sidecar
-bun run --filter @deckhand/tauri tauri:build
+bun run tauri:build
 ```
 
 | Platform | Artifacts |
 |----------|-----------|
-| macOS | `.app`, `.dmg` |
+| macOS | `.app`, `.dmg` under `tauri/src-tauri/target/release/bundle/` |
 | Linux | `.deb`, AppImage |
 | Windows | Deferred |
 
-CI (`.github/workflows/ci.yml`) builds the Go sidecar on macOS and Ubuntu and compiles the UI. Full Tauri packaging is left to local machines.
+### Tag-triggered release CI
+
+Pushing a version tag builds installers and attaches them to the GitHub Release:
+
+```bash
+bun run version 0.1.0-alpha.2   # syncs package.json + Cargo.toml
+git commit -am "Release 0.1.0-alpha.2"
+git tag v0.1.0-alpha.2
+git push origin main v0.1.0-alpha.2
+```
+
+[`.github/workflows/release.yml`](../.github/workflows/release.yml) runs on `v*` tags (and `workflow_dispatch` for an existing tag). It packages:
+
+- **macOS** (`macos-latest`) — Apple Silicon `.dmg` / `.app`
+- **Linux** (`ubuntu-22.04`) — x86_64 `.deb` + AppImage
+
+Tags containing `alpha`, `beta`, or `rc` are marked prerelease. Builds are **unsigned**. The workflow requires `package.json` version to match the tag (without the leading `v`).
+
+Regular CI (`.github/workflows/ci.yml`) still only builds the sidecar + UI — not full installers.
 
 ## Environment
 

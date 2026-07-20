@@ -1,0 +1,114 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and attach (e.g. v0.1.0-alpha.1). Leave empty to use the push tag."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Native Apple Silicon (matches macos-latest today).
+          - platform: macos-latest
+            args: ""
+          # Linux x64 .deb + AppImage (webkit2gtk 4.1).
+          - platform: ubuntu-22.04
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Resolve release tag
+        id: tag
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          if [[ ! "$TAG" =~ ^v ]]; then
+            echo "Tag must start with v (got: $TAG)"
+            exit 1
+          fi
+          echo "name=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Check package.json version matches tag
+        shell: bash
+        run: |
+          PKG="$(jq -r .version package.json)"
+          WANT="${{ steps.tag.outputs.version }}"
+          if [ "$PKG" != "$WANT" ]; then
+            echo "Version mismatch: package.json=$PKG tag=${{ steps.tag.outputs.name }} (expected package.json=$WANT)"
+            echo "Run: bun run version $WANT && commit before tagging."
+            exit 1
+          fi
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            xdg-utils
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: sidecar/go.mod
+          cache-dependency-path: sidecar/go.sum
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: tauri/src-tauri -> target
+
+      - name: Install JS dependencies
+        run: bun install
+
+      - name: Check Cargo.toml version matches package.json
+        run: bun run version:check
+
+      - name: Build and upload to GitHub Release
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: tauri
+          tagName: ${{ steps.tag.outputs.name }}
+          releaseName: Deckhand ${{ steps.tag.outputs.name }}
+          releaseBody: |
+            Automated packaging for `${{ steps.tag.outputs.name }}`.
+
+            **Unsigned** builds (no Apple notarization / code signing yet).
+            macOS artifacts are Apple Silicon; Linux is x86_64 `.deb` + AppImage.
+            Windows packaging is deferred.
+          prerelease: ${{ contains(steps.tag.outputs.name, 'alpha') || contains(steps.tag.outputs.name, 'beta') || contains(steps.tag.outputs.name, 'rc') }}
+          args: ${{ matrix.args }}

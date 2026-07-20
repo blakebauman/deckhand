@@ -37,6 +37,5 @@ jobs:
       - run: bun run --filter @deckhand/app build
       - run: bun run --filter @deckhand/tauri build
 
-  # Full Tauri packaging is environment-heavy; document local:
-  #   bun run build:sidecar && bun run --filter @deckhand/tauri tauri:build
-  # Produces .dmg/.app on macOS and .deb/AppImage on Linux.
+  # Installer packaging: .github/workflows/release.yml (on v* tags).
+  # Local: bun run tauri:build → .dmg/.app (macOS) or .deb/AppImage (Linux).
