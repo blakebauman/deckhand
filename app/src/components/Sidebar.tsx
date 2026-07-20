@@ -8,7 +8,6 @@ import {
 } from "@react-spectrum/s2";
 import Home from "@react-spectrum/s2/icons/Home";
 import Apps from "@react-spectrum/s2/icons/Apps";
-import Images from "@react-spectrum/s2/icons/Images";
 import SocialNetwork from "@react-spectrum/s2/icons/SocialNetwork";
 import Data from "@react-spectrum/s2/icons/Data";
 import Settings from "@react-spectrum/s2/icons/Settings";
@@ -17,6 +16,7 @@ import Cloud from "@react-spectrum/s2/icons/Cloud";
 import Archive from "@react-spectrum/s2/icons/Archive";
 import DeviceDesktop from "@react-spectrum/s2/icons/DeviceDesktop";
 import Layers from "@react-spectrum/s2/icons/Layers";
+import Project from "@react-spectrum/s2/icons/Project";
 import Tools from "@react-spectrum/s2/icons/Tools";
 import ViewList from "@react-spectrum/s2/icons/ViewList";
 import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
@@ -41,9 +41,9 @@ type NavItem = {
 
 const dockerNav: NavItem[] = [
   { to: "/", icon: Home, label: "Dashboard", hint: "Engine health and GPU overview", exact: true },
-  { to: "/projects", icon: Layers, label: "Projects", hint: "Compose up and down" },
+  { to: "/projects", icon: Project, label: "Projects", hint: "Compose up and down" },
   { to: "/containers", icon: Apps, label: "Containers", hint: "Monitor, logs, and exec" },
-  { to: "/images", icon: Images, label: "Images", hint: "Pull, prune, and remove images" },
+  { to: "/images", icon: Layers, label: "Images", hint: "Pull, prune, and remove images" },
   { to: "/builds", icon: Tools, label: "Builds", hint: "Build images and search Hub" },
   { to: "/networks", icon: SocialNetwork, label: "Networks", hint: "Bridge and custom networks" },
   { to: "/volumes", icon: Data, label: "Volumes", hint: "Named volumes on this engine" },

@@ -55,7 +55,7 @@ func (c *Client) Diagnose(ctx context.Context) DiagnoseReport {
 	defer cancel()
 	if err := c.Ping(pingCtx); err != nil {
 		rep.PingError = err.Error()
-		rep.Notes = append(rep.Notes, "Docker engine unreachable — start Docker Desktop, OrbStack, Colima, or the local daemon.")
+		rep.Notes = append(rep.Notes, "Docker engine unreachable — start any Docker-compatible engine, then reconnect.")
 	} else {
 		rep.OK = true
 		if v, err := c.Version(pingCtx); err == nil {

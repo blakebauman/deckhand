@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { CSSProperties, ReactElement } from "react";
 import { Tooltip, TooltipTrigger } from "@react-spectrum/s2";
 
 /** Spectrum tooltip for a single focusable child (button, link, etc.). */
@@ -14,9 +14,11 @@ export function Tip({
   delayDuration?: number;
 }) {
   return (
-    <TooltipTrigger delay={400}>
-      {children}
-      <Tooltip>{label}</Tooltip>
-    </TooltipTrigger>
+    <span style={{ display: "inline-flex", flexShrink: 0 } as CSSProperties}>
+      <TooltipTrigger delay={400}>
+        {children}
+        <Tooltip>{label}</Tooltip>
+      </TooltipTrigger>
+    </span>
   );
 }

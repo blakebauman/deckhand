@@ -14,9 +14,8 @@ import { StatusBadge } from "@/components/spectrum/StatusBadge";
 import { Tip } from "@/components/spectrum/Tip";
 import { useUIStore } from "@/stores/uiStore";
 import FolderAdd from "@react-spectrum/s2/icons/FolderAdd";
-import Add from "@react-spectrum/s2/icons/Add";
 import DataRefresh from "@react-spectrum/s2/icons/DataRefresh";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
 
 import { copyText, composeProjectKey, composeStatusLabel } from "@/routes/shared";
 import type { ComposeProject } from "@/lib/api";
@@ -177,7 +176,7 @@ export function ProjectsPage() {
           }}
         />
         <Button variant="secondary" aria-label="Add scan root" onPress={addRoot}>
-          <FolderAdd />
+          <FolderAdd styles={iconStyle({ size: "S" })} />
         </Button>
       </div>
       {composeRoots.length > 0 ? (
@@ -262,7 +261,6 @@ export function ProjectsPage() {
             </Tip>
             <Tip label="Deploy from YAML or path">
               <Button size="S" onPress={() => setDeployOpen(true)}>
-                <Add />
                 Deploy
               </Button>
             </Tip>
