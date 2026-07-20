@@ -124,7 +124,7 @@ export function DashboardPage() {
 
           <ChartPanel
             title="Running containers"
-            hint="Samples every ~5s"
+            hint="Hover for time · ~5s samples"
             height={220}
           >
             <RunningAreaChart data={runningSeries} />

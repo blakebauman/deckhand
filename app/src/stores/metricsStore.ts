@@ -21,7 +21,8 @@ type MetricsState = {
 
 function label(ts: number) {
   const d = new Date(ts);
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  // Quiet clock for tooltips — no seconds.
+  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
 function pushSample(history: RunningSample[], running: number): RunningSample[] {

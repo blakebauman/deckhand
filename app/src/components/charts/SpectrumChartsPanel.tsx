@@ -85,8 +85,9 @@ export function RunningAreaChart({
     : [{ i: 0, t: "now", running: 0 }];
   return (
     <Chart data={chartData} height="100%" width="100%" colorScheme={colorScheme} padding={8}>
-      <Axis position="bottom" baseline />
-      <Axis position="left" grid />
+      {/* Hide sample-index ticks — time lives in the tooltip only. */}
+      <Axis position="bottom" baseline hideDefaultLabels />
+      <Axis position="left" grid numberFormat="d" tickMinStep={1} tickCountLimit={4} />
       <Line dimension="i" metric="running" gradient interpolate="step-after" scaleType="linear">
         <ChartTooltip>
           {(datum) => (
