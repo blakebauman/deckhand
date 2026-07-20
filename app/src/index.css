@@ -240,10 +240,10 @@ button.dh-metric-tile:focus-visible {
   background: transparent;
 }
 
-/* Keep Spectrum icons square inside circular sidebar hits */
+/* Keep Lucide rail icons square inside circular sidebar hits (lucideProps M = 18) */
 aside nav button svg {
-  width: 20px !important;
-  height: 20px !important;
+  width: 18px !important;
+  height: 18px !important;
   flex-shrink: 0;
 }
 

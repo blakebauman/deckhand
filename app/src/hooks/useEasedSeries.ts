@@ -1,3 +1,4 @@
+import { useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 /** Ease-out cubic — finishes before the next ~1s Docker sample. */
@@ -8,8 +9,10 @@ function easeOutCubic(t: number) {
 /**
  * Live series easing: committed history stays at true values (spikes stay visible);
  * only the newest tip lerps toward the latest sample.
+ * Snaps instantly when prefers-reduced-motion is set.
  */
 export function useEasedSeries(target: number[], durationMs = 280): number[] {
+  const reduceMotion = useReducedMotion();
   const [tip, setTip] = useState(() => target[target.length - 1] ?? 0);
   const tipRef = useRef(tip);
   const fromRef = useRef(tip);
@@ -36,9 +39,6 @@ export function useEasedSeries(target: number[], durationMs = 280): number[] {
       return;
     }
 
-    fromRef.current = tipRef.current;
-    toRef.current = nextTip;
-    startRef.current = performance.now();
     cancelAnimationFrame(rafRef.current);
 
     if (target.length === 0) {
@@ -47,12 +47,16 @@ export function useEasedSeries(target: number[], durationMs = 280): number[] {
       return;
     }
 
-    // First point: snap.
-    if (prev.length === 0) {
+    // First point, or reduced motion: snap.
+    if (prev.length === 0 || reduceMotion) {
       tipRef.current = nextTip;
       setTip(nextTip);
       return;
     }
+
+    fromRef.current = tipRef.current;
+    toRef.current = nextTip;
+    startRef.current = performance.now();
 
     const tick = (now: number) => {
       const t = Math.min(1, (now - startRef.current) / durationMs);
@@ -65,7 +69,7 @@ export function useEasedSeries(target: number[], durationMs = 280): number[] {
 
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [target, durationMs]);
+  }, [target, durationMs, reduceMotion]);
 
   return useMemo(() => {
     if (target.length === 0) return [];
@@ -77,6 +81,7 @@ export function useEasedSeries(target: number[], durationMs = 280): number[] {
 
 /** Same short ease for headline metric numbers (keep in sync with sparkline tip). */
 export function useEasedNumber(target: number, durationMs = 280): number {
+  const reduceMotion = useReducedMotion();
   const [display, setDisplay] = useState(target);
   const displayRef = useRef(target);
   const fromRef = useRef(target);
@@ -85,10 +90,17 @@ export function useEasedNumber(target: number, durationMs = 280): number {
   const rafRef = useRef(0);
 
   useEffect(() => {
+    cancelAnimationFrame(rafRef.current);
+
+    if (reduceMotion) {
+      displayRef.current = target;
+      setDisplay(target);
+      return;
+    }
+
     fromRef.current = displayRef.current;
     toRef.current = target;
     startRef.current = performance.now();
-    cancelAnimationFrame(rafRef.current);
 
     const tick = (now: number) => {
       const t = Math.min(1, (now - startRef.current) / durationMs);
@@ -101,7 +113,7 @@ export function useEasedNumber(target: number, durationMs = 280): number {
 
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [target, durationMs]);
+  }, [target, durationMs, reduceMotion]);
 
   return display;
 }

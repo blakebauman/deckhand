@@ -1,5 +1,7 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { Tooltip, TooltipTrigger } from "@react-spectrum/s2";
+
+type Placement = "top" | "bottom" | "left" | "right" | "start" | "end";
 
 /**
  * Spectrum tooltip for a single focusable child (button, link, etc.).
@@ -8,16 +10,14 @@ import { Tooltip, TooltipTrigger } from "@react-spectrum/s2";
 export function Tip({
   label,
   children,
+  placement = "bottom",
 }: {
-  label: string;
+  label: ReactNode;
   children: ReactElement;
-  /** @deprecated Unused — TooltipTrigger placement is fixed. */
-  side?: "top" | "bottom" | "left" | "right";
-  /** @deprecated Unused — kept for call-site compatibility. */
-  delayDuration?: number;
+  placement?: Placement;
 }) {
   return (
-    <TooltipTrigger delay={400}>
+    <TooltipTrigger placement={placement} delay={400}>
       {children}
       <Tooltip>{label}</Tooltip>
     </TooltipTrigger>

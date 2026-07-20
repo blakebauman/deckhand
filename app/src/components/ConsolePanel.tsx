@@ -25,8 +25,6 @@ export function ConsolePanel({
 }: {
   url: string | null;
   title?: string;
-  /** @deprecated Unused — kept for call-site compatibility. */
-  className?: string;
   follow?: boolean;
   downloadName?: string;
 }) {

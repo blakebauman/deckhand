@@ -84,8 +84,6 @@ export function TerminalBlock({
   copyValue,
 }: {
   children: ReactNode;
-  /** @deprecated Unused — kept for call-site compatibility. */
-  className?: string;
   copyValue?: string;
 }) {
   const text = copyValue ?? (typeof children === "string" ? children : "");

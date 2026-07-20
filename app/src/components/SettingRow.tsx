@@ -84,8 +84,6 @@ export function SettingRow({
    * When `action` is omitted: treated as the right-aligned control (legacy Deckhand).
    */
   children?: ReactNode;
-  /** @deprecated Unused — kept for call-site compatibility. */
-  className?: string;
 }) {
   const heading = title || label || "";
   const right = action !== undefined ? action : children;

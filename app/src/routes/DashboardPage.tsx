@@ -32,7 +32,6 @@ export function DashboardPage() {
   const status = useQuery({ queryKey: ["status"], queryFn: api.status });
   const info = useQuery({ queryKey: ["docker-info"], queryFn: api.dockerInfo, retry: false });
   const contexts = useQuery({ queryKey: ["docker-contexts"], queryFn: api.dockerContexts, retry: false });
-  const gpus = useQuery({ queryKey: ["gpus"], queryFn: api.gpus, refetchInterval: 8000 });
   const pushRunning = useMetricsStore((s) => s.pushRunning);
   const clearRunning = useMetricsStore((s) => s.clearRunning);
   const runningHistory = useMetricsStore((s) => s.runningHistory);
@@ -161,16 +160,9 @@ export function DashboardPage() {
             })}
           >
             <section className={style({ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 })}>
-              <div className={style({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 })}>
-                <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
-                  <Text styles={style({ font: "title-sm", margin: 0 })}>GPUs</Text>
-                  <HelpHint label="Detected via nvidia-smi and the Docker NVIDIA runtime" />
-                </div>
-                {gpus.data?.devices?.length ? (
-                  <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>
-                    {gpus.data.devices.length} detected
-                  </Text>
-                ) : null}
+              <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
+                <Text styles={style({ font: "title-sm", margin: 0 })}>GPUs</Text>
+                <HelpHint label="Detected via nvidia-smi and the Docker NVIDIA runtime" />
               </div>
               <GpuPanel />
             </section>

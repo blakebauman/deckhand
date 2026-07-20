@@ -176,15 +176,30 @@ export function ListSkeleton({ rows = 6 }: { rows?: number }) {
               borderRadius: "lg",
               paddingX: 12,
               paddingY: 12,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
             })}
             style={{ opacity: 1 - i * 0.1 }}
           >
-            <Text styles={style({ font: "ui", display: "block", marginBottom: 8 })}>
-              Loading item title placeholder
-            </Text>
-            <Text styles={style({ font: "body-xs", display: "block" })}>
-              Secondary loading detail line
-            </Text>
+            <div
+              className={style({
+                height: 14,
+                width: "full",
+                maxWidth: 200,
+                borderRadius: "sm",
+                backgroundColor: "gray-200",
+              })}
+            />
+            <div
+              className={style({
+                height: 10,
+                width: "full",
+                maxWidth: 140,
+                borderRadius: "sm",
+                backgroundColor: "gray-200",
+              })}
+            />
           </div>
         ))}
       </Skeleton>
@@ -245,21 +260,16 @@ export function ListEmpty({
 
 export function ListPaneScroll({
   className,
-  contentClassName,
   style: inlineStyle,
   children,
   empty,
   loading,
 }: {
   className?: string;
-  /** @deprecated Unused — header is no longer absolutely positioned. */
-  contentClassName?: string;
   style?: CSSProperties;
   children: ReactNode;
   empty?: ReactNode;
   loading?: boolean;
-  /** @deprecated Unused — header is no longer absolutely positioned. */
-  hasSearch?: boolean;
 }) {
   const hasItems = Array.isArray(children)
     ? children.length > 0
@@ -342,7 +352,7 @@ export function ListPane({
           />
         ) : null}
       </ListPaneHeader>
-      <ListPaneScroll hasSearch={!!search} empty={empty} loading={loading}>
+      <ListPaneScroll empty={empty} loading={loading}>
         {children}
       </ListPaneScroll>
     </ListPaneRoot>
@@ -388,11 +398,10 @@ export const ListItem = forwardRef<
   {
     active?: boolean;
     onClick?: () => void;
-    onContextMenu?: (e: React.MouseEvent) => void;
     children: React.ReactNode;
     className?: string;
   }
->(function ListItem({ active, onClick, onContextMenu, children, className }, ref) {
+>(function ListItem({ active, onClick, children, className }, ref) {
   return (
     <div
       ref={ref}
@@ -406,7 +415,6 @@ export const ListItem = forwardRef<
           onClick();
         }
       }}
-      onContextMenu={onContextMenu}
       className={[
         "dh-list-item",
         active ? "dh-list-item-selected" : null,

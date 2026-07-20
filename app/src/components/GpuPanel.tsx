@@ -5,6 +5,7 @@ import {
   Content,
   Heading,
   IllustratedMessage,
+  ProgressCircle,
   Text,
   Tooltip,
   TooltipTrigger,
@@ -13,7 +14,7 @@ import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import CloudStateError from "@react-spectrum/s2/illustrations/linear/CloudStateError";
 import { api, type GPUStatus } from "@/lib/api";
 import { HelpHint } from "@/components/HelpHint";
-import { MetricCard, RingGauge, WaveBars } from "@/components/charts/MetricChart";
+import { RingGauge } from "@/components/charts/MetricChart";
 
 export function GpuPanel() {
   const gpus = useQuery({ queryKey: ["gpus"], queryFn: api.gpus, refetchInterval: 4000 });
@@ -32,7 +33,7 @@ export function GpuPanel() {
           textAlign: "center",
         })}
       >
-        <WaveBars values={[0.25, 0.5, 0.35, 0.7, 0.45, 0.6, 0.8, 0.4, 0.55, 0.65]} max={1} />
+        <ProgressCircle aria-label="Probing GPUs" isIndeterminate size="M" />
         <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>Probing GPUs…</Text>
       </div>
     );
@@ -155,17 +156,13 @@ export function GpuPanel() {
                 <div>
                   <RingGauge value={d.utilization} label="GPU util" sub={`${d.utilization}% compute`} />
                 </div>
-                <MetricCard
-                  flat
-                  label="VRAM"
-                  value={`${memPct.toFixed(0)}%`}
-                  hint={`${d.memoryUsedMiB} / ${d.memoryTotalMiB} MiB`}
-                >
-                  <WaveBars
-                    values={[memPct * 0.7, memPct * 0.85, memPct, memPct * 0.9, memPct * 0.75, memPct]}
-                    max={100}
+                <div>
+                  <RingGauge
+                    value={memPct}
+                    label="VRAM"
+                    sub={`${d.memoryUsedMiB} / ${d.memoryTotalMiB} MiB`}
                   />
-                </MetricCard>
+                </div>
               </div>
             </div>
           );

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useId, useMemo } from "react";
 import { Text } from "@react-spectrum/s2";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
@@ -12,13 +12,11 @@ export function WaveBars({
 }: {
   values: number[];
   max?: number;
-  /** @deprecated Unused — kept for call-site compatibility. */
-  className?: string;
-  /** @deprecated Unused — Spectrum tokens drive color. */
-  color?: string;
 }) {
+  const reduceMotion = useReducedMotion();
   const peak = Math.max(max ?? 0, ...values, 1);
   const pads = values.length ? values : Array.from({ length: 24 }, () => 0);
+  const duration = reduceMotion ? 0 : 0.35;
 
   return (
     <div
@@ -45,7 +43,11 @@ export function WaveBars({
             height: `${Math.max(8, (v / peak) * 100)}%`,
             opacity: 0.35 + (i / Math.max(pads.length, 1)) * 0.65,
           }}
-          transition={{ duration: 0.35, ease, delay: Math.min(i * 0.008, 0.12) }}
+          transition={{
+            duration,
+            ease,
+            delay: reduceMotion ? 0 : Math.min(i * 0.008, 0.12),
+          }}
         />
       ))}
     </div>
@@ -59,8 +61,6 @@ export function AreaChart({
 }: {
   values: number[];
   max?: number;
-  /** @deprecated Unused — kept for call-site compatibility. */
-  className?: string;
   stroke?: string;
   fill?: string;
 }) {
@@ -126,9 +126,8 @@ export function RingGauge({
   max?: number;
   label: string;
   sub?: string;
-  /** @deprecated Unused — kept for call-site compatibility. */
-  className?: string;
 }) {
+  const reduceMotion = useReducedMotion();
   const pct = Math.min(100, Math.max(0, (value / max) * 100));
   const r = 34;
   const c = 2 * Math.PI * r;
@@ -148,7 +147,7 @@ export function RingGauge({
           strokeLinecap="round"
           strokeDasharray={c}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.45, ease }}
+          transition={{ duration: reduceMotion ? 0 : 0.45, ease }}
         />
       </svg>
       <div>
@@ -186,8 +185,6 @@ export function MetricCard({
   children?: React.ReactNode;
   /** Skip raised fill when nested inside another layer surface. */
   flat?: boolean;
-  /** @deprecated Unused — kept for call-site compatibility. */
-  className?: string;
 }) {
   return (
     <div

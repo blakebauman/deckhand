@@ -29,8 +29,6 @@ export function CopyButton({
   value: string;
   label?: string;
   copiedLabel?: string;
-  /** @deprecated Unused — kept for call-site compatibility. */
-  className?: string;
   iconOnly?: boolean;
   /** Prefer quiet static color on dark console chrome */
   dark?: boolean;
