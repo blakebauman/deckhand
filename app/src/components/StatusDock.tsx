@@ -372,7 +372,7 @@ export function StatusDock() {
                     color: "neutral-subdued",
                   })}
                 >
-                  {dockerOk ? "Listening…" : "local-first"}
+                  {dockerOk ? "No activity" : "local-first"}
                 </Text>
               </button>
             </TipTop>
