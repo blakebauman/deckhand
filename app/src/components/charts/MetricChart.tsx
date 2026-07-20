@@ -207,6 +207,9 @@ export function MetricCard({
               backgroundColor: "layer-1",
               overflow: "hidden",
               borderRadius: "xl",
+              borderWidth: 1,
+              borderStyle: "solid",
+              borderColor: "gray-200",
               paddingX: 16,
               paddingY: 16,
             })

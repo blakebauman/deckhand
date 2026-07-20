@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { InlineAlert, Heading, Content, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { Heading, InlineAlert, Content, StatusLight, Text } from "@react-spectrum/s2";
+import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
+import Pause from "@react-spectrum/s2/icons/Pause";
 import { api, type ContainerStats } from "@/lib/api";
 import { AreaChart, MetricCard, WaveBars } from "@/components/charts/MetricChart";
 import { formatBytes } from "@/lib/utils";
@@ -71,14 +72,34 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
     return (
       <div
         className={style({
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
           backgroundColor: "layer-1",
           borderRadius: "xl",
-          paddingX: 20,
-          paddingY: 24,
+          paddingX: 32,
+          paddingY: 40,
+          minHeight: 240,
+          textAlign: "center",
         })}
       >
-        <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
-          Start the container to stream CPU, memory, network, and block I/O metrics.
+        <div
+          className={style({
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            size: 44,
+            borderRadius: "full",
+            backgroundColor: "gray-100",
+          })}
+        >
+          <Pause styles={iconStyle({ size: "L", color: "neutral" })} />
+        </div>
+        <Text styles={style({ font: "title-sm" })}>Container stopped</Text>
+        <Text styles={style({ font: "body-sm", color: "neutral-subdued", maxWidth: 320 })}>
+          Start it to stream CPU, memory, network, and block I/O from cgroups.
         </Text>
       </div>
     );
@@ -97,24 +118,37 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
     return (
       <div
         className={style({
-          backgroundColor: "layer-1",
-          borderRadius: "xl",
           display: "flex",
-          height: 160,
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          gap: 16,
+          backgroundColor: "layer-1",
+          borderRadius: "xl",
+          paddingX: 24,
+          paddingY: 32,
+          minHeight: 240,
         })}
       >
-        <WaveBars values={[0.2, 0.5, 0.3, 0.8, 0.4, 0.6, 0.9, 0.3, 0.5, 0.7, 0.4, 0.6]} max={1} />
+        <WaveBars values={[0.2, 0.45, 0.3, 0.7, 0.4, 0.55, 0.85, 0.35, 0.5, 0.65, 0.4, 0.6]} max={1} />
+        <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
+          <StatusLight size="S" variant="notice" />
+          <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
+            Connecting to stats stream…
+          </Text>
+        </div>
       </div>
     );
   }
 
   return (
     <div className={style({ display: "flex", flexDirection: "column", gap: 12 })}>
-      <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>
-        Live Docker stats stream — CPU, memory, net, and block I/O from cgroups.
-      </Text>
+      <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
+        <StatusLight size="S" variant="positive" />
+        <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>
+          Live Docker stats · CPU, memory, net, and block I/O
+        </Text>
+      </div>
       <div
         className={style({
           display: "grid",
@@ -127,9 +161,6 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
       >
         <MetricCard label="CPU" value={`${sample.cpuPercent.toFixed(2)}%`} hint="total usage">
           <AreaChart values={cpuHist} />
-          <div className={style({ marginTop: 8 })}>
-            <WaveBars values={cpuHist} max={Math.max(100, ...cpuHist)} />
-          </div>
         </MetricCard>
         <MetricCard
           label="Memory"
@@ -137,9 +168,6 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
           hint={`${formatBytes(sample.memoryUsage)} / ${formatBytes(sample.memoryLimit)}`}
         >
           <AreaChart values={memHist} max={100} />
-          <div className={style({ marginTop: 8 })}>
-            <WaveBars values={memHist} max={100} />
-          </div>
         </MetricCard>
       </div>
       <div

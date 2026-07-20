@@ -16,6 +16,7 @@ import {
   Tabs,
 } from "@react-spectrum/s2";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { CodeBlock } from "@/components/CodeBlock";
 import { ConsolePanel } from "@/components/ConsolePanel";
 import { ContainerMonitor } from "@/components/ContainerMonitor";
 import { CopyButton } from "@/components/CopyButton";
@@ -111,7 +112,7 @@ export function ContainersPage() {
   ];
 
   return (
-    <div className={style({ display: "flex", height: "full", minHeight: 0, gap: 24 })}>
+    <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
       <ListPane
         title="Containers"
         loading={list.isLoading}
@@ -440,24 +441,12 @@ export function ContainersPage() {
                   </div>
                 </div>
               ) : null}
-              <div className={style({ position: "relative" })}>
-                <div className={style({ position: "absolute", top: 12, insetEnd: 12, zIndex: 10 })}>
-                  <CopyButton value={JSON.stringify(detail.data || {}, null, 2)} label="Copy JSON" />
-                </div>
-                <pre
-                  className={style({
-                    backgroundColor: "layer-1",
-                    borderRadius: "xl",
-                    padding: 16,
-                    paddingTop: 48,
-                    font: "code-xs",
-                    maxHeight: "100%",
-                    overflow: "auto",
-                  })}
-                >
-                  {JSON.stringify(detail.data || {}, null, 2)}
-                </pre>
-              </div>
+              <CodeBlock
+                title="Inspect"
+                meta="docker inspect"
+                value={JSON.stringify(detail.data || {}, null, 2)}
+                empty="No inspect data"
+              />
             </div>
           </TabPanel>
         </Tabs>

@@ -39,6 +39,9 @@ export function ChartPanel({
       className={style({
         backgroundColor: "layer-1",
         borderRadius: "xl",
+        borderWidth: 1,
+        borderStyle: "solid",
+        borderColor: "gray-200",
         paddingX: 20,
         paddingY: 16,
         minWidth: 0,

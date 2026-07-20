@@ -136,10 +136,10 @@ export function StatusDock() {
         gap: 12,
         maxWidth: 1800,
         marginX: "auto",
-        paddingEnd: 32,
+        paddingEnd: 40,
       })}
-      // 80 sidebar + 32 page pad — 112 is outside the Spectrum spacing scale
-      style={{ paddingInlineStart: 112 }}
+      // 80 sidebar + 40 page pad — outside the Spectrum spacing scale
+      style={{ paddingInlineStart: 120 }}
     >
       <div
         className={style({
@@ -159,7 +159,7 @@ export function StatusDock() {
               navigate({ to: "/" });
             }}
           >
-            <LogoMark size={20} />
+            <LogoMark size={22} />
             <Text styles={style({ font: "title-sm" })}>Deckhand</Text>
           </button>
         </TipTop>
@@ -244,17 +244,28 @@ export function StatusDock() {
               }}
             >
               <StatusHalo tone="ok" pulse size="sm" />
-              <span
+              <div
                 className={style({
-                  font: "code-xs",
-                  color: "neutral-subdued",
-                  truncate: true,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "start",
                   minWidth: 0,
                   flexGrow: 1,
+                  gap: 2,
                 })}
               >
-                {events[0]}
-              </span>
+                <Text styles={style({ font: "detail-sm", color: "neutral-subdued" })}>Event</Text>
+                <span
+                  className={style({
+                    font: "code-xs",
+                    truncate: true,
+                    minWidth: 0,
+                    maxWidth: "full",
+                  })}
+                >
+                  {events[0]}
+                </span>
+              </div>
             </button>
           </TipTop>
         ) : (

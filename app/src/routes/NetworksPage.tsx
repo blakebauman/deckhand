@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { Button, Picker, PickerItem } from "@react-spectrum/s2";
+import { CodeBlock } from "@/components/CodeBlock";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
@@ -45,7 +46,7 @@ export function NetworksPage() {
   const attached = Object.entries(insp?.Containers || {}) as [string, any][];
 
   return (
-    <div className={style({ display: "flex", height: "full", minHeight: 0, gap: 24 })}>
+    <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
       <ListPane
         title="Networks"
         loading={list.isLoading}
@@ -164,24 +165,11 @@ export function NetworksPage() {
                 </Button>
               </div>
               {showRaw ? (
-                <div className={style({ position: "relative" })}>
-                  <div className={style({ position: "absolute", top: 12, insetEnd: 12, zIndex: 10 })}>
-                    <CopyButton value={JSON.stringify(detail.data || insp, null, 2)} label="Copy JSON" />
-                  </div>
-                  <pre
-                    className={style({
-                      backgroundColor: "layer-1",
-                      borderRadius: "xl",
-                      padding: 16,
-                      paddingTop: 48,
-                      font: "code-xs",
-                      maxHeight: "100%",
-                      overflow: "auto",
-                    })}
-                  >
-                    {JSON.stringify(detail.data || insp, null, 2)}
-                  </pre>
-                </div>
+                <CodeBlock
+                  title="Inspect"
+                  meta="network"
+                  value={JSON.stringify(detail.data || insp, null, 2)}
+                />
               ) : null}
             </div>
           ) : null}

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@react-spectrum/s2";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
+import { CodeBlock } from "@/components/CodeBlock";
 import { PageShell } from "@/components/PageShell";
 import { Field } from "@/components/spectrum/Field";
 
@@ -80,7 +81,11 @@ export function MicroVMsPage() {
           </div>
         ))}
       </div>
-      {logs ? <pre className={style({ marginTop: 16, maxHeight: 256, overflow: "auto", borderRadius: "xl", padding: 16, font: "code-xs", backgroundColor: "layer-2" })}>{logs}</pre> : null}
+      {logs ? (
+        <div className={style({ marginTop: 16 })}>
+          <CodeBlock title="Console" meta="microVM" value={logs} maxHeight="256px" />
+        </div>
+      ) : null}
     </PageShell>
   );
 }

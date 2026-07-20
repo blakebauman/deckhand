@@ -40,10 +40,14 @@ function RootLayout() {
             marginStart: 80,
             height: "full",
             minHeight: 0,
+            minWidth: 0,
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
           })}
+          // Block width:auto + margin-inline-start can still overflow in the webview;
+          // pin to the remaining viewport so the end padding stays visible.
+          style={{ width: "calc(100% - 80px)", boxSizing: "border-box" }}
         >
           <div
             className={style({
@@ -52,12 +56,15 @@ function RootLayout() {
               width: "full",
               height: "full",
               minHeight: 0,
+              minWidth: 0,
               display: "flex",
               flexDirection: "column",
-              paddingX: 32,
-              paddingY: 16,
-              paddingBottom: 24,
+              paddingTop: 16,
+              paddingBottom: 32,
+              paddingX: 40,
+              overflowX: "hidden",
               overflowY: "auto",
+              boxSizing: "border-box",
             })}
           >
             <AnimatedOutlet />

@@ -5,25 +5,40 @@ import { useEffect, useState } from "react";
 import { AppRouter } from "@/router";
 import { BootSplash } from "@/components/BootSplash";
 import { api, setApiBaseUrl } from "@/lib/api";
+import { isTauriShell } from "@/lib/platform";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
 
-async function resolveSidecarUrl(): Promise<string> {
+const BROWSER_SIDECAR =
+  (import.meta as any).env?.VITE_SIDECAR_URL || "http://127.0.0.1:7420";
+
+async function invokeSidecarUrl(): Promise<string | null> {
   try {
     const { invoke } = await import("@tauri-apps/api/core");
     const url = await Promise.race([
       invoke<string>("sidecar_url"),
       new Promise<string>((_, reject) =>
-        setTimeout(() => reject(new Error("sidecar_url timeout")), 800),
+        setTimeout(() => reject(new Error("sidecar_url timeout")), 2500),
       ),
     ]);
-    if (url) return url;
+    return url?.trim() || null;
   } catch {
-    /* browser / no tauri / invoke unavailable */
+    return null;
   }
-  return (import.meta as any).env?.VITE_SIDECAR_URL || "http://127.0.0.1:7420";
+}
+
+/** In Tauri, keep asking until we get a URL — never silently stick to a stale :7420. */
+async function resolveSidecarUrl(): Promise<string> {
+  if (!isTauriShell()) return BROWSER_SIDECAR;
+
+  for (let i = 0; i < 40; i++) {
+    const url = await invokeSidecarUrl();
+    if (url) return url;
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  return BROWSER_SIDECAR;
 }
 
 export default function App() {
@@ -33,7 +48,7 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const url = await resolveSidecarUrl();
+      let url = await resolveSidecarUrl();
       setApiBaseUrl(url);
       for (let i = 0; i < 60 && !cancelled; i++) {
         try {
@@ -41,6 +56,14 @@ export default function App() {
           if (!cancelled) setReady(true);
           return;
         } catch {
+          // Sidecar may still be binding, or Tauri may have moved to an ephemeral port.
+          if (isTauriShell() && i > 0 && i % 4 === 0) {
+            const next = await invokeSidecarUrl();
+            if (next && next !== url) {
+              url = next;
+              setApiBaseUrl(url);
+            }
+          }
           setMessage(`Waiting for sidecar (${url})…`);
           await new Promise((r) => setTimeout(r, 500));
         }

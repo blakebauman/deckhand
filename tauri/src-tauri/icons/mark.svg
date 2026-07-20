@@ -1,18 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" role="img" aria-labelledby="title desc">
   <title id="title">Deckhand mark</title>
-  <desc id="desc">Flat anchor icon on a solid Adobe red tile. Mark inspired by Lucide Icons (ISC).</desc>
+  <desc id="desc">Bold white anchor on Adobe red with subtle depth. Mark inspired by Lucide Icons (ISC).</desc>
+  <defs>
+    <linearGradient id="tile" x1="16" y1="8" x2="112" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF2B2B"/>
+      <stop offset="48%" stop-color="#FF0000"/>
+      <stop offset="100%" stop-color="#C20000"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="64" y1="0" x2="64" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glyphShadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.2" flood-color="#4A0000" flood-opacity="0.32"/>
+    </filter>
+  </defs>
 
-  <rect width="128" height="128" rx="28" fill="#FF0000"/>
+  <rect width="128" height="128" rx="28" fill="url(#tile)"/>
+  <rect width="128" height="128" rx="28" fill="url(#sheen)"/>
 
+  <!-- Slightly larger + heavier stroke so the hook stays legible at 16–20px -->
   <g
-    transform="translate(32 32) scale(2.66667)"
+    transform="translate(28 28) scale(3)"
     stroke="#FFFFFF"
-    stroke-width="2.25"
+    stroke-width="3.15"
     stroke-linecap="round"
     stroke-linejoin="round"
     fill="none"
+    filter="url(#glyphShadow)"
   >
-    <circle cx="12" cy="5" r="3"/>
+    <circle cx="12" cy="5" r="3.15" fill="#FFFFFF"/>
     <path d="M12 22V8"/>
     <path d="M5 12H2a10 10 0 0 0 20 0h-3"/>
   </g>

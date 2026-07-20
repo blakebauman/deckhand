@@ -3,13 +3,20 @@ import {
   ActionButton,
   SearchField,
   StatusLight,
-  Text,
   Tooltip,
   TooltipTrigger,
 } from "@react-spectrum/s2";
 import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
 import Download from "@react-spectrum/s2/icons/Download";
+import Pause from "@react-spectrum/s2/icons/Pause";
+import Play from "@react-spectrum/s2/icons/Play";
+import Delete from "@react-spectrum/s2/icons/Delete";
 import { CopyButton } from "@/components/CopyButton";
+import {
+  TerminalFrame,
+  TerminalToolbarEnd,
+  TerminalToolbarStart,
+} from "@/components/TerminalChrome";
 
 /** Streaming console for container/pod logs. */
 export function ConsolePanel({
@@ -97,112 +104,99 @@ export function ConsolePanel({
     URL.revokeObjectURL(a.href);
   };
 
+  const emptyLabel = filter
+    ? "No matching lines"
+    : url
+      ? live
+        ? "Waiting for output…"
+        : "Stream paused"
+      : "No stream selected";
+
+  const body = filter ? filtered || emptyLabel : lines || emptyLabel;
+  const isPlaceholder = !lines || (filter && !filtered);
+
   return (
-    <div
-      className={style({
-        display: "flex",
-        flexDirection: "column",
-        minHeight: 0,
-        overflow: "hidden",
-        borderRadius: "xl",
-        borderWidth: 1,
-        borderStyle: "solid",
-        borderColor: "gray-300",
-        backgroundColor: "black",
-      })}
-    >
-      <div
-        className={style({
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          borderBottomWidth: 1,
-          borderStyle: "solid",
-          borderColor: "gray-700",
-          paddingX: 12,
-          paddingY: 8,
-        })}
-      >
-        <div className={style({ display: "flex", minWidth: 0, alignItems: "center", gap: 8 })}>
-          <StatusLight
-            size="S"
-            variant={live ? "positive" : "neutral"}
-            aria-label={live ? "Live" : "Paused"}
-          />
-          <Text
-            styles={style({
-              font: "detail",
-              fontWeight: "medium",
-              color: "gray-400",
-            })}
-          >
-            {title}
-          </Text>
-          {matchCount != null ? (
-            <Text styles={style({ font: "detail", color: "gray-500" })}>
-              {matchCount} match{matchCount === 1 ? "" : "es"}
-            </Text>
-          ) : null}
-        </div>
-        <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
-          <SearchField
-            aria-label="Filter logs"
-            value={filter}
-            onChange={setFilter}
-            placeholder="Filter…"
-            size="S"
-            styles={style({ width: 160 })}
-          />
-          <CopyButton value={filter ? filtered : lines} label="Copy" dark />
-          {lines ? (
+    <TerminalFrame
+      tall
+      toolbar={
+        <>
+          <TerminalToolbarStart>
+            <StatusLight
+              size="S"
+              variant={error ? "negative" : live ? "positive" : "neutral"}
+              aria-label={error ? "Error" : live ? "Live" : "Paused"}
+            />
+            <div className={style({ display: "flex", flexDirection: "column", minWidth: 0, gap: 2 })}>
+              <span className={["dh-terminal__title", style({ font: "ui-sm", fontWeight: "medium" })].join(" ")}>
+                {title}
+              </span>
+              <span className={["dh-terminal__meta", style({ font: "detail-sm" })].join(" ")}>
+                {error ? "Disconnected" : live ? "Live stream" : "Paused"}
+                {matchCount != null ? ` · ${matchCount} match${matchCount === 1 ? "" : "es"}` : ""}
+              </span>
+            </div>
+          </TerminalToolbarStart>
+          <TerminalToolbarEnd>
+            <SearchField
+              aria-label="Filter logs"
+              value={filter}
+              onChange={setFilter}
+              placeholder="Filter lines…"
+              size="S"
+              styles={style({ width: 180 })}
+            />
+            <CopyButton value={filter ? filtered : lines} label="Copy" iconOnly dark />
             <TooltipTrigger placement="bottom">
               <ActionButton
                 aria-label="Download full log"
                 isQuiet
                 staticColor="white"
                 size="S"
+                isDisabled={!lines}
                 onPress={download}
               >
                 <Download styles={iconStyle({ size: "S" })} />
               </ActionButton>
-              <Tooltip>Download full log</Tooltip>
+              <Tooltip>Download log</Tooltip>
             </TooltipTrigger>
-          ) : (
-            <ActionButton
-              aria-label="Download full log"
-              isQuiet
-              staticColor="white"
-              size="S"
-              isDisabled
-            >
-              <Download styles={iconStyle({ size: "S" })} />
-            </ActionButton>
-          )}
-          <ActionButton
-            aria-label={live ? "Pause log stream" : "Resume log stream"}
-            isQuiet
-            staticColor="white"
-            size="S"
-            onPress={() => setLive((v) => !v)}
-          >
-            <Text>{live ? "Pause" : "Resume"}</Text>
-          </ActionButton>
-          <ActionButton
-            aria-label="Clear logs"
-            isQuiet
-            staticColor="white"
-            size="S"
-            onPress={() => setLines("")}
-          >
-            <Text>Clear</Text>
-          </ActionButton>
-        </div>
-      </div>
+            <TooltipTrigger placement="bottom">
+              <ActionButton
+                aria-label={live ? "Pause log stream" : "Resume log stream"}
+                isQuiet
+                staticColor="white"
+                size="S"
+                onPress={() => setLive((v) => !v)}
+              >
+                {live ? (
+                  <Pause styles={iconStyle({ size: "S" })} />
+                ) : (
+                  <Play styles={iconStyle({ size: "S" })} />
+                )}
+              </ActionButton>
+              <Tooltip>{live ? "Pause" : "Resume"}</Tooltip>
+            </TooltipTrigger>
+            <TooltipTrigger placement="bottom">
+              <ActionButton
+                aria-label="Clear logs"
+                isQuiet
+                staticColor="white"
+                size="S"
+                isDisabled={!lines}
+                onPress={() => setLines("")}
+              >
+                <Delete styles={iconStyle({ size: "S" })} />
+              </ActionButton>
+              <Tooltip>Clear</Tooltip>
+            </TooltipTrigger>
+          </TerminalToolbarEnd>
+        </>
+      }
+    >
       {error ? (
-        <div className={style({ paddingX: 12, paddingY: 8 })}>
-          <Text styles={style({ font: "body-xs", color: "notice-900" })}>{error}</Text>
+        <div className="dh-terminal__banner">
+          <span className={["dh-terminal__banner-text", style({ font: "body-xs" })].join(" ")}>
+            {error}
+          </span>
         </div>
       ) : null}
       <pre
@@ -211,20 +205,26 @@ export function ConsolePanel({
           const el = e.currentTarget;
           stickBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
         }}
-        className={style({
-          minHeight: 240,
-          flexGrow: 1,
-          overflow: "auto",
-          padding: 16,
-          margin: 0,
-          font: "code-xs",
-          color: "chartreuse-400",
-        })}
+        className={[
+          "dh-terminal__body",
+          isPlaceholder ? "is-muted" : "",
+          style({
+            minHeight: 0,
+            flexGrow: 1,
+            overflow: "auto",
+            paddingX: 16,
+            paddingY: 16,
+            margin: 0,
+            font: "code-xs",
+            whiteSpace: "pre-wrap",
+            overflowWrap: "anywhere",
+          }),
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
-        {filter
-          ? filtered || "No matching lines"
-          : lines || (url ? "Waiting for output…" : "No stream")}
+        {body}
       </pre>
-    </div>
+    </TerminalFrame>
   );
 }

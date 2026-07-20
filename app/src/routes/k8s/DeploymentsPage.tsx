@@ -43,7 +43,7 @@ export function DeploymentsPage() {
 
   return (
     <K8sChrome>
-      <div className={style({ display: "flex", height: "full", minHeight: 0, gap: 24 })}>
+      <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
         <ListPane
           title="Deployments"
           loading={list.isLoading}

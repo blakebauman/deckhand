@@ -108,7 +108,9 @@ const asideStyle = style({
   borderStyle: "solid",
   borderColor: "gray-300",
   backgroundColor: "layer-1",
-  paddingY: 20,
+  paddingTop: 20,
+  // Keep version chip above the in-flow status dock
+  paddingBottom: 80,
 });
 
 const asideStyleDesktop = style({
@@ -125,8 +127,8 @@ const asideStyleDesktop = style({
   borderStyle: "solid",
   borderColor: "gray-300",
   backgroundColor: "layer-1",
-  paddingY: 20,
   paddingTop: 64,
+  paddingBottom: 80,
 });
 
 const navBtn = style({

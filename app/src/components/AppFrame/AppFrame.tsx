@@ -3,13 +3,18 @@ import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { TitleBarDragRegion } from "@/components/TitleBarDragRegion";
 import { isTauriShell } from "@/lib/platform";
 
+/**
+ * Reserved space for the fixed status dock (bar + hairline + breathing room).
+ * Applied as inline padding-bottom — Spectrum style() can drop arbitrary clearance.
+ */
+export const STATUS_DOCK_CLEARANCE = 64;
+
 const frameBase = style({
   display: "flex",
   flexDirection: "column",
   height: "screen",
   overflow: "hidden",
   backgroundColor: "base",
-  paddingBottom: 64,
 });
 
 const frameDesktop = style({
@@ -19,7 +24,7 @@ const frameDesktop = style({
   overflow: "hidden",
   backgroundColor: "base",
   paddingTop: 56,
-  paddingBottom: 64,
+  boxSizing: "border-box",
 });
 
 const content = style({
@@ -27,16 +32,16 @@ const content = style({
   zIndex: 0,
   minHeight: 0,
   flexGrow: 1,
+  overflow: "hidden",
+  boxSizing: "border-box",
 });
 
+/** Content-sized dock — top hairline only (avoid borderStyle painting all sides). */
 const dock = style({
   position: "fixed",
   insetX: 0,
   bottom: 0,
   zIndex: 40,
-  borderTopWidth: 1,
-  borderStyle: "solid",
-  borderColor: "gray-300",
   backgroundColor: "layer-1",
   paddingY: 12,
 });
@@ -51,12 +56,17 @@ export function AppFrame({
   const desktop = isTauriShell();
 
   return (
-    <div className={desktop ? frameDesktop : frameBase}>
+    <div className={desktop ? frameDesktop : frameBase} style={{ boxSizing: "border-box" }}>
       {desktop ? <TitleBarDragRegion /> : null}
-      <div className={content}>{children}</div>
+      <div
+        className={content}
+        style={dockSlot ? { paddingBottom: STATUS_DOCK_CLEARANCE } : undefined}
+      >
+        {children}
+      </div>
       {dockSlot ? (
         <div
-          className={dock}
+          className={["dh-status-dock", dock].join(" ")}
           style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
           data-no-drag
         >
