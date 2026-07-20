@@ -1,12 +1,17 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Text, Tooltip, TooltipTrigger } from "@react-spectrum/s2";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api, subscribeDockerEvents } from "@/lib/api";
 import { LogoMark } from "@/components/Logo";
 import { StatusHalo } from "@/components/StatusHalo";
 import { useUIStore } from "@/stores/uiStore";
+
+type DockEvent = { id: number; line: string };
+
+const easeOutExpo = [0.16, 1, 0.3, 1] as const;
 
 function TipTop({
   label,
@@ -100,8 +105,10 @@ function formatEvent(ev: any): string {
 export function StatusDock() {
   const navigate = useNavigate();
   const setMode = useUIStore((s) => s.setMode);
+  const reduceMotion = useReducedMotion();
   const status = useQuery({ queryKey: ["status"], queryFn: api.status, refetchInterval: 5000 });
-  const [events, setEvents] = useState<string[]>([]);
+  const [events, setEvents] = useState<DockEvent[]>([]);
+  const seq = useRef(0);
   const dockerOk = !!status.data?.docker.connected;
   const k8sOk = !!status.data?.kubernetes.connected;
   const statusDown = status.isError;
@@ -114,10 +121,14 @@ export function StatusDock() {
     const unsub = subscribeDockerEvents((ev) => {
       const line = formatEvent(ev);
       if (!line) return;
-      setEvents((prev) => [line, ...prev].slice(0, 8));
+      seq.current += 1;
+      const id = seq.current;
+      setEvents((prev) => [{ id, line }, ...prev].slice(0, 8));
     });
     return unsub;
   }, [dockerOk]);
+
+  const latest = events[0];
 
   const dockerTip = dockerOk
     ? "Open Docker dashboard"
@@ -208,7 +219,7 @@ export function StatusDock() {
           gap: 8,
         })}
       >
-        {events[0] ? (
+        {latest ? (
           <TipTop
             label={
               <div
@@ -228,8 +239,8 @@ export function StatusDock() {
                   Recent Docker events
                 </Text>
                 {events.slice(0, 4).map((e) => (
-                  <Text key={e} styles={style({ font: "code-xs", display: "block" })}>
-                    {e}
+                  <Text key={e.id} styles={style({ font: "code-xs", display: "block" })}>
+                    {e.line}
                   </Text>
                 ))}
               </div>
@@ -243,7 +254,15 @@ export function StatusDock() {
                 navigate({ to: "/containers" });
               }}
             >
-              <StatusHalo tone="ok" pulse size="sm" />
+              <motion.span
+                key={latest.id}
+                initial={reduceMotion ? false : { scale: 0.7, opacity: 0.35 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.4, ease: easeOutExpo }}
+                className={style({ display: "inline-flex", flexShrink: 0 })}
+              >
+                <StatusHalo tone="ok" pulse size="sm" />
+              </motion.span>
               <div
                 className={style({
                   display: "flex",
@@ -252,18 +271,49 @@ export function StatusDock() {
                   minWidth: 0,
                   flexGrow: 1,
                   gap: 2,
+                  overflow: "hidden",
                 })}
               >
                 <Text styles={style({ font: "detail-sm", color: "neutral-subdued" })}>Event</Text>
                 <span
                   className={style({
+                    position: "relative",
+                    display: "block",
                     font: "code-xs",
-                    truncate: true,
                     minWidth: 0,
                     maxWidth: "full",
+                    width: "full",
+                    height: 16,
+                    overflow: "hidden",
                   })}
                 >
-                  {events[0]}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.span
+                      key={latest.id}
+                      initial={
+                        reduceMotion
+                          ? { opacity: 0 }
+                          : { opacity: 0, y: 8, filter: "blur(3px)" }
+                      }
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      exit={
+                        reduceMotion
+                          ? { opacity: 0 }
+                          : { opacity: 0, y: -8, filter: "blur(3px)" }
+                      }
+                      transition={{ duration: 0.32, ease: easeOutExpo }}
+                      className={style({
+                        position: "absolute",
+                        insetX: 0,
+                        top: 0,
+                        truncate: true,
+                        minWidth: 0,
+                        maxWidth: "full",
+                      })}
+                    >
+                      {latest.line}
+                    </motion.span>
+                  </AnimatePresence>
                 </span>
               </div>
             </button>
