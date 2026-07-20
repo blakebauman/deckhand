@@ -1,0 +1,75 @@
+/* App-only CSS. UI chrome uses @react-spectrum/s2 + style macros. */
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* xterm host */
+.xterm {
+  height: 100%;
+  padding: 8px;
+}
+
+.xterm-viewport {
+  overflow-y: auto !important;
+}
+
+/* Interactive chrome that uses native buttons + Spectrum tokens */
+button.dh-chip:hover,
+.dh-list-item:hover:not(.dh-list-item-selected) {
+  background-color: var(--s2-gray-100, rgba(128, 128, 128, 0.12));
+}
+
+/* Native metric tiles — kill UA button chrome */
+button.dh-metric-tile {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  box-shadow: none;
+}
+
+/* Keep Spectrum icons square inside circular sidebar hits */
+aside nav button svg {
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0;
+}
+
+aside [role="group"] button svg {
+  flex-shrink: 0;
+}
+
+/* Tauri titlebar drag helpers */
+[data-tauri-drag-region] {
+  -webkit-app-region: drag;
+}
+
+[data-no-drag],
+[data-tauri-drag-region] button,
+[data-tauri-drag-region] a,
+[data-tauri-drag-region] input {
+  -webkit-app-region: no-drag;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

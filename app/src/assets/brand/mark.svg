@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Deckhand mark</title>
+  <desc id="desc">Flat anchor icon on a solid Adobe red tile. Mark inspired by Lucide Icons (ISC).</desc>
+
+  <rect width="128" height="128" rx="28" fill="#FF0000"/>
+
+  <g
+    transform="translate(32 32) scale(2.66667)"
+    stroke="#FFFFFF"
+    stroke-width="2.25"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  >
+    <circle cx="12" cy="5" r="3"/>
+    <path d="M12 22V8"/>
+    <path d="M5 12H2a10 10 0 0 0 20 0h-3"/>
+  </g>
+</svg>

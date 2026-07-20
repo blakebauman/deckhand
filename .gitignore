@@ -1,0 +1,17 @@
+node_modules/
+dist/
+target/
+.DS_Store
+*.log
+.env
+.env.*
+sidecar/deckhand-sidecar
+tauri/src-tauri/binaries/
+tauri/src-tauri/target/
+*.dmg
+*.deb
+*.AppImage
+.idea/
+.vscode/
+coverage/
+*.exe

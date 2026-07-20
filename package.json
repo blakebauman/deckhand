@@ -1,0 +1,17 @@
+{
+  "name": "deckhand",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["app", "tauri"],
+  "scripts": {
+    "dev": "bun run build:sidecar && bun run --filter @deckhand/tauri tauri:dev",
+    "dev:ui": "bun run --filter @deckhand/app dev",
+    "dev:sidecar": "cd sidecar && go run ./cmd/deckhand-sidecar -- --addr 127.0.0.1:7420",
+    "build": "bun run --filter @deckhand/app build",
+    "build:sidecar": "bash scripts/build-sidecar.sh",
+    "icons": "bash scripts/generate-icons.sh",
+    "tauri": "bun run --filter @deckhand/tauri tauri",
+    "tauri:dev": "bun run build:sidecar && bun run --filter @deckhand/tauri tauri:dev",
+    "tauri:build": "bun run build:sidecar && bun run --filter @deckhand/tauri tauri:build"
+  }
+}

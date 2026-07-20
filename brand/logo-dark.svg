@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 128" fill="none" role="img" aria-label="Deckhand">
+  <svg x="0" y="0" width="128" height="128" viewBox="0 0 128 128">
+
+  <rect width="128" height="128" rx="28" fill="#C4B5FD"/>
+
+  <g
+    transform="translate(32 32) scale(2.66667)"
+    stroke="#FFFFFF"
+    stroke-width="2.25"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  >
+    <circle cx="12" cy="5" r="3"/>
+    <path d="M12 22V8"/>
+    <path d="M5 12H2a10 10 0 0 0 20 0h-3"/>
+  </g>
+
+  </svg>
+  <g transform="translate(152 0)" fill="#F5F3FF">
+    <text x="0" y="78" font-family="Outfit, Avenir Next, Segoe UI, sans-serif" font-size="54" font-weight="650" letter-spacing="-0.035em">Deckhand</text>
+    <text x="2" y="104" font-family="Outfit, Avenir Next, Segoe UI, sans-serif" font-size="13" font-weight="500" letter-spacing="0.2em" fill="#C4B5FD">LOCAL CONTAINER OPS</text>
+  </g>
+</svg>

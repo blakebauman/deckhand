@@ -1,0 +1,31 @@
+---
+description: Deckhand UI must use Adobe Spectrum 2 only
+globs: app/src/**/*.{tsx,ts,css}
+alwaysApply: false
+---
+
+# Spectrum 2 UI only
+
+Deckhand’s React UI uses **Adobe React Spectrum 2** (`@react-spectrum/s2`).
+
+## Required
+
+- Components and icons from `@react-spectrum/s2` and `@react-spectrum/s2/icons/*`
+- Layout/tokens via `import { style, iconStyle } from '@react-spectrum/s2/style' with { type: 'macro' }`
+- Root: `Provider`, `@react-spectrum/s2/page.css`, `ToastContainer` / `ToastQueue`
+- Button events: `onPress` (not `onClick`) on Spectrum components
+- `style()` arguments must be **static** object literals (build-time macro)
+
+## Do not add
+
+- Radix UI, shadcn/ui, Tailwind utility styling, MUI, Chakra, Ant Design, or parallel component kits
+- Lucide / other icon sets when an S2 icon exists
+- Sonner or non-Spectrum toast libraries
+
+## App helpers
+
+Small Spectrum helpers live under `app/src/components/spectrum/` (`Tip`, `StatusBadge`, `RowMenu`, `Field`/`Area`). Prefer these or raw `@react-spectrum/s2` — do not recreate `components/ui` or shadcn-style wrappers.
+
+## Custom widgets
+
+When S2 has no component (e.g. xterm, custom charts), style chrome with Spectrum tokens / `style` macros (and React Aria if needed). Do not reintroduce a second design system.
