@@ -39,7 +39,6 @@ export function K8sOverviewPage() {
       const phase = p.status?.phase || "Unknown";
       counts.set(phase, (counts.get(phase) || 0) + 1);
     }
-    if (!counts.size) counts.set("Empty", 1);
     return [...counts.entries()].map(([name, value]) => ({ name, value }));
   }, [podList]);
 
@@ -104,13 +103,12 @@ export function K8sOverviewPage() {
             <ChartPanel title="Pod phases" hint={namespace}>
               <BreakdownPie data={phaseMix} />
             </ChartPanel>
-            <ChartPanel title="Workload mix" hint="counts">
+            <ChartPanel title="Deployments" hint={`${readyDeps} ready`}>
               <BreakdownPie
                 data={[
-                  { name: "Pods", value: podList.length || 0 },
-                  { name: "Deployments", value: depList.length || 0 },
-                  { name: "Ready deps", value: readyDeps },
-                ]}
+                  { name: "Ready", value: readyDeps },
+                  { name: "Not ready", value: Math.max(0, depList.length - readyDeps) },
+                ].filter((d) => d.value > 0)}
               />
             </ChartPanel>
           </div>

@@ -167,16 +167,15 @@ export function K8sResourcesPage() {
               q={q}
               onQ={setQ}
               renderMeta={(s) => (
-                <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" })}>
-                  <StatusBadge tone="muted">{s.spec?.type || "ClusterIP"}</StatusBadge>
-                  <span className={style({ font: "code-xs", color: "neutral-subdued", truncate: true })}>
-                    {s.spec?.clusterIP || "—"}
-                    {(s.spec?.ports || [])
-                      .slice(0, 3)
-                      .map((p: any) => ` · ${p.port}${p.protocol ? "/" + p.protocol : ""}`)
-                      .join("")}
-                  </span>
-                </div>
+                <span className={style({ font: "code-xs", color: "neutral-subdued", truncate: true })}>
+                  {s.spec?.type || "ClusterIP"}
+                  {" · "}
+                  {s.spec?.clusterIP || "—"}
+                  {(s.spec?.ports || [])
+                    .slice(0, 3)
+                    .map((p: any) => ` · ${p.port}${p.protocol ? "/" + p.protocol : ""}`)
+                    .join("")}
+                </span>
               )}
             />
           </TabPanel>
@@ -228,14 +227,13 @@ export function K8sResourcesPage() {
               renderMeta={(sec) => {
                 const keys = Object.keys(sec.data || sec.stringData || {});
                 return (
-                  <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" })}>
-                    <StatusBadge tone="muted">{sec.type || "Opaque"}</StatusBadge>
-                    <span className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}>
-                      {keys.length
-                        ? `keys: ${keys.slice(0, 6).join(", ")}${keys.length > 6 ? "…" : ""}`
-                        : "no keys"}
-                    </span>
-                  </div>
+                  <span className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}>
+                    {sec.type || "Opaque"}
+                    {" · "}
+                    {keys.length
+                      ? `keys: ${keys.slice(0, 6).join(", ")}${keys.length > 6 ? "…" : ""}`
+                      : "no keys"}
+                  </span>
                 );
               }}
             />
@@ -253,7 +251,7 @@ export function K8sResourcesPage() {
                 const ok = ready?.status === "True";
                 return (
                   <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" })}>
-                    <StatusBadge tone={ok ? "success" : "muted"}>{ok ? "Ready" : "NotReady"}</StatusBadge>
+                    <StatusBadge tone={ok ? "success" : "destructive"}>{ok ? "Ready" : "NotReady"}</StatusBadge>
                     <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
                       {n.status?.nodeInfo?.kubeletVersion || ""}
                     </span>
@@ -272,14 +270,11 @@ export function K8sResourcesPage() {
               onQ={setQ}
               renderMeta={(ev) => (
                 <div className={style({ display: "flex", flexDirection: "column", gap: 2 })}>
-                  <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" })}>
-                    <StatusBadge tone="muted">
-                      {ev.reason || ev.type || "Event"}
-                    </StatusBadge>
-                    <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
-                      {ev.involvedObject?.kind}/{ev.involvedObject?.name || ev.involved || ""}
-                    </span>
-                  </div>
+                  <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                    {ev.reason || ev.type || "Event"}
+                    {" · "}
+                    {ev.involvedObject?.kind}/{ev.involvedObject?.name || ev.involved || ""}
+                  </span>
                   <span className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}>
                     {ev.message || "—"}
                   </span>
@@ -312,12 +307,11 @@ export function K8sResourcesPage() {
               q={q}
               onQ={setQ}
               renderMeta={(cj) => (
-                <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" })}>
-                  <StatusBadge tone="muted">{cj.spec?.schedule || "—"}</StatusBadge>
-                  <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
-                    {cj.spec?.suspend ? "suspended" : "active"}
-                  </span>
-                </div>
+                <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                  {cj.spec?.schedule || "—"}
+                  {" · "}
+                  {cj.spec?.suspend ? "suspended" : "active"}
+                </span>
               )}
             />
           </TabPanel>
