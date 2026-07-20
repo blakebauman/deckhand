@@ -73,19 +73,26 @@ export function ChartPanel({
   );
 }
 
-export function RunningAreaChart({ data }: { data: { t: string; running: number }[] }) {
+export function RunningAreaChart({
+  data,
+}: {
+  data: { i: number; t: string; running: number }[];
+}) {
   const colorScheme = useChartColorScheme();
-  const chartData = data.length ? data : [{ t: "now", running: 0 }];
+  // Integer counts + ordinal X — monotone over time strings looked like fractional containers.
+  const chartData = data.length
+    ? data.map((d) => ({ i: d.i, t: d.t, running: Math.round(d.running) }))
+    : [{ i: 0, t: "now", running: 0 }];
   return (
     <Chart data={chartData} height="100%" width="100%" colorScheme={colorScheme} padding={8}>
       <Axis position="bottom" baseline />
-      <Axis position="left" grid hideDefaultLabels={false} />
-      <Line dimension="t" metric="running" gradient interpolate="monotone" scaleType="point">
+      <Axis position="left" grid />
+      <Line dimension="i" metric="running" gradient interpolate="step-after" scaleType="linear">
         <ChartTooltip>
           {(datum) => (
             <TooltipBody
               title={String(datum.t ?? "")}
-              value={`${Number(datum.running ?? 0)} running`}
+              value={`${Math.round(Number(datum.running ?? 0))} running`}
             />
           )}
         </ChartTooltip>

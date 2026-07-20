@@ -222,26 +222,22 @@ func (c *Client) Raw() *client.Client { return c.cli }
 
 func DashboardCounts(ctx context.Context, c *Client) (map[string]int, error) {
 	counts := map[string]int{
-		"containers": 0, "containersRunning": 0, "images": 0, "volumes": 0, "networks": 0,
+		"containers": 0, "containersRunning": 0, "containersPaused": 0,
+		"images": 0, "volumes": 0, "networks": 0,
 	}
 	if !c.Ready() {
 		return counts, c.err
 	}
-	ctrs, err := c.ListContainers(ctx, true)
+	// Prefer engine Info — matches `docker info` and avoids list/filter drift.
+	info, err := c.Info(ctx)
 	if err != nil {
 		return counts, err
 	}
-	counts["containers"] = len(ctrs)
-	for _, ct := range ctrs {
-		if ct.State == "running" {
-			counts["containersRunning"]++
-		}
-	}
-	imgs, err := c.ListImages(ctx)
-	if err != nil {
-		return counts, err
-	}
-	counts["images"] = len(imgs)
+	counts["containers"] = info.Containers
+	counts["containersRunning"] = info.ContainersRunning
+	counts["containersPaused"] = info.ContainersPaused
+	counts["images"] = info.Images
+
 	vols, err := c.ListVolumes(ctx)
 	if err != nil {
 		return counts, err

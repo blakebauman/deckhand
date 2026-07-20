@@ -32,7 +32,13 @@ export function DashboardPage() {
   const contexts = useQuery({ queryKey: ["docker-contexts"], queryFn: api.dockerContexts, retry: false });
   const gpus = useQuery({ queryKey: ["gpus"], queryFn: api.gpus, refetchInterval: 8000 });
   const pushRunning = useMetricsStore((s) => s.pushRunning);
+  const clearRunning = useMetricsStore((s) => s.clearRunning);
   const runningHistory = useMetricsStore((s) => s.runningHistory);
+  const engineContext = contexts.data?.current;
+
+  useEffect(() => {
+    clearRunning();
+  }, [engineContext, clearRunning]);
 
   useEffect(() => {
     if (dash.data?.containersRunning == null) return;
@@ -41,16 +47,18 @@ export function DashboardPage() {
 
   const running = dash.data?.containersRunning ?? 0;
   const totalContainers = dash.data?.containers ?? 0;
+  const paused = dash.data?.containersPaused ?? 0;
+  const stopped = Math.max(totalContainers - running - paused, 0);
   const engineName =
-    contexts.data?.current ||
+    engineContext ||
     (info.data as { Name?: string } | undefined)?.Name ||
     "local engine";
 
   const runningSeries = useMemo(() => {
     if (runningHistory.length > 0) {
-      return runningHistory.map(({ t, running: r }) => ({ t, running: r }));
+      return runningHistory.map(({ i, t, running: r }) => ({ i, t, running: r }));
     }
-    return [{ t: "now", running }];
+    return [{ i: 0, t: "now", running }];
   }, [runningHistory, running]);
 
   return (
@@ -84,12 +92,15 @@ export function DashboardPage() {
               <div className={style({ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 })}>
                 <div className={style({ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" })}>
                   <Text styles={style({ font: "heading-lg", margin: 0 })}>
-                    {running} / {totalContainers} running
+                    {running} running
                   </Text>
                   <StatusBadge tone="success">Connected</StatusBadge>
                 </div>
                 <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
                   {engineName}
+                  {` · ${totalContainers} total`}
+                  {stopped ? ` · ${stopped} stopped` : ""}
+                  {paused ? ` · ${paused} paused` : ""}
                   {dash.data?.images != null ? ` · ${dash.data.images} images` : ""}
                   {dash.data?.volumes != null ? ` · ${dash.data.volumes} volumes` : ""}
                   {dash.data?.networks != null ? ` · ${dash.data.networks} networks` : ""}

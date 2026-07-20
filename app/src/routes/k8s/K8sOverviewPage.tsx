@@ -45,9 +45,9 @@ export function K8sOverviewPage() {
 
   const readySeries = useMemo(() => {
     if (k8sRunningHistory.length > 0) {
-      return k8sRunningHistory.map(({ t, running }) => ({ t, running }));
+      return k8sRunningHistory.map(({ i, t, running }) => ({ i, t, running }));
     }
-    return [{ t: "now", running: runningPods }];
+    return [{ i: 0, t: "now", running: runningPods }];
   }, [k8sRunningHistory, runningPods]);
 
   return (
