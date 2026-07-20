@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { Heading, Text } from "@react-spectrum/s2";
-import CursorClick from "@react-spectrum/s2/icons/CursorClick";
-import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
+import { MousePointerClick } from "lucide-react";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { lucideProps } from "@/components/Icon";
 
 /** Detail title — matches ListPaneTitle (heading-lg) for list/detail alignment. */
 export function DetailHeading({ children }: { children: ReactNode }) {
@@ -28,7 +29,7 @@ export function DetailEmpty({
   title?: string;
   description?: string;
   action?: ReactNode;
-  /** Optional custom icon node. Defaults to CursorClick. */
+  /** Optional custom icon node. Defaults to MousePointerClick. */
   icon?: ReactNode;
 }) {
   return (
@@ -59,7 +60,7 @@ export function DetailEmpty({
           backgroundColor: "gray-100",
         })}
       >
-        {icon ?? <CursorClick styles={iconStyle({ size: "L", color: "neutral" })} />}
+        {icon ?? <MousePointerClick {...lucideProps("L")} />}
       </div>
       <Heading
         styles={style({

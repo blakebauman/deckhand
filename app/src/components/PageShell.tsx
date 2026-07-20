@@ -1,7 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Heading, Text, Tooltip, TooltipTrigger } from "@react-spectrum/s2";
-import CloudStateDisconnected from "@react-spectrum/s2/icons/CloudStateDisconnected";
-import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
+import { CloudOff } from "lucide-react";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { lucideProps } from "@/components/Icon";
 import { useWindowDragProps } from "@/components/TitleBarDragRegion";
 
 export function PageShell({
@@ -110,7 +111,7 @@ export function EmptyState({
           marginBottom: 4,
         })}
       >
-        <CloudStateDisconnected styles={iconStyle({ size: "L", color: "neutral" })} />
+        <CloudOff {...lucideProps("L")} />
       </div>
       <Heading
         styles={style({

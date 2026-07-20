@@ -13,9 +13,9 @@ import { RowMenu } from "@/components/spectrum/RowMenu";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
 import { Tip } from "@/components/spectrum/Tip";
 import { useUIStore } from "@/stores/uiStore";
-import FolderAdd from "@react-spectrum/s2/icons/FolderAdd";
-import DataRefresh from "@react-spectrum/s2/icons/DataRefresh";
-import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
+import { FolderPlus, RefreshCw } from "lucide-react";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { lucideProps } from "@/components/Icon";
 
 import { copyText, composeProjectKey, composeStatusLabel } from "@/routes/shared";
 import type { ComposeProject } from "@/lib/api";
@@ -176,7 +176,7 @@ export function ProjectsPage() {
           }}
         />
         <Button variant="secondary" aria-label="Add scan root" onPress={addRoot}>
-          <FolderAdd styles={iconStyle({ size: "S" })} />
+          <FolderPlus {...lucideProps("S")} />
         </Button>
       </div>
       {composeRoots.length > 0 ? (
@@ -256,7 +256,7 @@ export function ProjectsPage() {
                   void scanned.refetch();
                 }}
               >
-                <DataRefresh />
+                <RefreshCw {...lucideProps("S")} />
               </ActionButton>
             </Tip>
             <Tip label="Deploy from YAML or path">

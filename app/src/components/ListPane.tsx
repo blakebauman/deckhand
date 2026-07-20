@@ -1,7 +1,8 @@
 import { forwardRef, type CSSProperties, type ReactNode } from "react";
 import { Heading, SearchField, Text, Skeleton } from "@react-spectrum/s2";
-import ViewList from "@react-spectrum/s2/icons/ViewList";
-import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
+import { List } from "lucide-react";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { lucideProps } from "@/components/Icon";
 import { useWindowDragProps } from "@/components/TitleBarDragRegion";
 
 /** Master list shell (compound pieces + convenience wrapper). */
@@ -223,7 +224,7 @@ export function ListEmpty({
           backgroundColor: "gray-100",
         })}
       >
-        <ViewList styles={iconStyle({ size: "M", color: "neutral" })} />
+        <List {...lucideProps("M")} />
       </div>
       <Text styles={style({ font: "title-sm" })}>{title}</Text>
       {description ? (

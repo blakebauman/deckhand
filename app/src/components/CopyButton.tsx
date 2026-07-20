@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { ActionButton, Text, Tooltip, TooltipTrigger } from "@react-spectrum/s2";
-import { iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
-import Checkmark from "@react-spectrum/s2/icons/Checkmark";
-import Copy from "@react-spectrum/s2/icons/Copy";
+import { Check, Copy } from "lucide-react";
+import { lucideProps } from "@/components/Icon";
 
 async function writeClipboard(text: string) {
   if (navigator.clipboard?.writeText) {
@@ -59,9 +58,9 @@ export function CopyButton({
       data-no-drag
     >
       {copied ? (
-        <Checkmark styles={iconStyle({ size: "S", color: "positive" })} />
+        <Check {...lucideProps("S", { color: "var(--spectrum-positive-visual-color, #0e6e3c)" })} />
       ) : (
-        <Copy styles={iconStyle({ size: "S" })} />
+        <Copy {...lucideProps("S")} />
       )}
       {!iconOnly ? <Text>{copied ? copiedLabel : label}</Text> : null}
     </ActionButton>

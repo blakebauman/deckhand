@@ -10,8 +10,9 @@ import {
   Tooltip,
   TooltipTrigger,
 } from "@react-spectrum/s2";
-import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
-import Refresh from "@react-spectrum/s2/icons/Refresh";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { RefreshCw } from "lucide-react";
+import { lucideProps } from "@/components/Icon";
 import {
   TerminalFrame,
   TerminalToolbarEnd,
@@ -205,7 +206,7 @@ export function ExecTerminal({
                 size="S"
                 onPress={() => setNonce((n) => n + 1)}
               >
-                <Refresh styles={iconStyle({ size: "S" })} />
+                <RefreshCw {...lucideProps("S")} />
               </ActionButton>
               <Tooltip>Reconnect</Tooltip>
             </TooltipTrigger>

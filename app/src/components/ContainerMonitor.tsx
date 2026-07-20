@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Badge, Heading, InlineAlert, Content, Text } from "@react-spectrum/s2";
-import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
-import Pause from "@react-spectrum/s2/icons/Pause";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { Pause } from "lucide-react";
+import { lucideProps } from "@/components/Icon";
 import { api, type ContainerStats } from "@/lib/api";
 import { LiveSparkline } from "@/components/charts/LiveSparkline";
 import { MetricCard, WaveBars } from "@/components/charts/MetricChart";
@@ -111,7 +112,7 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
             backgroundColor: "gray-100",
           })}
         >
-          <Pause styles={iconStyle({ size: "L", color: "neutral" })} />
+          <Pause {...lucideProps("L")} />
         </div>
         <Text styles={style({ font: "title-sm" })}>Container stopped</Text>
         <Text styles={style({ font: "body-sm", color: "neutral-subdued", maxWidth: 320 })}>

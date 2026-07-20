@@ -30,8 +30,9 @@ import { Tip } from "@/components/spectrum/Tip";
 import { containerBrowseUrl, openExternalUrl } from "@/lib/openUrl";
 import { containerName, shortId } from "@/lib/utils";
 import { useUIStore } from "@/stores/uiStore";
-import Filter from "@react-spectrum/s2/icons/Filter";
-import { iconStyle, style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { Filter } from "lucide-react";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { lucideProps } from "@/components/Icon";
 
 import { copyText } from "@/routes/shared";
 
@@ -131,7 +132,7 @@ export function ContainersPage() {
           <div className={style({ display: "flex", alignItems: "center", gap: 8 })} data-no-drag>
             <DialogTrigger>
               <ActionButton isQuiet aria-label="Filter by container state">
-                <Filter styles={iconStyle({ size: "S" })} />
+                <Filter {...lucideProps("S")} />
               </ActionButton>
               <Popover>
                 <Content>

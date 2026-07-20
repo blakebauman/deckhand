@@ -4,58 +4,59 @@ import {
   Text,
   Tooltip,
   TooltipTrigger,
-  type IconProps,
 } from "@react-spectrum/s2";
 import { Focusable } from "react-aria-components";
-import Apps from "@react-spectrum/s2/icons/Apps";
-import Archive from "@react-spectrum/s2/icons/Archive";
-import ChartBarVert from "@react-spectrum/s2/icons/ChartBarVert";
-import Cloud from "@react-spectrum/s2/icons/Cloud";
-import Code from "@react-spectrum/s2/icons/Code";
-import Collection from "@react-spectrum/s2/icons/Collection";
-import Data from "@react-spectrum/s2/icons/Data";
-import DeviceDesktop from "@react-spectrum/s2/icons/DeviceDesktop";
-import Layers from "@react-spectrum/s2/icons/Layers";
-import FolderOpen from "@react-spectrum/s2/icons/FolderOpen";
-import GlobeGrid from "@react-spectrum/s2/icons/GlobeGrid";
-import Search from "@react-spectrum/s2/icons/Search";
-import Settings from "@react-spectrum/s2/icons/Settings";
-import Table from "@react-spectrum/s2/icons/Table";
-import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
-import { useEffect, type CSSProperties, type ComponentType, type ReactElement, type ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  Archive,
+  Boxes,
+  ChartColumn,
+  Cloud,
+  Code,
+  Container,
+  Database,
+  FolderOpen,
+  Globe,
+  Layers,
+  Monitor,
+  Search,
+  Settings,
+  Table,
+} from "lucide-react";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { useEffect, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import { useUIStore, type AppMode } from "@/stores/uiStore";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { lucideProps } from "@/components/Icon";
 import { LogoMark } from "@/components/Logo";
 import { DockerMark, KubernetesMark, MicroVMMark } from "@/components/ModeMarks";
 import { APP_VERSION } from "@/lib/version";
 import { isTauriShell } from "@/lib/platform";
 import { modKeyLabel } from "@/lib/hotkeys";
 
-type NavIcon = ComponentType<IconProps>;
-
 type NavItem = {
   to: string;
-  icon: NavIcon;
+  icon: LucideIcon;
   label: string;
   hint?: string;
   exact?: boolean;
 };
 
 const dockerNav: NavItem[] = [
-  { to: "/", icon: ChartBarVert, label: "Dashboard", hint: "Engine health and GPU overview", exact: true },
+  { to: "/", icon: ChartColumn, label: "Dashboard", hint: "Engine health and GPU overview", exact: true },
   { to: "/projects", icon: FolderOpen, label: "Projects", hint: "Compose up and down" },
-  { to: "/containers", icon: Collection, label: "Containers", hint: "Monitor, logs, and exec" },
+  { to: "/containers", icon: Container, label: "Containers", hint: "Monitor, logs, and exec" },
   { to: "/images", icon: Layers, label: "Images", hint: "Pull, prune, and remove images" },
   { to: "/builds", icon: Code, label: "Builds", hint: "Build images and search Hub" },
-  { to: "/networks", icon: GlobeGrid, label: "Networks", hint: "Bridge and custom networks" },
-  { to: "/volumes", icon: Data, label: "Volumes", hint: "Named volumes on this engine" },
+  { to: "/networks", icon: Globe, label: "Networks", hint: "Bridge and custom networks" },
+  { to: "/volumes", icon: Database, label: "Volumes", hint: "Named volumes on this engine" },
   { to: "/settings", icon: Settings, label: "Settings", hint: "Theme and connection status" },
 ];
 
 const k8sNav: NavItem[] = [
-  { to: "/k8s", icon: ChartBarVert, label: "Overview", hint: "Namespace workload summary", exact: true },
-  { to: "/k8s/pods", icon: Apps, label: "Pods", hint: "Logs and exec for pods" },
+  { to: "/k8s", icon: ChartColumn, label: "Overview", hint: "Namespace workload summary", exact: true },
+  { to: "/k8s/pods", icon: Boxes, label: "Pods", hint: "Logs and exec for pods" },
   { to: "/k8s/deployments", icon: Cloud, label: "Deployments", hint: "Scale, restart, delete" },
   { to: "/k8s/resources", icon: Table, label: "Resources", hint: "Services, secrets, jobs, and more" },
   { to: "/k8s/helm", icon: Archive, label: "Helm", hint: "Install and manage releases" },
@@ -63,8 +64,8 @@ const k8sNav: NavItem[] = [
 ];
 
 const microNav: NavItem[] = [
-  { to: "/microvms", icon: ChartBarVert, label: "Overview", hint: "Firecracker availability", exact: true },
-  { to: "/microvms/vms", icon: DeviceDesktop, label: "VMs", hint: "Create and manage microVMs" },
+  { to: "/microvms", icon: ChartColumn, label: "Overview", hint: "Firecracker availability", exact: true },
+  { to: "/microvms/vms", icon: Monitor, label: "VMs", hint: "Create and manage microVMs" },
   { to: "/settings", icon: Settings, label: "Settings", hint: "Theme and connection status" },
 ];
 
@@ -373,7 +374,7 @@ export function Sidebar() {
                 aria-current={active ? "page" : undefined}
                 onClick={() => navigate({ to: item.to })}
               >
-                <Icon styles={iconStyle({ size: "M" })} />
+                <Icon {...lucideProps("M")} />
               </button>
             </TipRight>
           );
@@ -398,7 +399,7 @@ export function Sidebar() {
             aria-label={`Command palette (${mod}K)`}
             onClick={() => openCommandPalette()}
           >
-            <Search styles={iconStyle({ size: "M" })} />
+            <Search {...lucideProps("M")} />
           </button>
         </TipRight>
         <TipRight title={`Deckhand v${APP_VERSION}`}>

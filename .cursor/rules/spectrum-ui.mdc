@@ -6,12 +6,14 @@ alwaysApply: false
 
 # Spectrum 2 UI only
 
-Deckhand’s React UI uses **Adobe React Spectrum 2** (`@react-spectrum/s2`).
+Deckhand’s React UI uses **Adobe React Spectrum 2** (`@react-spectrum/s2`) for components and layout.
+Icons use **[Lucide React](https://lucide.dev/guide/react/)** (`lucide-react`) — not official Spectrum, but the chosen set for this app.
 
 ## Required
 
-- Components and icons from `@react-spectrum/s2` and `@react-spectrum/s2/icons/*`
-- Layout/tokens via `import { style, iconStyle } from '@react-spectrum/s2/style' with { type: 'macro' }`
+- Components from `@react-spectrum/s2`
+- Icons from `lucide-react` via `lucideProps()` / `Icon` in `app/src/components/Icon.tsx` (size tokens S/M/L, stroke 1.75)
+- Layout/tokens via `import { style } from '@react-spectrum/s2/style' with { type: 'macro' }`
 - Root: `Provider`, `@react-spectrum/s2/page.css`, `ToastContainer` / `ToastQueue`
 - Button events: `onPress` (not `onClick`) on Spectrum components
 - `style()` arguments must be **static** object literals (build-time macro)
@@ -19,7 +21,7 @@ Deckhand’s React UI uses **Adobe React Spectrum 2** (`@react-spectrum/s2`).
 ## Do not add
 
 - Radix UI, shadcn/ui, Tailwind utility styling, MUI, Chakra, Ant Design, or parallel component kits
-- Lucide / other icon sets when an S2 icon exists
+- `@react-spectrum/s2/icons/*` (use Lucide instead)
 - Sonner or non-Spectrum toast libraries
 
 ## App helpers

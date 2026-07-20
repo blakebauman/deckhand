@@ -6,12 +6,10 @@ import {
   Tooltip,
   TooltipTrigger,
 } from "@react-spectrum/s2";
-import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
-import Download from "@react-spectrum/s2/icons/Download";
-import Pause from "@react-spectrum/s2/icons/Pause";
-import Play from "@react-spectrum/s2/icons/Play";
-import Delete from "@react-spectrum/s2/icons/Delete";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { Download, Pause, Play, Trash2 } from "lucide-react";
 import { CopyButton } from "@/components/CopyButton";
+import { lucideProps } from "@/components/Icon";
 import {
   TerminalFrame,
   TerminalToolbarEnd,
@@ -155,7 +153,7 @@ export function ConsolePanel({
                 isDisabled={!lines}
                 onPress={download}
               >
-                <Download styles={iconStyle({ size: "S" })} />
+                <Download {...lucideProps("S")} />
               </ActionButton>
               <Tooltip>Download log</Tooltip>
             </TooltipTrigger>
@@ -167,11 +165,7 @@ export function ConsolePanel({
                 size="S"
                 onPress={() => setLive((v) => !v)}
               >
-                {live ? (
-                  <Pause styles={iconStyle({ size: "S" })} />
-                ) : (
-                  <Play styles={iconStyle({ size: "S" })} />
-                )}
+                {live ? <Pause {...lucideProps("S")} /> : <Play {...lucideProps("S")} />}
               </ActionButton>
               <Tooltip>{live ? "Pause" : "Resume"}</Tooltip>
             </TooltipTrigger>
@@ -184,7 +178,7 @@ export function ConsolePanel({
                 isDisabled={!lines}
                 onPress={() => setLines("")}
               >
-                <Delete styles={iconStyle({ size: "S" })} />
+                <Trash2 {...lucideProps("S")} />
               </ActionButton>
               <Tooltip>Clear</Tooltip>
             </TooltipTrigger>
