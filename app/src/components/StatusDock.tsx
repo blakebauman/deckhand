@@ -251,11 +251,6 @@ export function StatusDock() {
             alignItems: "center",
             justifyContent: "end",
             gap: 8,
-            // Hairline lives here (not on the sidebar) — separates engine chips from activity.
-            borderStartWidth: 1,
-            borderStyle: "solid",
-            borderColor: "gray-300",
-            paddingStart: 12,
           })}
         >
           {latest ? (
@@ -365,7 +360,7 @@ export function StatusDock() {
                 aria-label="Activity idle"
                 onClick={() => dockerOk && setSheetOpen(true)}
               >
-                <StatusHalo tone={dockerOk ? "ok" : "idle"} size="sm" />
+                <StatusHalo tone="idle" size="sm" />
                 <Text
                   styles={style({
                     font: "ui-xs",
