@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "dev.deckhand.app",
   "build": {
-    "beforeDevCommand": "bun run --cwd ../.. --filter @deckhand/tauri dev",
+    "beforeDevCommand": "vite --port 1420 --strictPort",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run --cwd ../.. build:sidecar && bun run --cwd ../.. --filter @deckhand/tauri build",
+    "beforeBuildCommand": "bun run --cwd ../.. build:sidecar && bun run --cwd .. build",
     "frontendDist": "../dist"
   },
   "app": {

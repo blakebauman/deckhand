@@ -100,29 +100,6 @@ export function ProjectsPage() {
 
   const selected = projects.find((p) => composeProjectKey(p) === selectedKey) || null;
 
-  useEffect(() => {
-    if (selectedKey && !projects.some((p) => composeProjectKey(p) === selectedKey)) {
-      setSelectedKey(null);
-    }
-  }, [projects, selectedKey]);
-
-  const run = async (label: string, fn: () => Promise<{ output: string }>, nameHint?: string) => {
-    setSheetTitle(label);
-    setSheetOpen(true);
-    setOutput("Running…");
-    try {
-      const res = await fn();
-      setOutput(res.output?.trim() ? res.output : "(no output)");
-      toast.success(`Compose ${label}`, { description: nameHint || projectName });
-      await qc.invalidateQueries({ queryKey: ["compose-projects"] });
-      return true;
-    } catch (e: any) {
-      setOutput(e.message);
-      toast.error(`Compose ${label} failed`, { description: e?.message });
-      return false;
-    }
-  };
-
   const bodyFor = (
     p?: ComposeProject | null,
     override?: { path?: string; yaml?: string; projectName?: string },
@@ -143,6 +120,37 @@ export function ProjectsPage() {
       };
     }
     return { path: path || undefined, yaml: path ? undefined : yaml, projectName };
+  };
+
+  const services = useQuery({
+    queryKey: ["compose-services", selectedKey],
+    queryFn: () => api.composeServices(bodyFor(selected)),
+    enabled: !!selected,
+    refetchInterval: 6000,
+  });
+
+  useEffect(() => {
+    if (selectedKey && !projects.some((p) => composeProjectKey(p) === selectedKey)) {
+      setSelectedKey(null);
+    }
+  }, [projects, selectedKey]);
+
+  const run = async (label: string, fn: () => Promise<{ output: string }>, nameHint?: string) => {
+    setSheetTitle(label);
+    setSheetOpen(true);
+    setOutput("Running…");
+    try {
+      const res = await fn();
+      setOutput(res.output?.trim() ? res.output : "(no output)");
+      toast.success(`Compose ${label}`, { description: nameHint || projectName });
+      await qc.invalidateQueries({ queryKey: ["compose-projects"] });
+      await qc.invalidateQueries({ queryKey: ["compose-services"] });
+      return true;
+    } catch (e: any) {
+      setOutput(e.message);
+      toast.error(`Compose ${label} failed`, { description: e?.message });
+      return false;
+    }
   };
 
   const addRoot = () => {
@@ -394,6 +402,107 @@ export function ProjectsPage() {
                   ))}
                 </div>
               ) : null}
+
+              <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
+                <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Services</div>
+                {services.isLoading ? (
+                  <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0 })}>Loading…</p>
+                ) : services.isError ? (
+                  <p className={style({ font: "body-xs", color: "negative", margin: 0 })}>
+                    {(services.error as Error)?.message || "Could not load services"}
+                  </p>
+                ) : (services.data || []).length === 0 ? (
+                  <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0 })}>
+                    No services reported for this project.
+                  </p>
+                ) : (
+                  (services.data || []).map((svc) => (
+                    <div
+                      key={svc.name}
+                      className={style({
+                        display: "flex",
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                        gap: 8,
+                        backgroundColor: "layer-2",
+                        borderRadius: "xl",
+                        paddingX: 12,
+                        paddingY: 12,
+                      })}
+                    >
+                      <div className={style({ flexGrow: 1, minWidth: 0 })}>
+                        <div className={style({ font: "body", fontWeight: "medium", truncate: true })}>
+                          {svc.name}
+                        </div>
+                        <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}>
+                          {svc.image || svc.status || svc.state || "—"}
+                        </div>
+                      </div>
+                      {svc.state || svc.status ? (
+                        <StatusBadge tone={(svc.state || svc.status || "").includes("running") ? "success" : "muted"}>
+                          {svc.state || svc.status}
+                        </StatusBadge>
+                      ) : null}
+                      <Button
+                        size="S"
+                        variant="secondary"
+                        onPress={() =>
+                          void run(
+                            `Start ${svc.name}`,
+                            () =>
+                              api.composeServiceAction({
+                                ...bodyFor(selected),
+                                action: "start",
+                                services: [svc.name],
+                              }),
+                            selected.name,
+                          )
+                        }
+                      >
+                        Start
+                      </Button>
+                      <Button
+                        size="S"
+                        variant="secondary"
+                        fillStyle="outline"
+                        onPress={() =>
+                          void run(
+                            `Stop ${svc.name}`,
+                            () =>
+                              api.composeServiceAction({
+                                ...bodyFor(selected),
+                                action: "stop",
+                                services: [svc.name],
+                              }),
+                            selected.name,
+                          )
+                        }
+                      >
+                        Stop
+                      </Button>
+                      <Button
+                        size="S"
+                        variant="secondary"
+                        fillStyle="outline"
+                        onPress={() =>
+                          void run(
+                            `Restart ${svc.name}`,
+                            () =>
+                              api.composeServiceAction({
+                                ...bodyFor(selected),
+                                action: "restart",
+                                services: [svc.name],
+                              }),
+                            selected.name,
+                          )
+                        }
+                      >
+                        Restart
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           ) : null}
         </DetailPane>

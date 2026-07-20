@@ -47,9 +47,11 @@ Partial connectivity is supported: Docker, Kubernetes, and Firecracker report st
 
 The sidebar switches between three modes (persisted in Zustand):
 
-- **Docker** — dashboard, Compose, containers, images, volumes, networks
-- **Kubernetes** — overview, pods, deployments, Helm
+- **Docker** — dashboard, Compose, containers, images, volumes, networks, builds
+- **Kubernetes** — overview, pods, deployments, resources, Helm
 - **MicroVMs** — Firecracker VMs (sidebar entry only when the runtime reports available)
+
+Tauri owns window lifecycle, sidecar spawn, and a system tray (Open / Quit; close-to-tray).
 
 ## Platform notes
 
@@ -57,7 +59,8 @@ The sidebar switches between three modes (persisted in Zustand):
 |-------|-------|--------|
 | Packaging | `.app`, `.dmg` | `.deb`, AppImage |
 | Docker | Docker Engine API (local socket / `DOCKER_HOST`) | Docker Engine |
-| Firecracker | Unavailable (`nop` provider) | Shown when `/dev/kvm` + `firecracker` on `PATH` |
+| Firecracker | Unavailable (`nop` provider) | Process + API sock when `/dev/kvm` + `firecracker` on `PATH` |
+| Embed VM | Scaffold (`/api/engine`) | N/A — use attach + Firecracker |
 | Host deps | — | `webkit2gtk`; KVM for MicroVMs |
 
 Windows packaging is deferred.
@@ -65,4 +68,6 @@ Windows packaging is deferred.
 ## Related
 
 - [Sidecar API](./api.md)
+- [Embed runtime](./embed-runtime.md)
+- [Supply chain](./supply-chain.md)
 - [Development](./development.md)

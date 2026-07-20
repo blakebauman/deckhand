@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { api } from "@/lib/api";
@@ -14,6 +14,7 @@ import {
   RunningAreaChart,
 } from "@/components/charts/SpectrumChartsPanel";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { useMetricsStore } from "@/stores/metricsStore";
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -21,6 +22,13 @@ export function DashboardPage() {
   const status = useQuery({ queryKey: ["status"], queryFn: api.status });
   const gpus = useQuery({ queryKey: ["gpus"], queryFn: api.gpus, refetchInterval: 8000 });
   const df = useQuery({ queryKey: ["system-df"], queryFn: api.systemDf, refetchInterval: 20000 });
+  const pushRunning = useMetricsStore((s) => s.pushRunning);
+  const runningHistory = useMetricsStore((s) => s.runningHistory);
+
+  useEffect(() => {
+    if (dash.data?.containersRunning == null) return;
+    pushRunning(dash.data.containersRunning);
+  }, [dash.dataUpdatedAt, dash.data?.containersRunning, pushRunning]);
 
   const cards = [
     {
@@ -65,12 +73,11 @@ export function DashboardPage() {
   const stopped = Math.max(totalContainers - running, 0);
 
   const runningSeries = useMemo(() => {
-    const base = running;
-    return Array.from({ length: 12 }, (_, i) => ({
-      t: `${i * 5}s`,
-      running: Math.max(0, Math.round(base * (0.7 + ((i * 13) % 7) / 20))),
-    }));
-  }, [running]);
+    if (runningHistory.length > 0) {
+      return runningHistory.map(({ t, running: r }) => ({ t, running: r }));
+    }
+    return [{ t: "now", running }];
+  }, [runningHistory, running]);
 
   const diskBars = useMemo(() => {
     const toGb = (n?: number) => (n || 0) / 1024 ** 3;
@@ -133,7 +140,10 @@ export function DashboardPage() {
               gap: 12,
             })}
           >
-            <ChartPanel title="Running load" hint={`${running}/${totalContainers} containers`}>
+            <ChartPanel
+              title="Running load"
+              hint={`${running}/${totalContainers} · samples every ~5s`}
+            >
               <RunningAreaChart data={runningSeries} />
             </ChartPanel>
             <ChartPanel title="Disk by type" hint="GB on engine">

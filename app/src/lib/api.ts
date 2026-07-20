@@ -116,6 +116,128 @@ export const api = {
     request("/api/docker/volumes", { method: "POST", body: JSON.stringify({ name }) }),
   removeVolume: (name: string, force = true) =>
     request(`/api/docker/volumes/${encodeURIComponent(name)}?force=${force}`, { method: "DELETE" }),
+  volumeFiles: (name: string, path = "") =>
+    request<VolumeFileEntry[]>(
+      `/api/docker/volumes/${encodeURIComponent(name)}/files?path=${encodeURIComponent(path)}`,
+    ),
+  cloneVolume: (source: string, dest: string) =>
+    request("/api/docker/volumes/clone", {
+      method: "POST",
+      body: JSON.stringify({ source, dest }),
+    }),
+  volumeExportUrl: (name: string) =>
+    `${baseUrl}/api/docker/volumes/${encodeURIComponent(name)}/export`,
+  importVolume: async (name: string, file: Blob) => {
+    const res = await fetch(`${baseUrl}/api/docker/volumes/${encodeURIComponent(name)}/import`, {
+      method: "POST",
+      body: file,
+    });
+    if (!res.ok) {
+      let message = res.statusText;
+      try {
+        const body = await res.json();
+        message = body.error || message;
+      } catch {
+        /* ignore */
+      }
+      throw new Error(message);
+    }
+    return res.json();
+  },
+  imageFiles: (id: string, path = "") =>
+    request<VolumeFileEntry[]>(
+      `/api/docker/images/${encodeURIComponent(id)}/files?path=${encodeURIComponent(path)}`,
+    ),
+  dockerContexts: () =>
+    request<{ contexts: DockerContextInfo[]; current: string }>("/api/docker/contexts"),
+  useDockerContext: (name: string) =>
+    request("/api/docker/contexts", { method: "POST", body: JSON.stringify({ name }) }),
+  diagnose: () => request<DiagnoseReport>("/api/docker/diagnose"),
+  builders: () => request<BuilderInfo[]>("/api/docker/builders"),
+  buildImage: async (
+    body: { context: string; dockerfile?: string; tag?: string },
+    onChunk: (text: string) => void,
+    signal?: AbortSignal,
+  ) => {
+    const res = await fetch(`${baseUrl}/api/docker/build`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal,
+    });
+    if (!res.ok || !res.body) {
+      let message = res.statusText;
+      try {
+        const b = await res.json();
+        message = b.error || message;
+      } catch {
+        /* ignore */
+      }
+      throw new Error(message);
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      onChunk(decoder.decode(value, { stream: true }));
+    }
+  },
+  debugContainer: (id: string) =>
+    request<{ id: string; target: string; image: string; started: boolean }>(
+      `/api/docker/containers/${id}/debug`,
+      { method: "POST" },
+    ),
+  registrySearch: (q: string, limit = 25) =>
+    request<HubSearchResult[]>(
+      `/api/docker/registry/search?q=${encodeURIComponent(q)}&limit=${limit}`,
+    ),
+  registryLogin: (body: { server?: string; username: string; password: string }) =>
+    request("/api/docker/registry/login", { method: "POST", body: JSON.stringify(body) }),
+  daemonJSON: () => request<{ path: string; json: any }>("/api/docker/daemon-json"),
+  saveDaemonJSON: (json: any) =>
+    request("/api/docker/daemon-json", {
+      method: "PUT",
+      body: JSON.stringify({ json }),
+    }),
+  composeServices: (body: ComposeBody) =>
+    request<ComposeServiceInfo[]>("/api/compose/services", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  composeServiceAction: (body: ComposeBody & { action: string; services: string[] }) =>
+    request<{ output: string }>("/api/compose/service-action", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  auditLog: (n = 100) =>
+    request<{ path: string; events: AuditEvent[] }>(`/api/audit?n=${n}`),
+  engineConfig: () => request<EngineConfig>("/api/engine"),
+  saveEngineConfig: (body: Partial<EngineConfig>) =>
+    request<EngineConfig>("/api/engine", { method: "PUT", body: JSON.stringify(body) }),
+  domainsStatus: () => request<DomainsStatus>("/api/domains"),
+  setDomainsEnabled: (enabled: boolean) =>
+    request<DomainsStatus>("/api/domains", {
+      method: "POST",
+      body: JSON.stringify({ enabled }),
+    }),
+  k8sServices: (namespace: string) =>
+    request<any[]>(`/api/k8s/services?namespace=${encodeURIComponent(namespace)}`),
+  k8sIngresses: (namespace: string) =>
+    request<any[]>(`/api/k8s/ingresses?namespace=${encodeURIComponent(namespace)}`),
+  k8sConfigMaps: (namespace: string) =>
+    request<any[]>(`/api/k8s/configmaps?namespace=${encodeURIComponent(namespace)}`),
+  k8sSecrets: (namespace: string) =>
+    request<any[]>(`/api/k8s/secrets?namespace=${encodeURIComponent(namespace)}`),
+  k8sNodes: () => request<any[]>("/api/k8s/nodes"),
+  k8sEvents: (namespace: string) =>
+    request<any[]>(`/api/k8s/events?namespace=${encodeURIComponent(namespace)}`),
+  k8sJobs: (namespace: string) =>
+    request<any[]>(`/api/k8s/jobs?namespace=${encodeURIComponent(namespace)}`),
+  k8sCronJobs: (namespace: string) =>
+    request<any[]>(`/api/k8s/cronjobs?namespace=${encodeURIComponent(namespace)}`),
+  k8sStatefulSets: (namespace: string) =>
+    request<any[]>(`/api/k8s/statefulsets?namespace=${encodeURIComponent(namespace)}`),
 
   networks: () => request<any[]>("/api/docker/networks"),
   network: (id: string) => request<any>(`/api/docker/networks/${encodeURIComponent(id)}`),
@@ -261,18 +383,117 @@ export function subscribeDockerEvents(onEvent: (event: any) => void, onError?: (
   return () => es.close();
 }
 
+export type MountSpec = {
+  type?: "bind" | "volume" | "tmpfs" | string;
+  source: string;
+  target: string;
+  readOnly?: boolean;
+};
+
 export type RunContainerBody = {
   image: string;
   name?: string;
   cmd?: string;
   env?: string[];
   ports?: string[];
+  mounts?: MountSpec[];
   start?: boolean;
   gpu?: boolean;
   autoRemove?: boolean;
   restart?: "no" | "always" | "unless-stopped" | "on-failure" | "";
   workdir?: string;
   network?: string;
+};
+
+export type VolumeFileEntry = {
+  name: string;
+  path: string;
+  dir: boolean;
+  size: number;
+  mode?: string;
+  modTime?: string;
+};
+
+export type DockerContextInfo = {
+  name: string;
+  description?: string;
+  dockerHost?: string;
+  current: boolean;
+};
+
+export type DiagnoseReport = {
+  ok: boolean;
+  time: string;
+  goos: string;
+  dockerHost?: string;
+  activeContext?: string;
+  pingError?: string;
+  serverVersion?: string;
+  compose?: string;
+  helm?: string;
+  buildx?: string;
+  proxyHttp?: string;
+  proxyHttps?: string;
+  notes?: string[];
+  extra?: Record<string, string>;
+};
+
+export type BuilderInfo = {
+  name: string;
+  driver?: string;
+  status?: string;
+  nodes?: number;
+};
+
+export type HubSearchResult = {
+  name: string;
+  description?: string;
+  starCount: number;
+  isOfficial: boolean;
+  isAutomated?: boolean;
+  pullCount?: number;
+};
+
+export type ComposeServiceInfo = {
+  name: string;
+  status?: string;
+  state?: string;
+  image?: string;
+  project?: string;
+};
+
+export type AuditEvent = {
+  time: string;
+  action: string;
+  target?: string;
+  detail?: string;
+  ok: boolean;
+  error?: string;
+};
+
+export type EngineConfig = {
+  mode: "attach" | "embed";
+  embedAvailable: boolean;
+  embedStatus?: string;
+  virtiofsShares?: string[];
+  cpu?: number;
+  memoryMiB?: number;
+  diskGiB?: number;
+  resourceSaver?: boolean;
+};
+
+export type DomainsStatus = {
+  enabled: boolean;
+  addr?: string;
+  httpsAddr?: string;
+  suffix?: string;
+  hint?: string;
+  dns?: {
+    macosResolverPath?: string;
+    macosResolverBody?: string;
+    hostsExample?: string;
+    note?: string;
+  };
 };
 
 export type RunContainerResult = {

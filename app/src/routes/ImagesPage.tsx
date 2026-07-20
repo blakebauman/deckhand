@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { api } from "@/lib/api";
+import { useEffect, useMemo, useState } from "react";
+import { api, type VolumeFileEntry } from "@/lib/api";
 import { Button } from "@react-spectrum/s2";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
@@ -29,7 +29,19 @@ export function ImagesPage() {
   const [q, setQ] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [confirmPrune, setConfirmPrune] = useState(false);
+  const [browsing, setBrowsing] = useState(false);
+  const [filePath, setFilePath] = useState("");
   const list = useQuery({ queryKey: ["images"], queryFn: api.images, refetchInterval: 8000 });
+  const files = useQuery({
+    queryKey: ["image-files", selected, filePath],
+    queryFn: () => api.imageFiles(selected!, filePath),
+    enabled: !!selected && browsing,
+  });
+
+  useEffect(() => {
+    setBrowsing(false);
+    setFilePath("");
+  }, [selected]);
 
   const filtered = useMemo(() => {
     const items = list.data || [];
@@ -175,10 +187,102 @@ export function ImagesPage() {
                     Run
                   </Button>
                 ) : null}
+                <Button
+                  size="S"
+                  variant="secondary"
+                  fillStyle="outline"
+                  onPress={() => {
+                    setBrowsing(true);
+                    setFilePath("");
+                  }}
+                >
+                  Browse files
+                </Button>
                 <Button size="S" variant="negative" onPress={() => setConfirmRemove(true)}>
                   Remove
                 </Button>
               </div>
+
+              {browsing ? (
+                <div
+                  className={style({
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    backgroundColor: "layer-1",
+                    borderRadius: "xl",
+                    padding: 12,
+                  })}
+                >
+                  <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
+                    <div className={style({ font: "body-xs", color: "neutral-subdued", flexGrow: 1 })}>
+                      Files · /{filePath || ""}
+                    </div>
+                    <Button
+                      size="S"
+                      variant="secondary"
+                      fillStyle="outline"
+                      isDisabled={!filePath}
+                      onPress={() => {
+                        const parts = filePath.replace(/\/+$/, "").split("/");
+                        parts.pop();
+                        setFilePath(parts.join("/"));
+                      }}
+                    >
+                      Up
+                    </Button>
+                    <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setBrowsing(false)}>
+                      Close
+                    </Button>
+                  </div>
+                  {files.isLoading ? (
+                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0 })}>Loading…</p>
+                  ) : files.isError ? (
+                    <p className={style({ font: "body-xs", color: "negative", margin: 0 })}>
+                      {(files.error as Error)?.message || "Failed to list files"}
+                    </p>
+                  ) : (files.data || []).length === 0 ? (
+                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0 })}>Empty directory</p>
+                  ) : (
+                    (files.data || []).map((f: VolumeFileEntry) => (
+                      <button
+                        key={f.path}
+                        type="button"
+                        disabled={!f.dir}
+                        onClick={() => {
+                          if (f.dir) setFilePath(f.path);
+                        }}
+                        className={style({
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 8,
+                          paddingX: 8,
+                          paddingY: 8,
+                          borderRadius: "default",
+                          borderStyle: "none",
+                          backgroundColor: {
+                            default: "transparent",
+                            ":hover": "gray-100",
+                          },
+                          cursor: "pointer",
+                          textAlign: "start",
+                          color: "neutral",
+                          width: "full",
+                        })}
+                      >
+                        <span className={style({ font: "code-xs", truncate: true, minWidth: 0 })}>
+                          {f.name}
+                          {f.dir ? "/" : ""}
+                        </span>
+                        <span className={style({ font: "body-xs", color: "neutral-subdued", flexShrink: 0 })}>
+                          {f.dir ? "dir" : formatBytes(f.size)}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </DetailPane>

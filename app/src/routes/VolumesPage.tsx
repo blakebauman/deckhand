@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { api } from "@/lib/api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { api, type VolumeFileEntry } from "@/lib/api";
 import { Button } from "@react-spectrum/s2";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
@@ -22,12 +22,28 @@ export function VolumesPage() {
   const [q, setQ] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
+  const [filePath, setFilePath] = useState("");
+  const [cloneDest, setCloneDest] = useState("");
+  const [browsing, setBrowsing] = useState(false);
+  const importRef = useRef<HTMLInputElement>(null);
+
   const list = useQuery({ queryKey: ["volumes"], queryFn: api.volumes });
   const detail = useQuery({
     queryKey: ["volume", selected],
     queryFn: () => api.volume(selected!),
     enabled: !!selected,
   });
+  const files = useQuery({
+    queryKey: ["volume-files", selected, filePath],
+    queryFn: () => api.volumeFiles(selected!, filePath),
+    enabled: !!selected && browsing,
+  });
+
+  useEffect(() => {
+    setFilePath("");
+    setBrowsing(false);
+    setCloneDest(selected ? `${selected}-copy` : "");
+  }, [selected]);
 
   const filtered = useMemo(() => {
     const items = list.data || [];
@@ -38,6 +54,18 @@ export function VolumesPage() {
 
   const row = filtered.find((v) => v.Name === selected);
   const insp = detail.data || row;
+
+  const openDir = (entry: VolumeFileEntry) => {
+    if (!entry.dir) return;
+    setFilePath(entry.path);
+  };
+
+  const goUp = () => {
+    if (!filePath) return;
+    const parts = filePath.replace(/\/+$/, "").split("/");
+    parts.pop();
+    setFilePath(parts.join("/"));
+  };
 
   return (
     <div className={style({ display: "flex", height: "full", minHeight: 0, gap: 24 })}>
@@ -133,7 +161,51 @@ export function VolumesPage() {
                   <LabelChips labels={insp.Labels} />
                 </div>
               ) : null}
+
               <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
+                <Button
+                  size="S"
+                  variant="secondary"
+                  onPress={() => {
+                    setBrowsing(true);
+                    setFilePath("");
+                  }}
+                >
+                  Browse files
+                </Button>
+                <Button
+                  size="S"
+                  variant="secondary"
+                  fillStyle="outline"
+                  onPress={() => {
+                    window.open(api.volumeExportUrl(selected!), "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  Export
+                </Button>
+                <Button size="S" variant="secondary" fillStyle="outline" onPress={() => importRef.current?.click()}>
+                  Import
+                </Button>
+                <input
+                  ref={importRef}
+                  type="file"
+                  accept=".tar,.tar.gz,.tgz,application/x-tar,application/gzip"
+                  className={style({ display: "none" })}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!file || !selected) return;
+                    void api
+                      .importVolume(selected, file)
+                      .then(() => {
+                        toast.success("Import complete", { description: selected });
+                        void files.refetch();
+                      })
+                      .catch((err: any) =>
+                        toast.error("Import failed", { description: err?.message }),
+                      );
+                  }}
+                />
                 <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setShowRaw((v) => !v)}>
                   {showRaw ? "Hide JSON" : "Inspect JSON"}
                 </Button>
@@ -141,6 +213,114 @@ export function VolumesPage() {
                   Remove
                 </Button>
               </div>
+
+              <div
+                className={style({
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  alignItems: "end",
+                  backgroundColor: "layer-2",
+                  borderRadius: "xl",
+                  padding: 12,
+                })}
+              >
+                <div className={style({ flexGrow: 1, minWidth: 160 })}>
+                  <Field
+                    value={cloneDest}
+                    onChange={setCloneDest}
+                    placeholder="clone destination name"
+                    aria-label="Clone destination"
+                  />
+                </div>
+                <Button
+                  size="S"
+                  isDisabled={!cloneDest.trim() || cloneDest.trim() === selected}
+                  onPress={() => {
+                    if (!selected) return;
+                    void api
+                      .cloneVolume(selected, cloneDest.trim())
+                      .then(async () => {
+                        toast.success("Volume cloned", { description: cloneDest.trim() });
+                        await qc.invalidateQueries({ queryKey: ["volumes"] });
+                        setSelected(cloneDest.trim());
+                      })
+                      .catch((e: any) => toast.error("Clone failed", { description: e?.message }));
+                  }}
+                >
+                  Clone
+                </Button>
+              </div>
+
+              {browsing ? (
+                <div
+                  className={style({
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    backgroundColor: "layer-1",
+                    borderRadius: "xl",
+                    padding: 12,
+                  })}
+                >
+                  <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
+                    <div className={style({ font: "body-xs", color: "neutral-subdued", flexGrow: 1 })}>
+                      Files · /{filePath || ""}
+                    </div>
+                    <Button size="S" variant="secondary" fillStyle="outline" isDisabled={!filePath} onPress={goUp}>
+                      Up
+                    </Button>
+                    <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setBrowsing(false)}>
+                      Close
+                    </Button>
+                  </div>
+                  {files.isLoading ? (
+                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0 })}>Loading…</p>
+                  ) : files.isError ? (
+                    <p className={style({ font: "body-xs", color: "negative", margin: 0 })}>
+                      {(files.error as Error)?.message || "Failed to list files"}
+                    </p>
+                  ) : (files.data || []).length === 0 ? (
+                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0 })}>Empty directory</p>
+                  ) : (
+                    (files.data || []).map((f) => (
+                      <button
+                        key={f.path}
+                        type="button"
+                        disabled={!f.dir}
+                        onClick={() => openDir(f)}
+                        className={style({
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 8,
+                          paddingX: 8,
+                          paddingY: 8,
+                          borderRadius: "default",
+                          borderStyle: "none",
+                          backgroundColor: {
+                            default: "transparent",
+                            ":hover": "gray-100",
+                          },
+                          cursor: "pointer",
+                          textAlign: "start",
+                          color: "neutral",
+                          width: "full",
+                        })}
+                      >
+                        <span className={style({ font: "code-xs", truncate: true, minWidth: 0 })}>
+                          {f.name}
+                          {f.dir ? "/" : ""}
+                        </span>
+                        <span className={style({ font: "body-xs", color: "neutral-subdued", flexShrink: 0 })}>
+                          {f.dir ? "dir" : formatBytes(f.size)}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              ) : null}
+
               {showRaw ? (
                 <div className={style({ position: "relative" })}>
                   <div className={style({ position: "absolute", top: 12, insetEnd: 12, zIndex: 10 })}>

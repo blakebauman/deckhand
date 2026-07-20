@@ -8,7 +8,7 @@ import {
 } from "@react-spectrum/s2";
 import Home from "@react-spectrum/s2/icons/Home";
 import Apps from "@react-spectrum/s2/icons/Apps";
-import Image from "@react-spectrum/s2/icons/Image";
+import Images from "@react-spectrum/s2/icons/Images";
 import SocialNetwork from "@react-spectrum/s2/icons/SocialNetwork";
 import Data from "@react-spectrum/s2/icons/Data";
 import Settings from "@react-spectrum/s2/icons/Settings";
@@ -17,6 +17,8 @@ import Cloud from "@react-spectrum/s2/icons/Cloud";
 import Archive from "@react-spectrum/s2/icons/Archive";
 import DeviceDesktop from "@react-spectrum/s2/icons/DeviceDesktop";
 import Layers from "@react-spectrum/s2/icons/Layers";
+import Tools from "@react-spectrum/s2/icons/Tools";
+import ViewList from "@react-spectrum/s2/icons/ViewList";
 import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
 import { useEffect, type CSSProperties, type ComponentType, type ReactNode } from "react";
 import { useUIStore, type AppMode } from "@/stores/uiStore";
@@ -41,7 +43,8 @@ const dockerNav: NavItem[] = [
   { to: "/", icon: Home, label: "Dashboard", hint: "Engine health and GPU overview", exact: true },
   { to: "/projects", icon: Layers, label: "Projects", hint: "Compose up and down" },
   { to: "/containers", icon: Apps, label: "Containers", hint: "Monitor, logs, and exec" },
-  { to: "/images", icon: Image, label: "Images", hint: "Pull, prune, and remove images" },
+  { to: "/images", icon: Images, label: "Images", hint: "Pull, prune, and remove images" },
+  { to: "/builds", icon: Tools, label: "Builds", hint: "Build images and search Hub" },
   { to: "/networks", icon: SocialNetwork, label: "Networks", hint: "Bridge and custom networks" },
   { to: "/volumes", icon: Data, label: "Volumes", hint: "Named volumes on this engine" },
   { to: "/settings", icon: Settings, label: "Settings", hint: "Theme and connection status" },
@@ -51,6 +54,7 @@ const k8sNav: NavItem[] = [
   { to: "/k8s", icon: Home, label: "Overview", hint: "Namespace workload summary", exact: true },
   { to: "/k8s/pods", icon: Collection, label: "Pods", hint: "Logs and exec for pods" },
   { to: "/k8s/deployments", icon: Cloud, label: "Deployments", hint: "Scale, restart, delete" },
+  { to: "/k8s/resources", icon: ViewList, label: "Resources", hint: "Services, secrets, jobs, and more" },
   { to: "/k8s/helm", icon: Archive, label: "Helm", hint: "Install and manage releases" },
   { to: "/settings", icon: Settings, label: "Settings", hint: "Theme and connection status" },
 ];
@@ -81,6 +85,7 @@ function modeFromPath(pathname: string): AppMode | null {
     pathname.startsWith("/projects") ||
     pathname.startsWith("/containers") ||
     pathname.startsWith("/images") ||
+    pathname.startsWith("/builds") ||
     pathname.startsWith("/networks") ||
     pathname.startsWith("/volumes")
   ) {

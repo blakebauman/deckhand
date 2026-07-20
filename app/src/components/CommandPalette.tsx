@@ -20,6 +20,8 @@ import Apps from "@react-spectrum/s2/icons/Apps";
 import Settings from "@react-spectrum/s2/icons/Settings";
 import Play from "@react-spectrum/s2/icons/Play";
 import Delete from "@react-spectrum/s2/icons/Delete";
+import Tools from "@react-spectrum/s2/icons/Tools";
+import ViewList from "@react-spectrum/s2/icons/ViewList";
 import { useUIStore } from "@/stores/uiStore";
 
 type Action = {
@@ -65,11 +67,13 @@ export function CommandPalette({
       { id: "projects", label: "Projects", hint: "Compose", group: "Navigate", icon: Layers, run: go("/projects", "docker") },
       { id: "containers", label: "Containers", group: "Navigate", icon: Collection, run: go("/containers", "docker") },
       { id: "images", label: "Images", group: "Navigate", icon: Data, run: go("/images", "docker") },
+      { id: "builds", label: "Builds", hint: "Build & Hub search", group: "Navigate", icon: Tools, run: go("/builds", "docker") },
       { id: "networks", label: "Networks", group: "Navigate", icon: GlobeGrid, run: go("/networks", "docker") },
       { id: "volumes", label: "Volumes", group: "Navigate", icon: Folder, run: go("/volumes", "docker") },
       { id: "k8s", label: "Kubernetes overview", group: "Navigate", icon: ViewGrid, run: go("/k8s", "kubernetes") },
       { id: "pods", label: "Pods", group: "Navigate", icon: AppsAll, run: go("/k8s/pods", "kubernetes") },
       { id: "deps", label: "Deployments", group: "Navigate", icon: DeviceLaptop, run: go("/k8s/deployments", "kubernetes") },
+      { id: "resources", label: "Resources", hint: "Services, secrets, jobs…", group: "Navigate", icon: ViewList, run: go("/k8s/resources", "kubernetes") },
       { id: "helm", label: "Helm", group: "Navigate", icon: Apps, run: go("/k8s/helm", "kubernetes") },
       { id: "settings", label: "Settings", group: "Navigate", icon: Settings, run: go("/settings") },
       {

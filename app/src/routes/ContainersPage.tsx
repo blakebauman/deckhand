@@ -289,6 +289,33 @@ export function ContainersPage() {
               >
                 Restart
               </Button>
+              <Tip label="Start an ephemeral debug sidecar attached to this container">
+                <Button
+                  size="S"
+                  variant="secondary"
+                  fillStyle="outline"
+                  onPress={() => {
+                    void (async () => {
+                      if (!selected) return;
+                      try {
+                        const res = await api.debugContainer(selected);
+                        await qc.invalidateQueries({ queryKey: ["containers"] });
+                        setSelected(res.id);
+                        setTab("exec");
+                        toast.success("Debug shell ready", {
+                          description: shortId(res.id),
+                        });
+                      } catch (e: any) {
+                        toast.error("Debug shell failed", {
+                          description: e?.message || String(e),
+                        });
+                      }
+                    })();
+                  }}
+                >
+                  Debug shell
+                </Button>
+              </Tip>
               <Button size="S" variant="negative" onPress={() => setConfirmRemove(true)}>
                 Remove
               </Button>
@@ -332,23 +359,65 @@ export function ContainersPage() {
             </div>
           </TabPanel>
           <TabPanel id="inspect">
-            <div className={style({ marginTop: 12, position: "relative" })}>
-              <div className={style({ position: "absolute", top: 12, insetEnd: 12, zIndex: 10 })}>
-                <CopyButton value={JSON.stringify(detail.data || {}, null, 2)} label="Copy JSON" />
+            <div className={style({ marginTop: 12, display: "flex", flexDirection: "column", gap: 16 })}>
+              {(detail.data?.Mounts || []).length > 0 ? (
+                <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
+                  <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Mounts</div>
+                  <div
+                    className={style({
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      backgroundColor: "layer-1",
+                      borderRadius: "xl",
+                      padding: 12,
+                    })}
+                  >
+                    {(detail.data.Mounts as any[]).map((m, i) => (
+                      <div
+                        key={`${m.Source || m.Name || ""}-${m.Destination || m.Target || ""}-${i}`}
+                        className={style({
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 2,
+                          paddingY: 4,
+                        })}
+                      >
+                        <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
+                          <StatusBadge tone="muted">{m.Type || "mount"}</StatusBadge>
+                          {m.RW === false || m.Mode === "ro" ? (
+                            <StatusBadge tone="warn">ro</StatusBadge>
+                          ) : null}
+                          <span className={style({ font: "code-xs", truncate: true, minWidth: 0 })}>
+                            {m.Source || m.Name || "—"}
+                          </span>
+                        </div>
+                        <div className={style({ font: "code-xs", color: "neutral-subdued", truncate: true })}>
+                          → {m.Destination || m.Target || "—"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <div className={style({ position: "relative" })}>
+                <div className={style({ position: "absolute", top: 12, insetEnd: 12, zIndex: 10 })}>
+                  <CopyButton value={JSON.stringify(detail.data || {}, null, 2)} label="Copy JSON" />
+                </div>
+                <pre
+                  className={style({
+                    backgroundColor: "layer-1",
+                    borderRadius: "xl",
+                    padding: 16,
+                    paddingTop: 48,
+                    font: "code-xs",
+                    maxHeight: "100%",
+                    overflow: "auto",
+                  })}
+                >
+                  {JSON.stringify(detail.data || {}, null, 2)}
+                </pre>
               </div>
-              <pre
-                className={style({
-                  backgroundColor: "layer-1",
-                  borderRadius: "xl",
-                  padding: 16,
-                  paddingTop: 48,
-                  font: "code-xs",
-                  maxHeight: "100%",
-                  overflow: "auto",
-                })}
-              >
-                {JSON.stringify(detail.data || {}, null, 2)}
-              </pre>
             </div>
           </TabPanel>
         </Tabs>
