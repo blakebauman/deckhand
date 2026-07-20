@@ -12,7 +12,8 @@ const toneMap: Record<
   accent: "accent",
   success: "positive",
   muted: "neutral",
-  warn: "notice",
+  // Monotone until green/red — no amber notice for status.
+  warn: "neutral",
   destructive: "negative",
   info: "informative",
 };

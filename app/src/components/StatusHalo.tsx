@@ -1,5 +1,6 @@
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 
+/** Chromatic only for ok/error — warn is aliased to idle (monotone). */
 export type StatusHaloTone = "ok" | "warn" | "error" | "idle";
 
 const wrapSm = style({
@@ -26,12 +27,6 @@ const coreSmOk = style({
   borderRadius: "full",
   backgroundColor: "positive",
 });
-const coreSmWarn = style({
-  position: "relative",
-  display: "inline-flex",
-  borderRadius: "full",
-  backgroundColor: "notice",
-});
 const coreSmError = style({
   position: "relative",
   display: "inline-flex",
@@ -50,13 +45,6 @@ const coreMdOk = style({
   borderRadius: "full",
   size: 8,
   backgroundColor: "positive",
-});
-const coreMdWarn = style({
-  position: "relative",
-  display: "inline-flex",
-  borderRadius: "full",
-  size: 8,
-  backgroundColor: "notice",
 });
 const coreMdError = style({
   position: "relative",
@@ -80,13 +68,6 @@ const haloSmOk = style({
   size: 8,
   backgroundColor: "positive",
 });
-const haloSmWarn = style({
-  position: "absolute",
-  borderRadius: "full",
-  opacity: 0.35,
-  size: 8,
-  backgroundColor: "notice",
-});
 const haloSmError = style({
   position: "absolute",
   borderRadius: "full",
@@ -108,13 +89,6 @@ const haloMdOk = style({
   size: 12,
   backgroundColor: "positive",
 });
-const haloMdWarn = style({
-  position: "absolute",
-  borderRadius: "full",
-  opacity: 0.35,
-  size: 12,
-  backgroundColor: "notice",
-});
 const haloMdError = style({
   position: "absolute",
   borderRadius: "full",
@@ -130,29 +104,33 @@ const haloMdIdle = style({
   backgroundColor: "gray-500",
 });
 
+function resolveTone(tone: StatusHaloTone): "ok" | "error" | "idle" {
+  if (tone === "ok") return "ok";
+  if (tone === "error") return "error";
+  return "idle";
+}
+
 function coreClass(size: "sm" | "md", tone: StatusHaloTone) {
+  const t = resolveTone(tone);
   if (size === "sm") {
-    if (tone === "ok") return coreSmOk;
-    if (tone === "warn") return coreSmWarn;
-    if (tone === "error") return coreSmError;
+    if (t === "ok") return coreSmOk;
+    if (t === "error") return coreSmError;
     return coreSmIdle;
   }
-  if (tone === "ok") return coreMdOk;
-  if (tone === "warn") return coreMdWarn;
-  if (tone === "error") return coreMdError;
+  if (t === "ok") return coreMdOk;
+  if (t === "error") return coreMdError;
   return coreMdIdle;
 }
 
 function haloClass(size: "sm" | "md", tone: StatusHaloTone) {
+  const t = resolveTone(tone);
   if (size === "sm") {
-    if (tone === "ok") return haloSmOk;
-    if (tone === "warn") return haloSmWarn;
-    if (tone === "error") return haloSmError;
+    if (t === "ok") return haloSmOk;
+    if (t === "error") return haloSmError;
     return haloSmIdle;
   }
-  if (tone === "ok") return haloMdOk;
-  if (tone === "warn") return haloMdWarn;
-  if (tone === "error") return haloMdError;
+  if (t === "ok") return haloMdOk;
+  if (t === "error") return haloMdError;
   return haloMdIdle;
 }
 

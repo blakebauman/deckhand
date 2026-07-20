@@ -78,7 +78,8 @@ function RuntimeChip({
   tip: string;
   onClick?: () => void;
 }) {
-  const tone = ok ? "ok" : warn ? "warn" : "error";
+  // Green / red only when decisive — soft offline stays monotone.
+  const tone = ok ? "ok" : warn ? "idle" : "error";
 
   return (
     <TipTop label={tip}>
@@ -100,25 +101,21 @@ function RuntimeChip({
   );
 }
 
-function badgeTone(t: DockEvent["tone"]): "success" | "warn" | "destructive" | "info" | "muted" {
+function badgeTone(t: DockEvent["tone"]): "success" | "destructive" | "muted" {
   switch (t) {
     case "ok":
       return "success";
-    case "warn":
-      return "warn";
     case "error":
       return "destructive";
-    case "info":
-      return "info";
     default:
       return "muted";
   }
 }
 
-function haloTone(t: DockEvent["tone"]): "ok" | "warn" | "error" {
-  if (t === "warn") return "warn";
+function haloTone(t: DockEvent["tone"]): "ok" | "error" | "idle" {
   if (t === "error") return "error";
-  return "ok";
+  if (t === "ok") return "ok";
+  return "idle";
 }
 
 export function StatusDock() {
@@ -363,7 +360,7 @@ export function StatusDock() {
                 aria-label="Activity idle"
                 onClick={() => dockerOk && setSheetOpen(true)}
               >
-                <StatusHalo tone={dockerOk ? "ok" : "warn"} size="sm" />
+                <StatusHalo tone={dockerOk ? "ok" : "idle"} size="sm" />
                 <Text
                   styles={style({
                     font: "ui-xs",

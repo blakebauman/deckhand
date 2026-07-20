@@ -319,7 +319,7 @@ export function SettingsPage() {
           {diagnose.data ? (
             <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
               <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
-                <StatusBadge tone={diagnose.data.ok ? "success" : "warn"}>
+                <StatusBadge tone={diagnose.data.ok ? "success" : "destructive"}>
                   {diagnose.data.ok ? "ok" : "issues"}
                 </StatusBadge>
                 {diagnose.data.activeContext ? (
@@ -543,7 +543,7 @@ export function SettingsPage() {
                     font: "body-xs",
                   })}
                 >
-                  <StatusBadge tone={ev.ok ? "success" : "warn"}>{ev.ok ? "ok" : "err"}</StatusBadge>
+                  <StatusBadge tone={ev.ok ? "success" : "destructive"}>{ev.ok ? "ok" : "err"}</StatusBadge>
                   <span className={style({ font: "code-xs", color: "neutral-subdued" })}>
                     {ev.time}
                   </span>
@@ -593,7 +593,7 @@ export function SettingsPage() {
 
       <SettingSection title="Engine">
         <SettingRow label="Docker" description={status.data?.docker.error || "Local Docker engine"}>
-          <StatusBadge tone={status.data?.docker.connected ? "success" : "warn"}>
+          <StatusBadge tone={status.data?.docker.connected ? "success" : "muted"}>
             {status.data?.docker.connected ? "Connected" : "Offline"}
           </StatusBadge>
         </SettingRow>

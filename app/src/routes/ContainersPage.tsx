@@ -441,7 +441,7 @@ export function ContainersPage() {
                         <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
                           <StatusBadge tone="muted">{m.Type || "mount"}</StatusBadge>
                           {m.RW === false || m.Mode === "ro" ? (
-                            <StatusBadge tone="warn">ro</StatusBadge>
+                            <StatusBadge tone="muted">ro</StatusBadge>
                           ) : null}
                           <span className={style({ font: "code-xs", truncate: true, minWidth: 0 })}>
                             {m.Source || m.Name || "—"}
