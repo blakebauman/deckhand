@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import {
   ActionButton,
-  Badge,
   Button,
   Checkbox,
   CheckboxGroup,
@@ -22,13 +21,14 @@ import { ContainerMonitor } from "@/components/ContainerMonitor";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { ExecTerminal } from "@/components/ExecTerminal";
+import { InspectFields, LabelChips } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
 import { RowMenu } from "@/components/spectrum/RowMenu";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
 import { Tip } from "@/components/spectrum/Tip";
 import { containerBrowseUrl, openExternalUrl } from "@/lib/openUrl";
-import { containerName, shortId } from "@/lib/utils";
+import { containerName, formatPublishedPorts, shortId } from "@/lib/utils";
 import { useUIStore } from "@/stores/uiStore";
 import { Filter } from "lucide-react";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
@@ -37,6 +37,25 @@ import { lucideProps } from "@/components/Icon";
 import { copyText } from "@/routes/shared";
 
 type ContainerTab = "monitor" | "logs" | "exec" | "inspect";
+
+function primaryNetwork(detail: any): string | undefined {
+  const networks = detail?.NetworkSettings?.Networks;
+  if (!networks || typeof networks !== "object") return undefined;
+  const names = Object.keys(networks);
+  if (!names.length) return undefined;
+  const first = networks[names[0]];
+  const ip = first?.IPAddress;
+  return ip ? `${names[0]} · ${ip}` : names[0];
+}
+
+function commandLine(detail: any): string | undefined {
+  const cfg = detail?.Config;
+  if (!cfg) return undefined;
+  const entry = Array.isArray(cfg.Entrypoint) ? cfg.Entrypoint.join(" ") : cfg.Entrypoint;
+  const cmd = Array.isArray(cfg.Cmd) ? cfg.Cmd.join(" ") : cfg.Cmd;
+  const parts = [entry, cmd].filter(Boolean);
+  return parts.length ? parts.join(" ") : undefined;
+}
 
 export function ContainersPage() {
   const qc = useQueryClient();
@@ -49,6 +68,7 @@ export function ContainersPage() {
   const [q, setQ] = useState("");
   const [stateFilter, setStateFilter] = useState<string[]>([]);
   const [tab, setTab] = useState<ContainerTab>("monitor");
+  const [showRaw, setShowRaw] = useState(false);
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const list = useQuery({ queryKey: ["containers"], queryFn: () => api.containers(true), refetchInterval: 4000 });
@@ -64,6 +84,11 @@ export function ContainersPage() {
     setSelected(pendingContainerId);
     setPendingContainerId(undefined);
   }, [pendingContainerId, setPendingContainerId]);
+
+  useEffect(() => {
+    setShowRaw(false);
+    setTab("monitor");
+  }, [selected]);
 
   const stateOptions = useMemo(() => {
     const set = new Set<string>();
@@ -83,26 +108,61 @@ export function ContainersPage() {
       return (
         containerName(c.names).toLowerCase().includes(needle) ||
         c.image?.toLowerCase().includes(needle) ||
-        c.id?.toLowerCase().includes(needle)
+        c.id?.toLowerCase().includes(needle) ||
+        c.status?.toLowerCase().includes(needle)
       );
     });
   }, [list.data, q, stateFilter, showStoppedContainers]);
 
-  const selectedRow = filtered.find((c) => c.id === selected);
+  const selectedRow = filtered.find((c) => c.id === selected) || (list.data || []).find((c) => c.id === selected);
   const running = selectedRow?.state === "running" || detail.data?.State?.Running === true;
+  const displayName = containerName(detail.data?.Name ? [detail.data.Name] : selectedRow?.names);
+  const portSummary = formatPublishedPorts(selectedRow?.ports);
+  const image = selectedRow?.image || detail.data?.Config?.Image || "—";
+  const hasGpu =
+    !!selectedRow?.gpu || (detail.data?.HostConfig?.DeviceRequests?.length ?? 0) > 0;
 
   const selectedIds = Object.entries(checked)
     .filter(([, v]) => v)
     .map(([id]) => id);
 
+  const stoppedHidden =
+    !showStoppedContainers &&
+    !q &&
+    stateFilter.length === 0 &&
+    (list.data || []).length > 0 &&
+    filtered.length === 0;
+
   const act = async (fn: () => Promise<unknown>, ok = "Done") => {
     try {
       await fn();
       qc.invalidateQueries({ queryKey: ["containers"] });
+      if (selected) qc.invalidateQueries({ queryKey: ["container", selected] });
       toast.success(ok);
     } catch (e: any) {
       toast.error("Action failed", { description: e?.message || String(e) });
     }
+  };
+
+  const openInBrowser = () => {
+    if (!selected) return;
+    const url = containerBrowseUrl({
+      name: displayName,
+      ports: selectedRow?.ports,
+      labels: selectedRow?.labels || detail.data?.Config?.Labels,
+      domainsEnabled: !!domains.data?.enabled,
+      domainHttpPort: domains.data?.addr?.split(":").pop(),
+    });
+    if (!url) {
+      toast.error("No published port", {
+        description: "Publish a port or enable Domains in Settings",
+      });
+      return;
+    }
+    void openExternalUrl(url).then(
+      () => toast.success("Opened browser", { description: url }),
+      (e: any) => toast.error("Open failed", { description: e?.message }),
+    );
   };
 
   const tabs: { id: ContainerTab; label: string }[] = [
@@ -112,6 +172,13 @@ export function ContainersPage() {
     { id: "inspect", label: "Inspect" },
   ];
 
+  const emptyTitle = q || stateFilter.length ? "No matches" : stoppedHidden ? "Stopped containers hidden" : "No containers";
+  const emptyDescription = q || stateFilter.length
+    ? "Try another name, image, ID, or clear state filters."
+    : stoppedHidden
+      ? "Turn on “Show stopped containers” in Settings, or clear filters to see exited ones."
+      : "Nothing on this engine yet. Pull an image or deploy a Compose project.";
+
   return (
     <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
       <ListPane
@@ -119,11 +186,14 @@ export function ContainersPage() {
         loading={list.isLoading}
         empty={
           <ListEmpty
-            title={q || stateFilter.length ? "No matches" : "No containers"}
-            description={
-              q || stateFilter.length
-                ? "Try another name, image, ID, or clear state filters."
-                : "Nothing on this engine yet. Pull an image or deploy a Compose project."
+            title={emptyTitle}
+            description={emptyDescription}
+            action={
+              stoppedHidden ? undefined : (
+                <Button size="S" onPress={() => openRunSheet()}>
+                  Run container
+                </Button>
+              )
             }
           />
         }
@@ -181,69 +251,81 @@ export function ContainersPage() {
           </div>
         }
       >
-        {filtered.map((c) => (
-          <RowMenu
-            key={c.id}
-            active={selected === c.id}
-            onSelect={() => setSelected(c.id)}
-            leading={
-              <Checkbox
-                aria-label={`Select ${containerName(c.names)}`}
-                isSelected={!!checked[c.id]}
-                onChange={(v) => setChecked((prev) => ({ ...prev, [c.id]: v }))}
-              />
-            }
-            items={[
-              { id: "open", label: "Open", onAction: () => setSelected(c.id) },
-              { id: "start", label: "Start", onAction: () => void act(() => api.startContainer(c.id), "Started") },
-              { id: "stop", label: "Stop", onAction: () => void act(() => api.stopContainer(c.id), "Stopped") },
-              {
-                id: "restart",
-                label: "Restart",
-                onAction: () => void act(() => api.restartContainer(c.id), "Restarted"),
-              },
-              { id: "sep-1", label: "", onAction: () => {} },
-              { id: "copy-id", label: "Copy ID", onAction: () => void copyText(c.id) },
-              { id: "copy-name", label: "Copy name", onAction: () => void copyText(containerName(c.names)) },
-              { id: "sep-2", label: "", onAction: () => {} },
-              {
-                id: "remove",
-                label: "Remove…",
-                onAction: () => {
-                  setSelected(c.id);
-                  setConfirmRemove(true);
+        {filtered.map((c) => {
+          const ports = formatPublishedPorts(c.ports);
+          const subtitle = [c.image, ports].filter(Boolean).join(" · ");
+          return (
+            <RowMenu
+              key={c.id}
+              active={selected === c.id}
+              onSelect={() => setSelected(c.id)}
+              leading={
+                <Checkbox
+                  aria-label={`Select ${containerName(c.names)}`}
+                  isSelected={!!checked[c.id]}
+                  onChange={(v) => setChecked((prev) => ({ ...prev, [c.id]: v }))}
+                />
+              }
+              items={[
+                { id: "open", label: "Open", onAction: () => setSelected(c.id) },
+                {
+                  id: "start",
+                  label: "Start",
+                  onAction: () => void act(() => api.startContainer(c.id), "Started"),
                 },
-                destructive: true,
-              },
-            ]}
-            suffix={
-              <>
-                {c.gpu ? <StatusBadge tone="accent">GPU</StatusBadge> : null}
-                <StatusBadge tone={c.state === "running" ? "success" : "muted"}>{c.state}</StatusBadge>
-              </>
-            }
-          >
-            <div
-              className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}
-              title={containerName(c.names)}
+                {
+                  id: "stop",
+                  label: "Stop",
+                  onAction: () => void act(() => api.stopContainer(c.id), "Stopped"),
+                },
+                {
+                  id: "restart",
+                  label: "Restart",
+                  onAction: () => void act(() => api.restartContainer(c.id), "Restarted"),
+                },
+                { id: "sep-1", label: "", onAction: () => {} },
+                { id: "copy-id", label: "Copy ID", onAction: () => void copyText(c.id) },
+                { id: "copy-name", label: "Copy name", onAction: () => void copyText(containerName(c.names)) },
+                { id: "sep-2", label: "", onAction: () => {} },
+                {
+                  id: "remove",
+                  label: "Remove…",
+                  onAction: () => {
+                    setSelected(c.id);
+                    setConfirmRemove(true);
+                  },
+                  destructive: true,
+                },
+              ]}
+              suffix={
+                <>
+                  {c.gpu ? <StatusBadge tone="accent">GPU</StatusBadge> : null}
+                  <StatusBadge tone={c.state === "running" ? "success" : "muted"}>{c.state}</StatusBadge>
+                </>
+              }
             >
-              {containerName(c.names)}
-            </div>
-            <div
-              className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}
-              title={c.image}
-            >
-              {c.image}
-            </div>
-          </RowMenu>
-        ))}
+              <div
+                className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}
+                title={containerName(c.names)}
+              >
+                {containerName(c.names)}
+              </div>
+              <div
+                className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}
+                title={[c.status, subtitle].filter(Boolean).join(" · ")}
+              >
+                {subtitle || c.status || "—"}
+              </div>
+            </RowMenu>
+          );
+        })}
       </ListPane>
       <DetailPane
         selectionKey={selected}
         empty={
           <DetailEmpty
             title="Select a container"
-            description="Monitor metrics, stream logs, and run exec commands for a container on this engine."
+            description="Monitor metrics, stream logs, and run exec — or start a new container on this engine."
             action={
               <Button size="S" onPress={() => openRunSheet()}>
                 Run container
@@ -251,219 +333,231 @@ export function ContainersPage() {
             }
           />
         }
-        header={
-          <div className={style({ display: "flex", flexDirection: "column", gap: 12 })}>
-            <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0 })}>
-              <DetailHeading>
-                {containerName(detail.data?.Name ? [detail.data.Name] : selectedRow?.names)}
-              </DetailHeading>
-              <span title={`Full ID: ${selected}`}>
-                <Badge variant="neutral" size="S">
-                  {shortId(selected!)}
-                </Badge>
-              </span>
-              <CopyButton value={selected || ""} label="Copy ID" iconOnly />
-              <StatusBadge tone={running ? "success" : "muted"}>
-                {running ? "running" : selectedRow?.state || "—"}
-              </StatusBadge>
-              {selectedRow?.gpu ||
-              (detail.data?.HostConfig?.DeviceRequests?.length ?? 0) > 0 ? (
-                <StatusBadge tone="accent">GPU</StatusBadge>
-              ) : null}
-            </div>
+      >
+        {selected ? (
+          <div className={style({ display: "flex", flexDirection: "column", gap: 16, minHeight: 0, height: "full" })}>
             <div
               className={style({
                 display: "flex",
                 flexWrap: "wrap",
-                alignItems: "center",
-                gap: 8,
+                alignItems: "start",
+                justifyContent: "space-between",
+                gap: 12,
               })}
             >
-              <Button
-                size="S"
-                variant="secondary"
-                fillStyle="outline"
-                isDisabled={!!running}
-                onPress={() => act(() => api.startContainer(selected!), "Started")}
-              >
-                Start
-              </Button>
-              <Button
-                size="S"
-                variant="secondary"
-                fillStyle="outline"
-                isDisabled={!running}
-                onPress={() => act(() => api.stopContainer(selected!), "Stopped")}
-              >
-                Stop
-              </Button>
-              <Button
-                size="S"
-                variant="secondary"
-                fillStyle="outline"
-                isDisabled={!running}
-                onPress={() => act(() => api.restartContainer(selected!), "Restarted")}
-              >
-                Restart
-              </Button>
-              <Tip label="Start an ephemeral debug sidecar attached to this container">
+              <div className={style({ minWidth: 0, flexGrow: 1, display: "flex", flexDirection: "column", gap: 8 })}>
+                <div className={style({ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" })}>
+                  <DetailHeading>{displayName}</DetailHeading>
+                  <StatusBadge tone={running ? "success" : "muted"}>
+                    {running ? "running" : selectedRow?.state || "—"}
+                  </StatusBadge>
+                  {hasGpu ? <StatusBadge tone="accent">GPU</StatusBadge> : null}
+                </div>
+                <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })} title={image}>
+                  {shortId(selected)}
+                  {selectedRow?.status ? ` · ${selectedRow.status}` : ""}
+                </div>
+                <div className={style({ font: "code-xs", color: "neutral-subdued", truncate: true })} title={image}>
+                  {image}
+                  {portSummary ? ` · ${portSummary}` : ""}
+                </div>
+              </div>
+              <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "end" })}>
+                <CopyButton value={selected} label="Copy ID" />
                 <Button
                   size="S"
                   variant="secondary"
                   fillStyle="outline"
-                  onPress={() => {
-                    void (async () => {
-                      if (!selected) return;
-                      try {
-                        const res = await api.debugContainer(selected);
-                        await qc.invalidateQueries({ queryKey: ["containers"] });
-                        setSelected(res.id);
-                        setTab("exec");
-                        toast.success("Debug shell ready", {
-                          description: shortId(res.id),
-                        });
-                      } catch (e: any) {
-                        toast.error("Debug shell failed", {
-                          description: e?.message || String(e),
-                        });
-                      }
-                    })();
-                  }}
+                  isDisabled={!!running}
+                  onPress={() => act(() => api.startContainer(selected), "Started")}
                 >
-                  Debug shell
+                  Start
                 </Button>
-              </Tip>
-              <Tip
-                label={
-                  domains.data?.enabled
-                    ? "Open via *.deckhand.local or published port (label: dev.deckhand.domains)"
-                    : "Open first published port on localhost"
-                }
-              >
                 <Button
                   size="S"
                   variant="secondary"
                   fillStyle="outline"
                   isDisabled={!running}
-                  onPress={() => {
-                    const name = containerName(
-                      detail.data?.Name ? [detail.data.Name] : selectedRow?.names,
-                    );
-                    const url = containerBrowseUrl({
-                      name,
-                      ports: selectedRow?.ports,
-                      labels: selectedRow?.labels || detail.data?.Config?.Labels,
-                      domainsEnabled: !!domains.data?.enabled,
-                      domainHttpPort: domains.data?.addr?.split(":").pop(),
-                    });
-                    if (!url) {
-                      toast.error("No published port", {
-                        description: "Publish a port or enable Domains in Settings",
-                      });
-                      return;
-                    }
-                    void openExternalUrl(url).then(
-                      () => toast.success("Opened browser", { description: url }),
-                      (e: any) => toast.error("Open failed", { description: e?.message }),
-                    );
-                  }}
+                  onPress={() => act(() => api.stopContainer(selected), "Stopped")}
                 >
-                  Open in browser
+                  Stop
                 </Button>
-              </Tip>
-              <Button size="S" variant="negative" fillStyle="outline" onPress={() => setConfirmRemove(true)}>
-                Remove
-              </Button>
-            </div>
-          </div>
-        }
-      >
-        <Tabs
-          aria-label="Container details"
-          selectedKey={tab}
-          onSelectionChange={(k) => setTab(String(k) as ContainerTab)}
-        >
-          <TabList>
-            {tabs.map((t) => (
-              <Tab key={t.id} id={t.id}>
-                {t.label}
-              </Tab>
-            ))}
-          </TabList>
-          <TabPanel id="monitor">
-            <div className={style({ marginTop: 12 })}>
-              <ContainerMonitor containerId={selected!} running={!!running} />
-            </div>
-          </TabPanel>
-          <TabPanel id="logs">
-            <div className={style({ marginTop: 12 })}>
-              <ConsolePanel
-                key={`${selected}-logs`}
-                url={api.containerLogsUrl(selected!, true)}
-                title="Container logs"
-              />
-            </div>
-          </TabPanel>
-          <TabPanel id="exec">
-            <div className={style({ marginTop: 12 })}>
-              <ExecTerminal
-                key={selected!}
-                wsUrl={api.containerExecWsUrl(selected!)}
-                title="Container shell"
-              />
-            </div>
-          </TabPanel>
-          <TabPanel id="inspect">
-            <div className={style({ marginTop: 12, display: "flex", flexDirection: "column", gap: 16 })}>
-              {(detail.data?.Mounts || []).length > 0 ? (
-                <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                  <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Mounts</div>
-                  <div
-                    className={style({
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                      backgroundColor: "layer-1",
-                      borderRadius: "xl",
-                      padding: 12,
-                    })}
+                <Button
+                  size="S"
+                  variant="secondary"
+                  fillStyle="outline"
+                  isDisabled={!running}
+                  onPress={() => act(() => api.restartContainer(selected), "Restarted")}
+                >
+                  Restart
+                </Button>
+                <Tip
+                  label={
+                    domains.data?.enabled
+                      ? "Open via *.deckhand.local or published port"
+                      : "Open first published port on localhost"
+                  }
+                >
+                  <Button
+                    size="S"
+                    variant="secondary"
+                    fillStyle="outline"
+                    isDisabled={!running}
+                    onPress={openInBrowser}
                   >
-                    {(detail.data.Mounts as any[]).map((m, i) => (
-                      <div
-                        key={`${m.Source || m.Name || ""}-${m.Destination || m.Target || ""}-${i}`}
-                        className={style({
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 2,
-                          paddingY: 4,
-                        })}
-                      >
-                        <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
-                          <StatusBadge tone="muted">{m.Type || "mount"}</StatusBadge>
-                          {m.RW === false || m.Mode === "ro" ? (
-                            <StatusBadge tone="muted">ro</StatusBadge>
-                          ) : null}
-                          <span className={style({ font: "code-xs", truncate: true, minWidth: 0 })}>
-                            {m.Source || m.Name || "—"}
-                          </span>
-                        </div>
-                        <div className={style({ font: "code-xs", color: "neutral-subdued", truncate: true })}>
-                          → {m.Destination || m.Target || "—"}
+                    Open
+                  </Button>
+                </Tip>
+                <Tip label="Start an ephemeral debug sidecar attached to this container">
+                  <Button
+                    size="S"
+                    variant="secondary"
+                    fillStyle="outline"
+                    onPress={() => {
+                      void (async () => {
+                        try {
+                          const res = await api.debugContainer(selected);
+                          await qc.invalidateQueries({ queryKey: ["containers"] });
+                          setSelected(res.id);
+                          setTab("exec");
+                          toast.success("Debug shell ready", {
+                            description: shortId(res.id),
+                          });
+                        } catch (e: any) {
+                          toast.error("Debug shell failed", {
+                            description: e?.message || String(e),
+                          });
+                        }
+                      })();
+                    }}
+                  >
+                    Debug
+                  </Button>
+                </Tip>
+                <Button size="S" variant="negative" fillStyle="outline" onPress={() => setConfirmRemove(true)}>
+                  Remove
+                </Button>
+              </div>
+            </div>
+
+            <Tabs
+              aria-label="Container details"
+              selectedKey={tab}
+              onSelectionChange={(k) => setTab(String(k) as ContainerTab)}
+            >
+              <TabList>
+                {tabs.map((t) => (
+                  <Tab key={t.id} id={t.id}>
+                    {t.label}
+                  </Tab>
+                ))}
+              </TabList>
+              <TabPanel id="monitor">
+                <div className={style({ marginTop: 12 })}>
+                  <ContainerMonitor containerId={selected} running={!!running} />
+                </div>
+              </TabPanel>
+              <TabPanel id="logs">
+                <div className={style({ marginTop: 12 })}>
+                  <ConsolePanel
+                    key={`${selected}-logs`}
+                    url={api.containerLogsUrl(selected, true)}
+                    title="Container logs"
+                  />
+                </div>
+              </TabPanel>
+              <TabPanel id="exec">
+                <div className={style({ marginTop: 12 })}>
+                  <ExecTerminal
+                    key={selected}
+                    wsUrl={api.containerExecWsUrl(selected)}
+                    title="Container shell"
+                  />
+                </div>
+              </TabPanel>
+              <TabPanel id="inspect">
+                <div className={style({ marginTop: 12, display: "flex", flexDirection: "column", gap: 16 })}>
+                  <InspectFields
+                    rows={[
+                      { label: "Image", value: image, mono: true, copy: image !== "—" ? image : undefined },
+                      { label: "Status", value: selectedRow?.status || selectedRow?.state },
+                      { label: "Ports", value: portSummary || undefined, mono: true },
+                      { label: "Network", value: primaryNetwork(detail.data), mono: true },
+                      { label: "Command", value: commandLine(detail.data), mono: true },
+                      { label: "Created", value: detail.data?.Created },
+                      {
+                        label: "Restart policy",
+                        value: detail.data?.HostConfig?.RestartPolicy?.Name,
+                      },
+                    ]}
+                  />
+
+                  {(detail.data?.Mounts || []).length > 0 ? (
+                    <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
+                      <div className={style({ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 })}>
+                        <div className={style({ font: "title-sm" })}>Mounts</div>
+                        <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                          {(detail.data.Mounts as any[]).length}
                         </div>
                       </div>
-                    ))}
+                      <div className={style({ display: "flex", flexDirection: "column", gap: 4 })}>
+                        {(detail.data.Mounts as any[]).map((m, i) => (
+                          <div
+                            key={`${m.Source || m.Name || ""}-${m.Destination || m.Target || ""}-${i}`}
+                            className={style({
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 2,
+                              paddingX: 12,
+                              paddingY: 8,
+                              borderRadius: "lg",
+                              backgroundColor: "gray-100",
+                              minWidth: 0,
+                            })}
+                          >
+                            <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
+                              <StatusBadge tone="muted">{m.Type || "mount"}</StatusBadge>
+                              {m.RW === false || m.Mode === "ro" ? (
+                                <StatusBadge tone="muted">ro</StatusBadge>
+                              ) : null}
+                              <span className={style({ font: "code-xs", truncate: true, minWidth: 0 })}>
+                                {m.Source || m.Name || "—"}
+                              </span>
+                            </div>
+                            <div className={style({ font: "code-xs", color: "neutral-subdued", truncate: true })}>
+                              → {m.Destination || m.Target || "—"}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {Object.keys(detail.data?.Config?.Labels || selectedRow?.labels || {}).length ? (
+                    <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
+                      <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Labels</div>
+                      <LabelChips labels={detail.data?.Config?.Labels || selectedRow?.labels} />
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setShowRaw((v) => !v)}>
+                      {showRaw ? "Hide JSON" : "Inspect JSON"}
+                    </Button>
                   </div>
+                  {showRaw ? (
+                    <CodeBlock
+                      title="Inspect"
+                      meta="docker inspect"
+                      value={JSON.stringify(detail.data || {}, null, 2)}
+                      empty="No inspect data"
+                    />
+                  ) : null}
                 </div>
-              ) : null}
-              <CodeBlock
-                title="Inspect"
-                meta="docker inspect"
-                value={JSON.stringify(detail.data || {}, null, 2)}
-                empty="No inspect data"
-              />
-            </div>
-          </TabPanel>
-        </Tabs>
+              </TabPanel>
+            </Tabs>
+          </div>
+        ) : null}
       </DetailPane>
 
       <ConfirmDialog
@@ -482,7 +576,7 @@ export function ContainersPage() {
         open={confirmRemove}
         onOpenChange={setConfirmRemove}
         title="Remove container"
-        description="Force-remove this container and its anonymous volumes?"
+        description={`Force-remove “${displayName}” and its anonymous volumes?`}
         confirmLabel="Remove"
         destructive
         onConfirm={() => act(() => api.removeContainer(selected!, true), "Container removed")}
