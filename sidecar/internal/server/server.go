@@ -102,6 +102,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/docker/system/prune", s.handleSystemPrune)
 	s.mux.HandleFunc("GET /api/docker/contexts", s.handleDockerContexts)
 	s.mux.HandleFunc("POST /api/docker/contexts", s.handleDockerUseContext)
+	s.mux.HandleFunc("POST /api/docker/reconnect", s.handleDockerReconnect)
 	s.mux.HandleFunc("GET /api/docker/diagnose", s.handleDockerDiagnose)
 	s.mux.HandleFunc("GET /api/docker/volumes/{name}/files", s.handleVolumeFiles)
 	s.mux.HandleFunc("POST /api/docker/volumes/clone", s.handleVolumeClone)
@@ -190,7 +191,12 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
-	dockerOK := s.docker.Ping(ctx) == nil
+	pingErr := s.docker.Ping(ctx)
+	dockerOK := pingErr == nil
+	dockerErr := errString(s.docker.Err())
+	if !dockerOK && pingErr != nil {
+		dockerErr = pingErr.Error()
+	}
 	k8sVersion := ""
 	k8sOK := false
 	if v, err := s.k8s.Probe(ctx); err == nil {
@@ -200,7 +206,12 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	fc := s.runtimes.Get("firecracker")
 	fcOK := fc != nil && fc.Available(ctx)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"docker":      map[string]any{"connected": dockerOK, "error": errString(s.docker.Err())},
+		"docker": map[string]any{
+			"connected":     dockerOK,
+			"error":         dockerErr,
+			"activeContext": s.docker.ActiveContext(),
+			"host":          s.docker.ActiveHost(),
+		},
 		"kubernetes":  map[string]any{"connected": k8sOK, "version": k8sVersion, "error": errString(s.k8s.Err())},
 		"firecracker": map[string]any{"available": fcOK},
 	})

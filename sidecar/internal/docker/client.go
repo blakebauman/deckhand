@@ -54,6 +54,12 @@ func (c *Client) ReconnectWithHost(host string) error {
 	return nil
 }
 
+// Reconnect rebuilds the SDK client using the active host (or FromEnv).
+// Use when the engine returns after a drop without a context switch.
+func (c *Client) Reconnect() error {
+	return c.ReconnectWithHost(c.activeHost)
+}
+
 func (c *Client) SetActiveContext(name string) { c.activeContext = name }
 func (c *Client) ActiveContext() string        { return c.activeContext }
 func (c *Client) ActiveHost() string           { return c.activeHost }

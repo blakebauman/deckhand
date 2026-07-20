@@ -20,6 +20,7 @@ import { PageShell } from "@/components/PageShell";
 import { SettingRow, SettingSection } from "@/components/SettingRow";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
 import { toast } from "@/components/Toaster";
+import { useDockerReconnect } from "@/hooks/useDockerReconnect";
 import { modKeyLabel } from "@/lib/hotkeys";
 import { isTauriShell } from "@/lib/platform";
 import { APP_VERSION } from "@/lib/version";
@@ -27,6 +28,7 @@ import { useUIStore } from "@/stores/uiStore";
 
 export function SettingsPage() {
   const qc = useQueryClient();
+  const { reconnect, pending: reconnecting } = useDockerReconnect();
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
   const startAfterCreate = useUIStore((s) => s.startAfterCreate);
@@ -298,22 +300,36 @@ export function SettingsPage() {
           title="Report"
           description={diagnose.data?.time || "Run a diagnose pass against the sidecar"}
           action={
-            <Button
-              size="S"
-              variant="secondary"
-              onPress={() =>
-                void diagnose.refetch().then((r) => {
-                  if (r.isError) {
-                    toast.error("Diagnose failed", {
-                      description: (r.error as Error)?.message,
-                    });
-                  }
-                })
-              }
-              isPending={diagnose.isFetching}
-            >
-              Refresh
-            </Button>
+            <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
+              <Button
+                size="S"
+                variant="accent"
+                isPending={reconnecting}
+                onPress={() =>
+                  void reconnect().then(() => {
+                    void diagnose.refetch();
+                  })
+                }
+              >
+                Reconnect
+              </Button>
+              <Button
+                size="S"
+                variant="secondary"
+                onPress={() =>
+                  void diagnose.refetch().then((r) => {
+                    if (r.isError) {
+                      toast.error("Diagnose failed", {
+                        description: (r.error as Error)?.message,
+                      });
+                    }
+                  })
+                }
+                isPending={diagnose.isFetching}
+              >
+                Refresh
+              </Button>
+            </div>
           }
         >
           {diagnose.data ? (
@@ -592,11 +608,26 @@ export function SettingsPage() {
       </SettingSection>
 
       <SettingSection title="Engine">
-        <SettingRow label="Docker" description={status.data?.docker.error || "Local Docker engine"}>
-          <StatusBadge tone={status.data?.docker.connected ? "success" : "muted"}>
-            {status.data?.docker.connected ? "Connected" : "Offline"}
-          </StatusBadge>
-        </SettingRow>
+        <SettingRow
+          label="Docker"
+          description={
+            status.data?.docker.error ||
+            status.data?.docker.activeContext ||
+            "Local Docker engine (attach)"
+          }
+          action={
+            <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
+              <StatusBadge tone={status.data?.docker.connected ? "success" : "muted"}>
+                {status.data?.docker.connected ? "Connected" : "Offline"}
+              </StatusBadge>
+              {!status.data?.docker.connected ? (
+                <Button size="S" variant="accent" isPending={reconnecting} onPress={() => void reconnect()}>
+                  Reconnect
+                </Button>
+              ) : null}
+            </div>
+          }
+        />
         <SettingRow label="Server version" description={info.data?.ServerVersion || "—"}>
           <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
             {info.data?.OperatingSystem || ""}

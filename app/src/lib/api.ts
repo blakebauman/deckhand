@@ -35,6 +35,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   health: () => request<{ ok: boolean }>("/health"),
   status: () => request<StatusResponse>("/api/status"),
+  /** Rebuild the Docker SDK client (attach recovery without context switch). */
+  reconnectDocker: () =>
+    request<{ ok: boolean; connected: boolean; error?: string; activeContext?: string; host?: string }>(
+      "/api/docker/reconnect",
+      { method: "POST" },
+    ),
 
   dockerDashboard: () => request<Record<string, number>>("/api/docker/dashboard"),
   dockerInfo: () => request<any>("/api/docker/info"),
@@ -326,7 +332,12 @@ export const api = {
 };
 
 export type StatusResponse = {
-  docker: { connected: boolean; error?: string };
+  docker: {
+    connected: boolean;
+    error?: string;
+    activeContext?: string;
+    host?: string;
+  };
   kubernetes: { connected: boolean; version?: string; error?: string };
   firecracker: { available: boolean };
 };
