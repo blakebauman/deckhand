@@ -9,7 +9,10 @@
       "cwd": "../.."
     },
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run --cwd ../.. build:sidecar && bun run --cwd .. build",
+    "beforeBuildCommand": {
+      "script": "bun run build:sidecar && bun run --filter @deckhand/tauri build",
+      "cwd": "../.."
+    },
     "frontendDist": "../dist"
   },
   "app": {
