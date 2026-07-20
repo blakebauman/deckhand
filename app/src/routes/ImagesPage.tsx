@@ -1,11 +1,18 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { api, type ImageScanResult, type VolumeFileEntry } from "@/lib/api";
-import { Button } from "@react-spectrum/s2";
+import {
+  ActionMenu,
+  Button,
+  MenuItem,
+  MenuSection,
+  Text,
+} from "@react-spectrum/s2";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
+import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
 import { Field } from "@/components/spectrum/Field";
@@ -18,6 +25,27 @@ import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 
 import { copyText } from "@/routes/shared";
 
+function imageTitle(img: { Id?: string; RepoTags?: string[] | null; RepoDigests?: string[] | null }) {
+  if (img.RepoTags?.[0]) return img.RepoTags[0];
+  const digestRepo = img.RepoDigests?.[0]?.split("@")[0];
+  if (digestRepo) return digestRepo;
+  return shortId(img.Id?.replace(/^sha256:/, "") || img.Id);
+}
+
+function imageShortId(id?: string) {
+  if (!id) return "";
+  return shortId(id.replace(/^sha256:/, ""));
+}
+
+function formatCreated(ts?: number) {
+  if (ts == null || !Number.isFinite(ts)) return undefined;
+  try {
+    return new Date(ts * 1000).toLocaleString();
+  } catch {
+    return undefined;
+  }
+}
+
 export function ImagesPage() {
   const qc = useQueryClient();
   const openRunSheet = useUIStore((s) => s.openRunSheet);
@@ -26,6 +54,7 @@ export function ImagesPage() {
   const [ref, setRef] = useState("nginx:alpine");
   const [pullLog, setPullLog] = useState("");
   const [pulling, setPulling] = useState(false);
+  const [pullOpen, setPullOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -61,18 +90,25 @@ export function ImagesPage() {
     return items.filter(
       (img) =>
         img.Id?.toLowerCase().includes(needle) ||
-        (img.RepoTags || []).some((t: string) => t.toLowerCase().includes(needle)),
+        (img.RepoTags || []).some((t: string) => t.toLowerCase().includes(needle)) ||
+        (img.RepoDigests || []).some((d: string) => d.toLowerCase().includes(needle)),
     );
   }, [list.data, q]);
 
-  const selectedImg = filtered.find((img) => img.Id === selected);
+  const selectedImg = filtered.find((img) => img.Id === selected) || (list.data || []).find((img) => img.Id === selected);
+  const title = selectedImg ? imageTitle(selectedImg) : "";
+  const dangling = !!selectedImg && !(selectedImg.RepoTags || []).length;
+  const extraTags = (selectedImg?.RepoTags || []).slice(1);
 
   const runPull = async () => {
+    const trimmed = ref.trim();
+    if (!trimmed) return;
     setPulling(true);
     setPullLog("");
+    setPullOpen(false);
     setSheetOpen(true);
     try {
-      await api.pullImageStream(ref, (chunk) => {
+      await api.pullImageStream(trimmed, (chunk) => {
         const lines = chunk.split("\n").filter(Boolean);
         const pretty = lines
           .map((line) => {
@@ -91,10 +127,32 @@ export function ImagesPage() {
       });
       qc.invalidateQueries({ queryKey: ["images"] });
       setPullLog((p) => p + "\nPull complete.\n");
+      toast.success("Pull complete", { description: trimmed });
     } catch (e: any) {
       setPullLog((p) => p + `\n${e.message || "pull failed"}\n`);
+      toast.error("Pull failed", { description: e?.message });
     } finally {
       setPulling(false);
+    }
+  };
+
+  const runScan = async () => {
+    if (!selected || !selectedImg) return;
+    setScanning(true);
+    try {
+      const res = await api.scanImage(selected, selectedImg.RepoTags?.[0] || selected);
+      setScan(res);
+      if (!res.ok) {
+        toast.error("Scan unavailable", { description: res.error });
+      } else {
+        toast.success(`Scanned with ${res.tool}`, {
+          description: `${res.critical} critical · ${res.high} high`,
+        });
+      }
+    } catch (e: any) {
+      toast.error("Scan failed", { description: e?.message });
+    } finally {
+      setScanning(false);
     }
   };
 
@@ -106,214 +164,276 @@ export function ImagesPage() {
         empty={
           <ListEmpty
             title={q ? "No matches" : "No local images"}
-            description={q ? "Try another tag or ID." : "Pull an image on the right to get started."}
+            description={q ? "Try another tag or ID." : "Pull a tag to get started on this engine."}
+            action={
+              q ? undefined : (
+                <Button size="S" onPress={() => setPullOpen(true)}>
+                  Pull image
+                </Button>
+              )
+            }
           />
         }
         search={{ value: q, onChange: setQ, placeholder: "Search images" }}
         actions={
-          <Tip label="Remove unused (dangling) images from the local engine">
-            <Button size="S" variant="secondary" fillStyle="outline" data-no-drag onPress={() => setConfirmPrune(true)}>
-              Prune
-            </Button>
-          </Tip>
+          <div className={style({ display: "flex", alignItems: "center", gap: 8 })} data-no-drag>
+            <Tip label="Remove unused (dangling) images from the local engine">
+              <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setConfirmPrune(true)}>
+                Prune
+              </Button>
+            </Tip>
+            <Tip label="Pull an image from a registry">
+              <Button size="S" onPress={() => setPullOpen(true)}>
+                Pull
+              </Button>
+            </Tip>
+          </div>
         }
       >
-        {filtered.map((img) => (
-          <RowMenu
-            key={img.Id}
-            active={selected === img.Id}
-            onSelect={() => setSelected(img.Id)}
-            items={[
-              { id: "open", label: "Open", onAction: () => setSelected(img.Id) },
-              ...(img.RepoTags?.[0]
-                ? [{ id: "run", label: "Run…", onAction: () => openRunSheet(img.RepoTags![0]) }]
-                : []),
-              { id: "copy-id", label: "Copy ID", onAction: () => void copyText(img.Id) },
-              ...(img.RepoTags?.[0]
-                ? [{ id: "copy-tag", label: "Copy tag", onAction: () => void copyText(img.RepoTags![0]) }]
-                : []),
-              { id: "sep-1", label: "", onAction: () => {} },
-              {
-                id: "remove",
-                label: "Remove…",
-                onAction: () => {
-                  setSelected(img.Id);
-                  setConfirmRemove(true);
+        {filtered.map((img) => {
+          const name = imageTitle(img);
+          const untagged = !(img.RepoTags || []).length;
+          return (
+            <RowMenu
+              key={img.Id}
+              active={selected === img.Id}
+              onSelect={() => setSelected(img.Id)}
+              items={[
+                { id: "open", label: "Open", onAction: () => setSelected(img.Id) },
+                ...(img.RepoTags?.[0]
+                  ? [{ id: "run", label: "Run…", onAction: () => openRunSheet(img.RepoTags![0]) }]
+                  : []),
+                { id: "copy-id", label: "Copy ID", onAction: () => void copyText(img.Id) },
+                ...(img.RepoTags?.[0]
+                  ? [{ id: "copy-tag", label: "Copy tag", onAction: () => void copyText(img.RepoTags![0]) }]
+                  : []),
+                { id: "sep-1", label: "", onAction: () => {} },
+                {
+                  id: "remove",
+                  label: "Remove…",
+                  onAction: () => {
+                    setSelected(img.Id);
+                    setConfirmRemove(true);
+                  },
+                  destructive: true,
                 },
-                destructive: true,
-              },
-            ]}
-          >
-            <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
-              {img.RepoTags?.[0] || shortId(img.Id)}
-            </div>
-            <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
-              {formatBytes(img.Size)}
-            </div>
-          </RowMenu>
-        ))}
-      </ListPane>
-      <div
-        className={style({
-          display: "flex",
-          flexDirection: "column",
-          flexGrow: 1,
-          minWidth: 0,
-          minHeight: 0,
-          height: "full",
-          gap: 16,
-        })}
-      >
-        <DetailPane
-          selectionKey={selected}
-          empty={
-            <DetailEmpty
-              title="Select an image"
-              description="Pull a tag below, or pick a local image to run or remove."
-            />
-          }
-        >
-          {selectedImg ? (
-            <div className={style({ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 8 })}>
-              <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "start", justifyContent: "space-between", gap: 8 })}>
-                <div className={style({ minWidth: 0, flexGrow: 1 })}>
-                  <DetailHeading>{selectedImg.RepoTags?.[0] || shortId(selectedImg.Id)}</DetailHeading>
-                  <p className={style({ font: "code-xs", color: "neutral-subdued", marginTop: 4 })}>{shortId(selectedImg.Id)}</p>
-                  <p className={style({ font: "body-sm", color: "neutral-subdued", marginTop: 4 })}>{formatBytes(selectedImg.Size)}</p>
-                </div>
-                <CopyButton value={selectedImg.Id} label="Copy ID" />
+              ]}
+              suffix={
+                untagged ? <StatusBadge tone="muted">dangling</StatusBadge> : null
+              }
+            >
+              <div
+                className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}
+                title={name}
+              >
+                {name}
               </div>
-              {(selectedImg.RepoTags || []).length > 1 ? (
-                <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
-                  {selectedImg.RepoTags!.map((t: string) => (
-                    <StatusBadge key={t} tone="muted">
-                      {t}
-                    </StatusBadge>
-                  ))}
+              <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+                {formatBytes(img.Size)}
+                {img.Id ? ` · ${imageShortId(img.Id)}` : ""}
+              </div>
+            </RowMenu>
+          );
+        })}
+      </ListPane>
+
+      <DetailPane
+        selectionKey={selected}
+        empty={
+          <DetailEmpty
+            title="Select an image"
+            description="Inspect tags and size, browse layers, scan vulns — or pull a new tag."
+            action={
+              <Button size="S" onPress={() => setPullOpen(true)}>
+                Pull image
+              </Button>
+            }
+          />
+        }
+      >
+        {selectedImg ? (
+          <div className={style({ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 8 })}>
+            <div
+              className={style({
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 16,
+                minWidth: 0,
+              })}
+            >
+              <div className={style({ minWidth: 0, flexGrow: 1, display: "flex", flexDirection: "column", gap: 4 })}>
+                <div className={style({ display: "flex", alignItems: "center", gap: 8, minWidth: 0 })}>
+                  <DetailHeading>{title}</DetailHeading>
+                  {dangling ? <StatusBadge tone="muted">dangling</StatusBadge> : null}
                 </div>
-              ) : null}
-              <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
+                <div className={style({ display: "flex", alignItems: "center", gap: 8, minWidth: 0 })}>
+                  <div
+                    className={style({
+                      display: "inline-flex",
+                      flexShrink: 0,
+                      alignItems: "center",
+                      gap: 2,
+                    })}
+                  >
+                    <span className={style({ font: "code-xs", color: "neutral-subdued" })}>
+                      {imageShortId(selectedImg.Id)}
+                    </span>
+                    <CopyButton value={selectedImg.Id} label="Copy ID" iconOnly />
+                  </div>
+                  <span className={style({ font: "code-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+                    {formatBytes(selectedImg.Size)}
+                    {extraTags.length ? ` · +${extraTags.length} tag${extraTags.length === 1 ? "" : "s"}` : ""}
+                  </span>
+                </div>
+              </div>
+              <div className={style({ display: "flex", flexShrink: 0, alignItems: "center", gap: 8 })}>
                 {selectedImg.RepoTags?.[0] ? (
-                  <Button size="S" onPress={() => openRunSheet(selectedImg.RepoTags![0])}>
+                  <Button size="S" variant="accent" onPress={() => openRunSheet(selectedImg.RepoTags![0])}>
                     Run
                   </Button>
                 ) : null}
-                <Button
-                  size="S"
-                  variant="secondary"
-                  fillStyle="outline"
-                  onPress={() => {
-                    setBrowsing(true);
-                    setFilePath("");
-                  }}
-                >
-                  Browse files
-                </Button>
-                <Tip label="Scan with Trivy or Grype if installed on PATH">
+                <ActionMenu aria-label="More image actions" isQuiet align="end" size="S">
+                  <MenuSection>
+                    <MenuItem
+                      id="browse"
+                      textValue="Browse files"
+                      onAction={() => {
+                        setBrowsing(true);
+                        setFilePath("");
+                      }}
+                    >
+                      <Text slot="label">Browse files</Text>
+                    </MenuItem>
+                    <MenuItem
+                      id="scan"
+                      textValue="Scan vulnerabilities"
+                      isDisabled={scanning}
+                      onAction={() => void runScan()}
+                    >
+                      <Text slot="label">{scanning ? "Scanning…" : "Scan vulns"}</Text>
+                    </MenuItem>
+                  </MenuSection>
+                  <MenuSection>
+                    <MenuItem id="remove" textValue="Remove" onAction={() => setConfirmRemove(true)}>
+                      <Text slot="label" styles={style({ color: "negative" })}>
+                        Remove…
+                      </Text>
+                    </MenuItem>
+                  </MenuSection>
+                </ActionMenu>
+              </div>
+            </div>
+
+            <InspectFields
+              rows={[
+                { label: "Size", value: formatBytes(selectedImg.Size) },
+                { label: "Created", value: formatCreated(selectedImg.Created) },
+                {
+                  label: "Tags",
+                  value: (selectedImg.RepoTags || []).length
+                    ? (selectedImg.RepoTags || []).join(", ")
+                    : "—",
+                  mono: true,
+                },
+                {
+                  label: "Digest",
+                  value: selectedImg.RepoDigests?.[0]?.split("@")[1] || undefined,
+                  mono: true,
+                  copy: selectedImg.RepoDigests?.[0],
+                },
+              ]}
+            />
+
+            {scan ? (
+              <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
+                <div className={style({ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 })}>
+                  <div className={style({ font: "title-sm" })}>Vulnerability scan</div>
+                  <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                    {scan.tool || "scanner"} · C{scan.critical} H{scan.high} M{scan.medium} L{scan.low}
+                  </div>
+                </div>
+                {scan.error ? (
+                  <div className={style({ font: "body-sm", color: "neutral-subdued" })}>{scan.error}</div>
+                ) : null}
+                {(scan.findings || []).length === 0 && scan.ok ? (
+                  <div className={style({ font: "body-sm", color: "neutral-subdued" })}>No findings reported.</div>
+                ) : (
+                  <div className={style({ display: "flex", flexDirection: "column", gap: 4 })}>
+                    {(scan.findings || []).slice(0, 12).map((f) => (
+                      <div
+                        key={`${f.id}-${f.package}`}
+                        className={style({
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          paddingX: 12,
+                          paddingY: 8,
+                          borderRadius: "lg",
+                          backgroundColor: "gray-100",
+                          minWidth: 0,
+                        })}
+                      >
+                        <StatusBadge
+                          tone={f.severity === "CRITICAL" || f.severity === "HIGH" ? "destructive" : "muted"}
+                        >
+                          {f.severity}
+                        </StatusBadge>
+                        <span className={style({ font: "code-xs", truncate: true, minWidth: 0 })}>
+                          {f.id}
+                          {f.package ? ` · ${f.package}` : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {browsing ? (
+              <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
+                <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
+                  <div className={style({ font: "title-sm", flexGrow: 1 })}>Files</div>
+                  <div className={style({ font: "code-xs", color: "neutral-subdued" })}>/{filePath || ""}</div>
                   <Button
                     size="S"
                     variant="secondary"
                     fillStyle="outline"
-                    isPending={scanning}
+                    isDisabled={!filePath}
                     onPress={() => {
-                      void (async () => {
-                        if (!selected) return;
-                        setScanning(true);
-                        try {
-                          const res = await api.scanImage(
-                            selected,
-                            selectedImg.RepoTags?.[0] || selected,
-                          );
-                          setScan(res);
-                          if (!res.ok) {
-                            toast.error("Scan unavailable", { description: res.error });
-                          } else {
-                            toast.success(`Scanned with ${res.tool}`, {
-                              description: `${res.critical} critical · ${res.high} high`,
-                            });
-                          }
-                        } catch (e: any) {
-                          toast.error("Scan failed", { description: e?.message });
-                        } finally {
-                          setScanning(false);
-                        }
-                      })();
+                      const parts = filePath.replace(/\/+$/, "").split("/");
+                      parts.pop();
+                      setFilePath(parts.join("/"));
                     }}
                   >
-                    Scan vulns
+                    Up
                   </Button>
-                </Tip>
-                <Button size="S" variant="negative" onPress={() => setConfirmRemove(true)}>
-                  Remove
-                </Button>
-              </div>
-
-              {scan ? (
-                <div
-                  className={style({
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                    backgroundColor: "layer-1",
-                    borderRadius: "xl",
-                    padding: 12,
-                  })}
-                >
-                  <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
-                    {scan.tool || "scanner"} · C{scan.critical} H{scan.high} M{scan.medium} L{scan.low}
-                    {scan.error ? ` · ${scan.error}` : ""}
-                  </div>
-                  {(scan.findings || []).slice(0, 12).map((f) => (
-                    <div key={`${f.id}-${f.package}`} className={style({ font: "code-xs" })}>
-                      <StatusBadge tone={f.severity === "CRITICAL" || f.severity === "HIGH" ? "destructive" : "muted"}>
-                        {f.severity}
-                      </StatusBadge>{" "}
-                      {f.id} {f.package ? `· ${f.package}` : ""}
-                    </div>
-                  ))}
+                  <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setBrowsing(false)}>
+                    Close
+                  </Button>
                 </div>
-              ) : null}
-
-              {browsing ? (
                 <div
                   className={style({
                     display: "flex",
                     flexDirection: "column",
-                    gap: 8,
+                    gap: 4,
                     backgroundColor: "layer-1",
                     borderRadius: "xl",
-                    padding: 12,
+                    padding: 8,
                   })}
                 >
-                  <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
-                    <div className={style({ font: "body-xs", color: "neutral-subdued", flexGrow: 1 })}>
-                      Files · /{filePath || ""}
-                    </div>
-                    <Button
-                      size="S"
-                      variant="secondary"
-                      fillStyle="outline"
-                      isDisabled={!filePath}
-                      onPress={() => {
-                        const parts = filePath.replace(/\/+$/, "").split("/");
-                        parts.pop();
-                        setFilePath(parts.join("/"));
-                      }}
-                    >
-                      Up
-                    </Button>
-                    <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setBrowsing(false)}>
-                      Close
-                    </Button>
-                  </div>
                   {files.isLoading ? (
-                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0 })}>Loading…</p>
+                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0, padding: 8 })}>
+                      Loading…
+                    </p>
                   ) : files.isError ? (
-                    <p className={style({ font: "body-xs", color: "negative", margin: 0 })}>
+                    <p className={style({ font: "body-xs", color: "negative", margin: 0, padding: 8 })}>
                       {(files.error as Error)?.message || "Failed to list files"}
                     </p>
                   ) : (files.data || []).length === 0 ? (
-                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0 })}>Empty directory</p>
+                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0, padding: 8 })}>
+                      Empty directory
+                    </p>
                   ) : (
                     (files.data || []).map((f: VolumeFileEntry) => (
                       <button
@@ -328,9 +448,9 @@ export function ImagesPage() {
                           alignItems: "center",
                           justifyContent: "space-between",
                           gap: 8,
-                          paddingX: 8,
+                          paddingX: 12,
                           paddingY: 8,
-                          borderRadius: "default",
+                          borderRadius: "lg",
                           borderStyle: "none",
                           backgroundColor: {
                             default: "transparent",
@@ -353,30 +473,36 @@ export function ImagesPage() {
                     ))
                   )}
                 </div>
-              ) : null}
-            </div>
-          ) : null}
-        </DetailPane>
-        <div
-          className={style({
-            flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-            backgroundColor: "layer-1",
-            borderRadius: "xl",
-            padding: 16,
-          })}
-        >
-          <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Pull image</div>
-          <div className={style({ display: "flex", gap: 8, alignItems: "end" })}>
-            <Field value={ref} onChange={setRef} placeholder="image:tag" />
-            <Button onPress={() => void runPull()} isDisabled={pulling || !ref.trim()}>
-              {pulling ? "Pulling…" : "Pull"}
-            </Button>
+              </div>
+            ) : null}
           </div>
-        </div>
-      </div>
+        ) : null}
+      </DetailPane>
+
+      <GlassSheet
+        open={pullOpen}
+        onOpenChange={setPullOpen}
+        title="Pull image"
+        description="Fetch a tag from a registry into the local engine."
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onPress={() => setPullOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="accent"
+              isDisabled={!ref.trim() || pulling}
+              isPending={pulling}
+              onPress={() => void runPull()}
+            >
+              Pull
+            </Button>
+          </>
+        }
+      >
+        <Field value={ref} onChange={setRef} placeholder="nginx:alpine" aria-label="Image reference" />
+      </GlassSheet>
 
       <GlassSheet
         open={sheetOpen}
@@ -397,7 +523,7 @@ export function ImagesPage() {
         open={confirmRemove}
         onOpenChange={setConfirmRemove}
         title="Remove image"
-        description={`Remove ${selectedImg?.RepoTags?.[0] || shortId(selected || "")}?`}
+        description={`Remove “${selectedImg ? imageTitle(selectedImg) : shortId(selected || "")}”?`}
         confirmLabel="Remove"
         destructive
         onConfirm={async () => {
