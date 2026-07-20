@@ -12,14 +12,15 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
-          go-version: "1.23.x"
+          go-version-file: sidecar/go.mod
+          cache-dependency-path: sidecar/go.sum
       - name: Build sidecar
         run: bash scripts/build-sidecar.sh
       - name: Upload sidecar artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: deckhand-sidecar-${{ matrix.os }}
           path: tauri/src-tauri/binaries/deckhand-sidecar*
@@ -27,7 +28,7 @@ jobs:
   ui:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
