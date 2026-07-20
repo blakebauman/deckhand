@@ -5,9 +5,14 @@ import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ListEmpty } from "@/components/ListPane";
 import { PageShell } from "@/components/PageShell";
+import { RowMenu } from "@/components/spectrum/RowMenu";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
+import { Tip } from "@/components/spectrum/Tip";
+import { toast } from "@/components/Toaster";
 import { useUIStore } from "@/stores/uiStore";
+import { copyText } from "@/routes/shared";
 import { K8sChrome } from "@/routes/k8s/K8sChrome";
 
 export function HelmPage() {
@@ -19,6 +24,8 @@ export function HelmPage() {
   const [output, setOutput] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetTitle, setSheetTitle] = useState("Helm");
+  const [installOpen, setInstallOpen] = useState(false);
+  const [installing, setInstalling] = useState(false);
   const [confirmUninstall, setConfirmUninstall] = useState<string | null>(null);
   const list = useQuery({
     queryKey: ["helm", namespace],
@@ -32,50 +39,90 @@ export function HelmPage() {
     setSheetOpen(true);
   };
 
+  const releases = list.data || [];
+
   return (
     <K8sChrome>
-      <PageShell title="Helm" description="Install and manage chart releases in the selected namespace.">
-        <div
-          className={style({
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-            marginBottom: 24,
-            backgroundColor: "layer-1",
-            borderRadius: "xl",
-            padding: 16,
-          })}
-        >
-          <div
-            className={style({
-              display: "grid",
-              gridTemplateColumns: {
-                default: "1fr",
-                sm: "1fr 1fr",
-              },
-              gap: 16,
-            })}
-          >
-            <TextField label="Release name" value={name} onChange={setName} placeholder="demo" />
-            <TextField
-              label="Chart"
-              value={chart}
-              onChange={setChart}
-              placeholder="path or repo/chart"
+      <PageShell
+        title="Helm"
+        description="Install and manage chart releases in the selected namespace."
+        actions={
+          <Tip label="Install a chart into this namespace">
+            <Button size="S" onPress={() => setInstallOpen(true)}>
+              Install
+            </Button>
+          </Tip>
+        }
+      >
+        <div className={style({ display: "flex", flexDirection: "column", gap: 4, maxWidth: 720 })}>
+          {list.isLoading ? (
+            <p className={style({ font: "body-sm", color: "neutral-subdued" })}>Loading releases…</p>
+          ) : releases.length === 0 ? (
+            <ListEmpty
+              title="No releases"
+              description={`Nothing installed in “${namespace}” yet.`}
+              action={
+                <Button size="S" onPress={() => setInstallOpen(true)}>
+                  Install chart
+                </Button>
+              }
             />
-          </div>
-          <TextArea
-            label="Values"
-            value={valuesYaml}
-            onChange={setValuesYaml}
-            placeholder="values.yaml (optional)"
-            styles={style({ width: "full" })}
-          />
-          <div>
+          ) : (
+            releases.map((r) => (
+              <RowMenu
+                key={`${r.namespace}-${r.name}`}
+                items={[
+                  {
+                    id: "rollback",
+                    label: "Rollback",
+                    onAction: () =>
+                      void api
+                        .helmRollback(r.namespace, r.name)
+                        .then((res: any) => showOut(`Rollback · ${r.name}`, res.output || "rolled back"))
+                        .catch((e: any) => showOut(`Rollback · ${r.name}`, e?.message || "failed")),
+                  },
+                  { id: "copy", label: "Copy name", onAction: () => void copyText(r.name) },
+                  { id: "sep-1", label: "", onAction: () => {} },
+                  {
+                    id: "uninstall",
+                    label: "Uninstall…",
+                    destructive: true,
+                    onAction: () => setConfirmUninstall(r.name),
+                  },
+                ]}
+                suffix={
+                  <StatusBadge tone={r.status === "deployed" ? "success" : "muted"}>{r.status}</StatusBadge>
+                }
+              >
+                <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+                  {r.name}
+                </div>
+                <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+                  {r.chart} · rev {r.revision}
+                </div>
+              </RowMenu>
+            ))
+          )}
+        </div>
+      </PageShell>
+
+      <GlassSheet
+        open={installOpen}
+        onOpenChange={setInstallOpen}
+        title="Install chart"
+        description={`Release into namespace “${namespace}”.`}
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onPress={() => setInstallOpen(false)} isDisabled={installing}>
+              Cancel
+            </Button>
             <Button
-              size="S"
-              isDisabled={!name.trim() || !chart.trim()}
+              variant="accent"
+              isDisabled={!name.trim() || !chart.trim() || installing}
+              isPending={installing}
               onPress={async () => {
+                setInstalling(true);
                 try {
                   const res: any = await api.helmInstall({
                     name,
@@ -84,73 +131,41 @@ export function HelmPage() {
                     valuesYaml,
                     createNamespace: true,
                   });
+                  setInstallOpen(false);
                   showOut(`Install · ${name}`, res.output || "installed");
+                  toast.success("Installed", { description: name });
                   qc.invalidateQueries({ queryKey: ["helm"] });
                 } catch (e: any) {
                   showOut(`Install · ${name}`, e.message);
+                  toast.error("Install failed", { description: e?.message });
+                } finally {
+                  setInstalling(false);
                 }
               }}
             >
               Install
             </Button>
-          </div>
+          </>
+        }
+      >
+        <div className={style({ display: "flex", flexDirection: "column", gap: 16 })}>
+          <TextField label="Release name" value={name} onChange={setName} placeholder="demo" />
+          <TextField
+            label="Chart"
+            value={chart}
+            onChange={setChart}
+            placeholder="path or repo/chart"
+          />
+          <TextArea
+            label="Values"
+            value={valuesYaml}
+            onChange={setValuesYaml}
+            placeholder="values.yaml (optional)"
+            styles={style({ width: "full" })}
+          />
         </div>
+      </GlassSheet>
 
-        <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-          {(list.data || []).length === 0 ? (
-            <p className={style({ font: "body-sm", color: "neutral-subdued" })}>
-              No releases in “{namespace}”.
-            </p>
-          ) : (
-            (list.data || []).map((r) => (
-              <div
-                key={`${r.namespace}-${r.name}`}
-                className={style({
-                  display: "flex",
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  backgroundColor: "layer-1",
-                  borderRadius: "xl",
-                  borderWidth: 0,
-                  paddingX: 16,
-                  paddingY: 12,
-                })}
-              >
-                <div className={style({ minWidth: 0, flexGrow: 1, display: "flex", alignItems: "center", gap: 8 })}>
-                  <div className={style({ minWidth: 0, flexGrow: 1 })}>
-                    <div className={style({ fontWeight: "medium", truncate: true, minWidth: 0 })}>{r.name}</div>
-                    <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, marginTop: 2 })}>
-                      {r.chart} · rev {r.revision}
-                    </div>
-                  </div>
-                  <div className={style({ flexShrink: 0 })}>
-                    <StatusBadge tone={r.status === "deployed" ? "success" : "muted"}>{r.status}</StatusBadge>
-                  </div>
-                </div>
-                <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, flexShrink: 0 })}>
-                  <Button
-                    size="S"
-                    variant="secondary"
-                    fillStyle="outline"
-                    onPress={() =>
-                      api
-                        .helmRollback(r.namespace, r.name)
-                        .then((res: any) => showOut(`Rollback · ${r.name}`, res.output || "rolled back"))
-                    }
-                  >
-                    Rollback
-                  </Button>
-                  <Button size="S" variant="negative" onPress={() => setConfirmUninstall(r.name)}>
-                    Uninstall
-                  </Button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </PageShell>
       <GlassSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
@@ -174,10 +189,15 @@ export function HelmPage() {
         destructive
         onConfirm={async () => {
           if (!confirmUninstall) return;
-          const res: any = await api.helmUninstall(namespace, confirmUninstall);
-          showOut(`Uninstall · ${confirmUninstall}`, res.output || "uninstalled");
-          setConfirmUninstall(null);
-          qc.invalidateQueries({ queryKey: ["helm"] });
+          try {
+            const res: any = await api.helmUninstall(namespace, confirmUninstall);
+            showOut(`Uninstall · ${confirmUninstall}`, res.output || "uninstalled");
+            toast.success("Uninstalled", { description: confirmUninstall });
+            setConfirmUninstall(null);
+            qc.invalidateQueries({ queryKey: ["helm"] });
+          } catch (e: any) {
+            toast.error("Uninstall failed", { description: e?.message });
+          }
         }}
       />
     </K8sChrome>

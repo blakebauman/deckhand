@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Button, Tab, TabList, TabPanel, Tabs } from "@react-spectrum/s2";
+import { ActionMenu, MenuItem, MenuSection, Tab, TabList, TabPanel, Tabs, Text } from "@react-spectrum/s2";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -8,6 +8,7 @@ import { ConsolePanel } from "@/components/ConsolePanel";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { ExecTerminal } from "@/components/ExecTerminal";
+import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
 import { RowMenu } from "@/components/spectrum/RowMenu";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
@@ -15,11 +16,17 @@ import { useUIStore } from "@/stores/uiStore";
 import { copyText } from "@/routes/shared";
 import { K8sChrome } from "@/routes/k8s/K8sChrome";
 
+function phaseTone(phase?: string): "success" | "muted" | "destructive" {
+  if (phase === "Running") return "success";
+  if (phase === "Failed") return "destructive";
+  return "muted";
+}
+
 export function PodsPage() {
   const namespace = useUIStore((s) => s.namespace);
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
-  const [podTab, setPodTab] = useState<"logs" | "exec">("logs");
+  const [podTab, setPodTab] = useState<"logs" | "exec" | "inspect">("logs");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [q, setQ] = useState("");
   const list = useQuery({ queryKey: ["pods", namespace], queryFn: () => api.pods(namespace), refetchInterval: 5000 });
@@ -32,6 +39,7 @@ export function PodsPage() {
   }, [list.data, q]);
 
   const selectedPod = filtered.find((p) => p.metadata.name === selected);
+  const phase = selectedPod?.status?.phase || "Unknown";
 
   return (
     <K8sChrome>
@@ -67,9 +75,7 @@ export function PodsPage() {
                 },
               ]}
               suffix={
-                <StatusBadge tone={p.status?.phase === "Running" ? "success" : "muted"}>
-                  {p.status?.phase || "Unknown"}
-                </StatusBadge>
+                <StatusBadge tone={phaseTone(p.status?.phase)}>{p.status?.phase || "Unknown"}</StatusBadge>
               }
             >
               <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
@@ -84,28 +90,31 @@ export function PodsPage() {
           header={
             <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8 })}>
               <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0, flexGrow: 1 })}>
-                <div className={style({ minWidth: 0, flexGrow: 1 })}>
-                  <DetailHeading>{selected}</DetailHeading>
-                </div>
-                <StatusBadge tone={selectedPod?.status?.phase === "Running" ? "success" : "muted"}>
-                  {selectedPod?.status?.phase || "Unknown"}
-                </StatusBadge>
+                <DetailHeading>{selected}</DetailHeading>
+                <StatusBadge tone={phaseTone(phase)}>{phase}</StatusBadge>
                 <CopyButton value={selected || ""} label="Copy name" iconOnly />
               </div>
-              <Button size="S" variant="negative" onPress={() => setConfirmDelete(true)}>
-                Delete
-              </Button>
+              <ActionMenu aria-label="More pod actions" isQuiet align="end" size="S">
+                <MenuSection>
+                  <MenuItem id="delete" textValue="Delete" onAction={() => setConfirmDelete(true)}>
+                    <Text slot="label" styles={style({ color: "negative" })}>
+                      Delete…
+                    </Text>
+                  </MenuItem>
+                </MenuSection>
+              </ActionMenu>
             </div>
           }
         >
           <Tabs
             aria-label="Pod details"
             selectedKey={podTab}
-            onSelectionChange={(key) => setPodTab(key as "logs" | "exec")}
+            onSelectionChange={(key) => setPodTab(key as "logs" | "exec" | "inspect")}
           >
             <TabList>
               <Tab id="logs">Logs</Tab>
               <Tab id="exec">Exec</Tab>
+              <Tab id="inspect">Inspect</Tab>
             </TabList>
             <TabPanel id="logs" styles={style({ marginTop: 12 })}>
               <ConsolePanel
@@ -120,6 +129,33 @@ export function PodsPage() {
                 wsUrl={api.podExecWsUrl(namespace, selected!)}
                 title="Pod shell"
               />
+            </TabPanel>
+            <TabPanel id="inspect" styles={style({ marginTop: 12 })}>
+              {selectedPod ? (
+                <InspectFields
+                  rows={[
+                    { label: "Namespace", value: namespace, mono: true },
+                    { label: "Node", value: selectedPod.spec?.nodeName, mono: true },
+                    { label: "Pod IP", value: selectedPod.status?.podIP, mono: true, copy: selectedPod.status?.podIP },
+                    {
+                      label: "Containers",
+                      value: (selectedPod.spec?.containers || [])
+                        .map((c: any) => c.name)
+                        .filter(Boolean)
+                        .join(", "),
+                    },
+                    {
+                      label: "Image",
+                      value: selectedPod.spec?.containers?.[0]?.image,
+                      mono: true,
+                      copy: selectedPod.spec?.containers?.[0]?.image,
+                    },
+                    { label: "Restart policy", value: selectedPod.spec?.restartPolicy },
+                    { label: "Created", value: selectedPod.metadata.creationTimestamp },
+                    { label: "UID", value: selectedPod.metadata.uid, mono: true, copy: selectedPod.metadata.uid },
+                  ]}
+                />
+              ) : null}
             </TabPanel>
           </Tabs>
         </DetailPane>
