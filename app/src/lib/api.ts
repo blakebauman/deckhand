@@ -322,13 +322,31 @@ export const api = {
     request(`/api/helm/releases/${ns}/${name}`, { method: "DELETE" }),
 
   runtimes: () => request<{ name: string; available: boolean }[]>("/api/runtimes"),
-  listVMs: () => request<any[]>("/api/runtimes/firecracker/vms"),
-  createVM: (body: any) =>
-    request("/api/runtimes/firecracker/vms", { method: "POST", body: JSON.stringify(body) }),
+  listVMs: () => request<MicroVM[]>("/api/runtimes/firecracker/vms"),
+  createVM: (body: MicroVMCreate) =>
+    request<MicroVM>("/api/runtimes/firecracker/vms", { method: "POST", body: JSON.stringify(body) }),
   startVM: (id: string) => request(`/api/runtimes/firecracker/vms/${id}/start`, { method: "POST" }),
   stopVM: (id: string) => request(`/api/runtimes/firecracker/vms/${id}/stop`, { method: "POST" }),
   destroyVM: (id: string) => request(`/api/runtimes/firecracker/vms/${id}`, { method: "DELETE" }),
   vmLogs: (id: string) => request<{ output: string }>(`/api/runtimes/firecracker/vms/${id}/logs`),
+};
+
+export type MicroVM = {
+  id: string;
+  name: string;
+  state: string;
+  vcpu: number;
+  memoryMb: number;
+  kernel?: string;
+  rootfs?: string;
+};
+
+export type MicroVMCreate = {
+  name: string;
+  kernel: string;
+  rootfs: string;
+  vcpu: number;
+  memoryMb: number;
 };
 
 export type StatusResponse = {
