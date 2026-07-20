@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Button, Text, Tooltip, TooltipTrigger } from "@react-spectrum/s2";
+import { Button, Text } from "@react-spectrum/s2";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api, subscribeDockerEvents } from "@/lib/api";
 import {
@@ -13,26 +13,12 @@ import {
 import { GlassSheet } from "@/components/GlassSheet";
 import { LogoMark } from "@/components/Logo";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
+import { Tip } from "@/components/spectrum/Tip";
 import { StatusHalo } from "@/components/StatusHalo";
 import { useUIStore } from "@/stores/uiStore";
 
 const easeOutExpo = [0.16, 1, 0.3, 1] as const;
 const MAX_EVENTS = 40;
-
-function TipTop({
-  label,
-  children,
-}: {
-  label: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <TooltipTrigger placement="top" delay={400}>
-      {children}
-      <Tooltip>{label}</Tooltip>
-    </TooltipTrigger>
-  );
-}
 
 const chipBtn = style({
   display: "inline-flex",
@@ -82,7 +68,7 @@ function RuntimeChip({
   const tone = ok ? "ok" : warn ? "idle" : "error";
 
   return (
-    <TipTop label={tip}>
+    <Tip label={tip} placement="top">
       <button type="button" className={`dh-chip ${chipBtn}`} onClick={onClick}>
         <StatusHalo tone={tone} pulse={ok} size="sm" />
         <Text styles={style({ font: "ui-sm" })}>{label}</Text>
@@ -97,7 +83,7 @@ function RuntimeChip({
           </Text>
         ) : null}
       </button>
-    </TipTop>
+    </Tip>
   );
 }
 
@@ -197,7 +183,7 @@ export function StatusDock() {
             minWidth: 0,
           })}
         >
-          <TipTop label="Local-first Docker & Kubernetes desktop">
+          <Tip label="Local-first Docker & Kubernetes desktop" placement="top">
             <button
               type="button"
               className={`dh-chip ${chipBtn}`}
@@ -209,7 +195,7 @@ export function StatusDock() {
               <LogoMark size={22} />
               <Text styles={style({ font: "title-sm" })}>Deckhand</Text>
             </button>
-          </TipTop>
+          </Tip>
           <RuntimeChip
             label="Docker"
             ok={dockerOk && !statusDown}
@@ -258,7 +244,7 @@ export function StatusDock() {
           })}
         >
           {latest ? (
-            <TipTop label="Open activity — recent engine events with detail">
+            <Tip label="Open activity — recent engine events with detail" placement="top">
               <button
                 type="button"
                 className={`dh-chip ${eventChipBtn}`}
@@ -349,14 +335,15 @@ export function StatusDock() {
                   </span>
                 </div>
               </button>
-            </TipTop>
+            </Tip>
           ) : (
-            <TipTop
+            <Tip
               label={
                 dockerOk
                   ? "Container start/stop and image activity will show here"
                   : "Connect Docker to stream engine activity here"
               }
+              placement="top"
             >
               <button
                 type="button"
@@ -374,7 +361,7 @@ export function StatusDock() {
                   {dockerOk ? "No activity" : "local-first"}
                 </Text>
               </button>
-            </TipTop>
+            </Tip>
           )}
         </div>
       </div>

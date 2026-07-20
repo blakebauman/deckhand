@@ -21,20 +21,16 @@ const toneMap: Record<
 /** Semantic status badge — Spectrum 2 `Badge` with list-safe shrink behavior. */
 export function StatusBadge({
   children,
-  tone,
-  variant,
+  tone = "default",
   fillStyle = "bold",
 }: {
   children?: ReactNode;
   tone?: Tone;
-  /** @deprecated use tone */
-  variant?: Tone;
   fillStyle?: "bold" | "outline" | "subtle";
 }) {
-  const resolved = tone ?? variant ?? "default";
   return (
     <Badge
-      variant={toneMap[resolved]}
+      variant={toneMap[tone]}
       size="S"
       fillStyle={fillStyle}
       overflowMode="truncate"

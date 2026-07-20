@@ -241,7 +241,7 @@ export function ContainersPage() {
                       )
                     }
                   >
-                    Stop ({selectedIds.length})
+                    {`Stop (${selectedIds.length})`}
                   </Button>
                 </Tip>
                 <Tip label="Force-remove selected containers">

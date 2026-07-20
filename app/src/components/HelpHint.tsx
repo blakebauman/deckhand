@@ -18,8 +18,6 @@ export function HelpHint({
   /** Optional popover title; omit for tip-only content. */
   title?: string;
   side?: "top" | "right" | "bottom" | "left";
-  /** @deprecated Unused — kept for call-site compatibility. */
-  className?: string;
 }) {
   return (
     <ContextualHelp variant="info" placement={placementMap[side]} size="XS">

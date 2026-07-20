@@ -53,8 +53,6 @@ export function ExecTerminal({
 }: {
   /** Base WebSocket URL; `shell` query is appended. */
   wsUrl: string;
-  /** @deprecated Unused — kept for call-site compatibility. */
-  className?: string;
   title?: string;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);

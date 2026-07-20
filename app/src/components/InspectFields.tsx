@@ -7,8 +7,6 @@ export function InspectFields({
   rows,
 }: {
   rows: { label: string; value?: ReactNode; copy?: string; mono?: boolean }[];
-  /** @deprecated Unused — kept for call-site compatibility. */
-  className?: string;
 }) {
   const visible = rows.filter((r) => r.value != null && r.value !== "");
   if (!visible.length) return null;
