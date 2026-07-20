@@ -1,11 +1,19 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { api } from "@/lib/api";
-import { ActionButton, Button } from "@react-spectrum/s2";
+import { api, type ComposeProject } from "@/lib/api";
+import {
+  ActionButton,
+  ActionMenu,
+  Button,
+  MenuItem,
+  MenuSection,
+  Text,
+} from "@react-spectrum/s2";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { HelpHint } from "@/components/HelpHint";
+import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
 import { Area, Field } from "@/components/spectrum/Field";
@@ -18,7 +26,12 @@ import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { lucideProps } from "@/components/Icon";
 
 import { copyText, composeProjectKey, composeStatusLabel } from "@/routes/shared";
-import type { ComposeProject } from "@/lib/api";
+
+function basename(path?: string) {
+  if (!path) return "";
+  const parts = path.replace(/\/+$/, "").split(/[/\\]/);
+  return parts[parts.length - 1] || path;
+}
 
 export function ProjectsPage() {
   const qc = useQueryClient();
@@ -37,6 +50,7 @@ export function ProjectsPage() {
   const [sheetTitle, setSheetTitle] = useState("Compose");
   const [deployOpen, setDeployOpen] = useState(false);
   const [deployBusy, setDeployBusy] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
 
   const engine = useQuery({
     queryKey: ["compose-projects"],
@@ -59,7 +73,6 @@ export function ProjectsPage() {
         byKey.set(key, p);
         return;
       }
-      // Engine status/path wins; keep any extra scan metadata.
       if (p.source === "engine" || existing.source !== "engine") {
         byKey.set(key, {
           ...existing,
@@ -72,7 +85,6 @@ export function ProjectsPage() {
 
     for (const p of scanned.data || []) upsert(p);
     for (const p of engine.data || []) {
-      // Match scanned rows that share a compose file path even if names differ.
       const pathMatch = [...byKey.values()].find((s) => s.path && p.path && s.path === p.path);
       if (pathMatch && composeProjectKey(pathMatch) !== composeProjectKey(p)) {
         byKey.delete(composeProjectKey(pathMatch));
@@ -160,61 +172,20 @@ export function ProjectsPage() {
     toast.success("Scan root added", { description: trimmed });
   };
 
-  const folderScan = (
-    <div className={style({ display: "flex", flexDirection: "column", gap: 12 })}>
-      <div className={style({ display: "flex", alignItems: "center", gap: 8, font: "body-xs", color: "neutral-subdued" })}>
-        Folder scan
-        <HelpHint label="Walk these roots for compose.yaml / docker-compose.yml (depth 3). Engine projects from docker compose ls always appear." />
-      </div>
-      <div className={style({ display: "flex", gap: 8 })}>
-        <Field
-          value={newRoot}
-          onChange={setNewRoot}
-          placeholder="/path/to/projects"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") addRoot();
-          }}
-        />
-        <Button variant="secondary" aria-label="Add scan root" onPress={addRoot}>
-          <FolderPlus {...lucideProps("S")} />
-        </Button>
-      </div>
-      {composeRoots.length > 0 ? (
-        <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
-          {composeRoots.map((root) => (
-            <div
-              key={root}
-              className={style({
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                paddingX: 8,
-                paddingY: 4,
-                borderRadius: "default",
-                backgroundColor: "gray-100",
-              })}
-            >
-              <span className={style({ font: "code-xs", maxWidth: 224, truncate: true })} title={root}>
-                {root}
-              </span>
-              <ActionButton
-                isQuiet
-                size="XS"
-                aria-label={`Remove ${root}`}
-                onPress={() => removeComposeRoot(root)}
-              >
-                ×
-              </ActionButton>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className={style({ font: "body-xs", color: "neutral-subdued" })}>
-          No scan roots yet. Engine Compose projects still list automatically.
-        </p>
-      )}
-    </div>
-  );
+  const serviceAction = (svcName: string, action: "start" | "stop" | "restart") => {
+    if (!selected) return;
+    const label = `${action[0].toUpperCase()}${action.slice(1)} ${svcName}`;
+    void run(
+      label,
+      () =>
+        api.composeServiceAction({
+          ...bodyFor(selected),
+          action,
+          services: [svcName],
+        }),
+      selected.name,
+    );
+  };
 
   return (
     <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
@@ -236,17 +207,22 @@ export function ProjectsPage() {
           ) : (
             <ListEmpty
               title="No Compose projects yet"
-              description="Engine projects appear automatically. Add a folder to scan for compose files."
+              description="Engine projects appear automatically. Add a folder to scan, or deploy YAML."
               action={
-                <Button size="S" onPress={() => setDeployOpen(true)}>
-                  Deploy YAML
-                </Button>
+                <div className={style({ display: "flex", gap: 8 })}>
+                  <Button size="S" variant="secondary" onPress={() => setScanOpen(true)}>
+                    Scan folders
+                  </Button>
+                  <Button size="S" onPress={() => setDeployOpen(true)}>
+                    Deploy
+                  </Button>
+                </div>
               }
             />
           )
         }
         actions={
-          <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
+          <div className={style({ display: "flex", alignItems: "center", gap: 8 })} data-no-drag>
             <Tip label="Refresh engine projects">
               <ActionButton
                 isQuiet
@@ -258,6 +234,11 @@ export function ProjectsPage() {
               >
                 <RefreshCw {...lucideProps("S")} />
               </ActionButton>
+            </Tip>
+            <Tip label="Add folders to discover compose files">
+              <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setScanOpen(true)}>
+                Scan
+              </Button>
             </Tip>
             <Tip label="Deploy from YAML or path">
               <Button size="S" onPress={() => setDeployOpen(true)}>
@@ -278,9 +259,19 @@ export function ProjectsPage() {
               items={[
                 { id: "open", label: "Open", onAction: () => setSelectedKey(key) },
                 ...(p.path || p.configFiles?.length
-                  ? [{ id: "deploy", label: "Deploy", onAction: () => void run("Deploy", () => api.composeUp(bodyFor(p)), p.name) }]
+                  ? [
+                      {
+                        id: "deploy",
+                        label: "Deploy",
+                        onAction: () => void run("Deploy", () => api.composeUp(bodyFor(p)), p.name),
+                      },
+                    ]
                   : []),
-                { id: "down", label: "Down", onAction: () => void run("Down", () => api.composeDown(bodyFor(p)), p.name) },
+                {
+                  id: "down",
+                  label: "Down",
+                  onAction: () => void run("Down", () => api.composeDown(bodyFor(p)), p.name),
+                },
                 {
                   id: "restart",
                   label: "Restart",
@@ -288,7 +279,9 @@ export function ProjectsPage() {
                 },
                 { id: "sep-1", label: "", onAction: () => {} },
                 { id: "copy-name", label: "Copy name", onAction: () => void copyText(p.name) },
-                ...(p.path ? [{ id: "copy-path", label: "Copy path", onAction: () => void copyText(p.path!) }] : []),
+                ...(p.path
+                  ? [{ id: "copy-path", label: "Copy path", onAction: () => void copyText(p.path!) }]
+                  : []),
               ]}
               suffix={<StatusBadge tone={p.running ? "success" : "muted"}>{label}</StatusBadge>}
             >
@@ -299,47 +292,67 @@ export function ProjectsPage() {
                 className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}
                 title={p.path || "no compose file"}
               >
-                {p.path || "no compose file"}
+                {p.path ? basename(p.path) : "no compose file"}
+                {p.source === "scan" ? " · scan" : ""}
               </div>
             </RowMenu>
           );
         })}
       </ListPane>
 
-      <div className={style({ display: "flex", flexDirection: "column", flexGrow: 1, minWidth: 0, minHeight: 0 })}>
-        <DetailPane
-          selectionKey={selectedKey}
-          empty={
-            <DetailEmpty
-              title="Select a Compose project"
-              description="Or deploy from YAML / a file path. Folder scan stays available below."
-              action={
-                <Button size="S" onPress={() => setDeployOpen(true)}>
-                  Deploy YAML
+      <DetailPane
+        selectionKey={selectedKey}
+        empty={
+          <DetailEmpty
+            title="Select a Compose project"
+            description="Deploy YAML, scan folders for compose files, or pick a project from the list."
+            action={
+              <div className={style({ display: "flex", gap: 8 })}>
+                <Button size="S" variant="secondary" onPress={() => setScanOpen(true)}>
+                  Scan folders
                 </Button>
-              }
-            />
-          }
-          header={
-            selected ? (
-              <div className={style({ display: "flex", flexDirection: "column", gap: 12 })}>
-                <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0 })}>
+                <Button size="S" onPress={() => setDeployOpen(true)}>
+                  Deploy
+                </Button>
+              </div>
+            }
+          />
+        }
+      >
+        {selected ? (
+          <div className={style({ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 8 })}>
+            <div
+              className={style({
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 16,
+                minWidth: 0,
+              })}
+            >
+              <div className={style({ minWidth: 0, flexGrow: 1, display: "flex", flexDirection: "column", gap: 4 })}>
+                <div className={style({ display: "flex", alignItems: "center", gap: 8, minWidth: 0 })}>
                   <DetailHeading>{selected.name}</DetailHeading>
                   <StatusBadge tone={selected.running ? "success" : "muted"}>
-                    {selected.running ? selected.status || "running" : composeStatusLabel(selected)}
+                    {composeStatusLabel(selected)}
                   </StatusBadge>
-                  {selected.source === "scan" ? <StatusBadge tone="muted">folder scan</StatusBadge> : null}
+                  {selected.source === "scan" ? <StatusBadge tone="muted">scan</StatusBadge> : null}
                   <CopyButton value={selected.name} label="Copy name" iconOnly />
                 </div>
-                <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
-                  {selected.path ? (
-                    <Button
-                      size="S"
-                      onPress={() => void run("Deploy", () => api.composeUp(bodyFor(selected)), selected.name)}
-                    >
-                      Deploy
-                    </Button>
-                  ) : null}
+                <div
+                  className={style({
+                    font: "code-xs",
+                    color: "neutral-subdued",
+                    truncate: true,
+                    minWidth: 0,
+                  })}
+                  title={selected.path || undefined}
+                >
+                  {selected.path || "No compose file path — Down / Restart still work by project name"}
+                </div>
+              </div>
+              <div className={style({ display: "flex", flexShrink: 0, alignItems: "center", gap: 8 })}>
+                {selected.running ? (
                   <Button
                     size="S"
                     variant="secondary"
@@ -347,166 +360,255 @@ export function ProjectsPage() {
                   >
                     Down
                   </Button>
-                  <Button
-                    size="S"
-                    variant="secondary"
-                    fillStyle="outline"
-                    onPress={() => void run("Restart", () => api.composeRestart(bodyFor(selected)), selected.name)}
-                  >
-                    Restart
-                  </Button>
-                  <Button
-                    size="S"
-                    variant="secondary"
-                    fillStyle="outline"
-                    onPress={() => void run("PS", () => api.composePs(bodyFor(selected)), selected.name)}
-                  >
-                    PS
-                  </Button>
-                </div>
-              </div>
-            ) : null
-          }
-        >
-          {selected ? (
-            <div className={style({ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 8 })}>
-              {selected.path ? (
-                <div className={style({ backgroundColor: "layer-2", borderRadius: "xl", paddingX: 16, paddingY: 12 })}>
-                  <div className={style({ font: "body-xs", color: "neutral-subdued", marginBottom: 4 })}>
-                    Compose file
-                  </div>
-                  <div className={style({ display: "flex", alignItems: "start", gap: 8 })}>
-                    <code className={style({ font: "code-xs", flexGrow: 1, minWidth: 0, truncate: true })}>
-                      {selected.path}
-                    </code>
-                    <CopyButton value={selected.path} label="Copy path" iconOnly />
-                  </div>
-                </div>
-              ) : (
-                <p className={style({ font: "body-sm", color: "neutral-subdued" })}>
-                  No compose file on disk for this engine project (stale config paths were dropped).
-                  Down / Restart still work by project name.
-                </p>
-              )}
-              {(selected.configFiles?.length || 0) > 1 ? (
-                <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                  <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
-                    Config files
-                  </div>
-                  {selected.configFiles!.map((f) => (
-                    <div key={f} className={style({ color: "neutral-subdued", font: "body-xs" })}>
-                      {f}
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
-              <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Services</div>
-                {services.isLoading ? (
-                  <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0 })}>Loading…</p>
-                ) : services.isError ? (
-                  <p className={style({ font: "body-xs", color: "negative", margin: 0 })}>
-                    {(services.error as Error)?.message || "Could not load services"}
-                  </p>
-                ) : (services.data || []).length === 0 ? (
-                  <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0 })}>
-                    No services reported for this project.
-                  </p>
                 ) : (
-                  (services.data || []).map((svc) => (
-                    <div
-                      key={svc.name}
-                      className={style({
-                        display: "flex",
-                        flexWrap: "wrap",
-                        alignItems: "center",
-                        gap: 8,
-                        backgroundColor: "layer-2",
-                        borderRadius: "xl",
-                        paddingX: 12,
-                        paddingY: 12,
-                      })}
-                    >
-                      <div className={style({ flexGrow: 1, minWidth: 0 })}>
-                        <div className={style({ font: "body", fontWeight: "medium", truncate: true })}>
-                          {svc.name}
-                        </div>
-                        <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}>
-                          {svc.image || svc.status || svc.state || "—"}
-                        </div>
-                      </div>
-                      {svc.state || svc.status ? (
-                        <StatusBadge tone={(svc.state || svc.status || "").includes("running") ? "success" : "muted"}>
-                          {svc.state || svc.status}
-                        </StatusBadge>
-                      ) : null}
-                      <Button
-                        size="S"
-                        variant="secondary"
-                        onPress={() =>
-                          void run(
-                            `Start ${svc.name}`,
-                            () =>
-                              api.composeServiceAction({
-                                ...bodyFor(selected),
-                                action: "start",
-                                services: [svc.name],
-                              }),
-                            selected.name,
-                          )
-                        }
-                      >
-                        Start
-                      </Button>
-                      <Button
-                        size="S"
-                        variant="secondary"
-                        fillStyle="outline"
-                        onPress={() =>
-                          void run(
-                            `Stop ${svc.name}`,
-                            () =>
-                              api.composeServiceAction({
-                                ...bodyFor(selected),
-                                action: "stop",
-                                services: [svc.name],
-                              }),
-                            selected.name,
-                          )
-                        }
-                      >
-                        Stop
-                      </Button>
-                      <Button
-                        size="S"
-                        variant="secondary"
-                        fillStyle="outline"
-                        onPress={() =>
-                          void run(
-                            `Restart ${svc.name}`,
-                            () =>
-                              api.composeServiceAction({
-                                ...bodyFor(selected),
-                                action: "restart",
-                                services: [svc.name],
-                              }),
-                            selected.name,
-                          )
-                        }
-                      >
-                        Restart
-                      </Button>
-                    </div>
-                  ))
+                  <Button
+                    size="S"
+                    variant="accent"
+                    isDisabled={!selected.path && !(selected.configFiles?.length)}
+                    onPress={() => void run("Deploy", () => api.composeUp(bodyFor(selected)), selected.name)}
+                  >
+                    Deploy
+                  </Button>
                 )}
+                <ActionMenu aria-label="More project actions" isQuiet align="end" size="S">
+                  <MenuSection>
+                    {!selected.running && (selected.path || selected.configFiles?.length) ? (
+                      <MenuItem
+                        id="deploy"
+                        textValue="Deploy"
+                        onAction={() =>
+                          void run("Deploy", () => api.composeUp(bodyFor(selected)), selected.name)
+                        }
+                      >
+                        <Text slot="label">Deploy</Text>
+                      </MenuItem>
+                    ) : null}
+                    {selected.running ? (
+                      <MenuItem
+                        id="down"
+                        textValue="Down"
+                        onAction={() =>
+                          void run("Down", () => api.composeDown(bodyFor(selected)), selected.name)
+                        }
+                      >
+                        <Text slot="label">Down</Text>
+                      </MenuItem>
+                    ) : null}
+                    <MenuItem
+                      id="restart"
+                      textValue="Restart"
+                      onAction={() =>
+                        void run("Restart", () => api.composeRestart(bodyFor(selected)), selected.name)
+                      }
+                    >
+                      <Text slot="label">Restart</Text>
+                    </MenuItem>
+                    <MenuItem
+                      id="ps"
+                      textValue="PS"
+                      onAction={() => void run("PS", () => api.composePs(bodyFor(selected)), selected.name)}
+                    >
+                      <Text slot="label">PS</Text>
+                    </MenuItem>
+                  </MenuSection>
+                  {selected.path ? (
+                    <MenuSection>
+                      <MenuItem
+                        id="copy-path"
+                        textValue="Copy path"
+                        onAction={() => void copyText(selected.path!)}
+                      >
+                        <Text slot="label">Copy path</Text>
+                      </MenuItem>
+                    </MenuSection>
+                  ) : null}
+                </ActionMenu>
               </div>
             </div>
-          ) : null}
-        </DetailPane>
 
-        <div className={style({ flexShrink: 0, paddingX: 4, paddingY: 16, marginTop: 8 })}>{folderScan}</div>
-      </div>
+            <InspectFields
+              rows={[
+                {
+                  label: "Compose file",
+                  value: selected.path,
+                  mono: true,
+                  copy: selected.path,
+                },
+                {
+                  label: "Config files",
+                  value:
+                    (selected.configFiles?.length || 0) > 1
+                      ? selected.configFiles!.join(", ")
+                      : undefined,
+                  mono: true,
+                },
+                {
+                  label: "Status",
+                  value: selected.status || composeStatusLabel(selected),
+                },
+                {
+                  label: "Source",
+                  value: selected.source === "scan" ? "folder scan" : "engine",
+                },
+              ]}
+            />
+
+            <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
+              <div
+                className={style({
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                  gap: 8,
+                })}
+              >
+                <div className={style({ font: "title-sm" })}>Services</div>
+                <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                  {services.isLoading ? "Loading…" : `${(services.data || []).length}`}
+                </div>
+              </div>
+              {services.isError ? (
+                <p className={style({ font: "body-sm", color: "negative", margin: 0 })}>
+                  {(services.error as Error)?.message || "Could not load services"}
+                </p>
+              ) : (services.data || []).length === 0 && !services.isLoading ? (
+                <p className={style({ font: "body-sm", color: "neutral-subdued", margin: 0 })}>
+                  No services reported for this project.
+                </p>
+              ) : (
+                <div className={style({ display: "flex", flexDirection: "column", gap: 4 })}>
+                  {(services.data || []).map((svc) => {
+                    const running = (svc.state || svc.status || "").includes("running");
+                    return (
+                      <div
+                        key={svc.name}
+                        className={style({
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          paddingX: 12,
+                          paddingY: 8,
+                          borderRadius: "lg",
+                          backgroundColor: "gray-100",
+                          minWidth: 0,
+                        })}
+                      >
+                        <div className={style({ flexGrow: 1, minWidth: 0 })}>
+                          <div className={style({ font: "body", fontWeight: "medium", truncate: true })}>
+                            {svc.name}
+                          </div>
+                          <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}>
+                            {svc.image || "—"}
+                          </div>
+                        </div>
+                        {svc.state || svc.status ? (
+                          <StatusBadge tone={running ? "success" : "muted"}>
+                            {svc.state || svc.status}
+                          </StatusBadge>
+                        ) : null}
+                        <ActionMenu aria-label={`Actions for ${svc.name}`} isQuiet align="end" size="S">
+                          <MenuSection>
+                            <MenuItem
+                              id="start"
+                              textValue="Start"
+                              isDisabled={running}
+                              onAction={() => serviceAction(svc.name, "start")}
+                            >
+                              <Text slot="label">Start</Text>
+                            </MenuItem>
+                            <MenuItem
+                              id="stop"
+                              textValue="Stop"
+                              isDisabled={!running}
+                              onAction={() => serviceAction(svc.name, "stop")}
+                            >
+                              <Text slot="label">Stop</Text>
+                            </MenuItem>
+                            <MenuItem
+                              id="restart"
+                              textValue="Restart"
+                              onAction={() => serviceAction(svc.name, "restart")}
+                            >
+                              <Text slot="label">Restart</Text>
+                            </MenuItem>
+                          </MenuSection>
+                        </ActionMenu>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </DetailPane>
+
+      <GlassSheet
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        title="Folder scan"
+        description="Walk these roots for compose.yaml / docker-compose.yml (depth 3). Engine projects always appear."
+        size="md"
+        footer={
+          <Button variant="secondary" onPress={() => setScanOpen(false)}>
+            Done
+          </Button>
+        }
+      >
+        <div className={style({ display: "flex", flexDirection: "column", gap: 12 })}>
+          <div className={style({ display: "flex", alignItems: "center", gap: 8, font: "body-xs", color: "neutral-subdued" })}>
+            Scan roots
+            <HelpHint label="Engine projects from docker compose ls always appear, even without scan roots." />
+          </div>
+          <div className={style({ display: "flex", gap: 8 })}>
+            <Field
+              value={newRoot}
+              onChange={setNewRoot}
+              placeholder="/path/to/projects"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") addRoot();
+              }}
+            />
+            <Button variant="secondary" aria-label="Add scan root" onPress={addRoot}>
+              <FolderPlus {...lucideProps("S")} />
+            </Button>
+          </div>
+          {composeRoots.length > 0 ? (
+            <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
+              {composeRoots.map((root) => (
+                <div
+                  key={root}
+                  className={style({
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    paddingX: 8,
+                    paddingY: 4,
+                    borderRadius: "default",
+                    backgroundColor: "gray-100",
+                  })}
+                >
+                  <span className={style({ font: "code-xs", maxWidth: 280, truncate: true })} title={root}>
+                    {root}
+                  </span>
+                  <ActionButton
+                    isQuiet
+                    size="XS"
+                    aria-label={`Remove ${root}`}
+                    onPress={() => removeComposeRoot(root)}
+                  >
+                    ×
+                  </ActionButton>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className={style({ font: "body-sm", color: "neutral-subdued", margin: 0 })}>
+              No scan roots yet. Engine Compose projects still list automatically.
+            </p>
+          )}
+        </div>
+      </GlassSheet>
 
       <GlassSheet
         open={deployOpen}
@@ -515,11 +617,18 @@ export function ProjectsPage() {
         description="From a file path or pasted YAML"
         footer={
           <>
-            <Button variant="secondary" fillStyle="outline" onPress={() => setDeployOpen(false)} isDisabled={deployBusy}>
+            <Button
+              variant="secondary"
+              fillStyle="outline"
+              onPress={() => setDeployOpen(false)}
+              isDisabled={deployBusy}
+            >
               Cancel
             </Button>
             <Button
+              variant="accent"
               isDisabled={deployBusy}
+              isPending={deployBusy}
               onPress={async () => {
                 const body = bodyFor(null, { path, yaml, projectName });
                 setDeployBusy(true);
@@ -528,7 +637,7 @@ export function ProjectsPage() {
                 if (ok) setDeployOpen(false);
               }}
             >
-              {deployBusy ? "Deploying…" : "Deploy"}
+              Deploy
             </Button>
           </>
         }
