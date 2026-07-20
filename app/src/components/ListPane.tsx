@@ -287,7 +287,7 @@ export function ListPaneScroll({
           display: "flex",
           flexDirection: "column",
           gap: 4,
-          paddingBottom: 32,
+          paddingBottom: 40,
         })}
       >
         {loading ? (

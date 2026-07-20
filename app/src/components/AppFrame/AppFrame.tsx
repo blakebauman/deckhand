@@ -4,10 +4,11 @@ import { TitleBarDragRegion } from "@/components/TitleBarDragRegion";
 import { isTauriShell } from "@/lib/platform";
 
 /**
- * Reserved space for the fixed status dock (bar + hairline + breathing room).
+ * Reserved space under live content so scrollports end above the fixed dock
+ * with a visible breathing gap (dock itself stays content-height).
  * Applied as inline padding-bottom — Spectrum style() can drop arbitrary clearance.
  */
-export const STATUS_DOCK_CLEARANCE = 64;
+export const STATUS_DOCK_CLEARANCE = 96;
 
 const frameBase = style({
   display: "flex",

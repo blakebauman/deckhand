@@ -60,7 +60,7 @@ function RootLayout() {
               display: "flex",
               flexDirection: "column",
               paddingTop: 16,
-              paddingBottom: 32,
+              paddingBottom: 40,
               paddingX: 40,
               overflowX: "hidden",
               overflowY: "auto",

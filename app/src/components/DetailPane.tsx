@@ -160,7 +160,7 @@ export function DetailPane({
               flexGrow: 1,
               overflowY: "auto",
               overflowX: "hidden",
-              paddingBottom: 32,
+              paddingBottom: 40,
               paddingEnd: 4,
             })}
           >
