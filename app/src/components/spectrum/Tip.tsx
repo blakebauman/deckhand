@@ -1,7 +1,10 @@
-import type { CSSProperties, ReactElement } from "react";
+import type { ReactElement } from "react";
 import { Tooltip, TooltipTrigger } from "@react-spectrum/s2";
 
-/** Spectrum tooltip for a single focusable child (button, link, etc.). */
+/**
+ * Spectrum tooltip for a single focusable child (button, link, etc.).
+ * No wrapper span — extra inline-flex shells skew alignment next to icon buttons.
+ */
 export function Tip({
   label,
   children,
@@ -14,11 +17,9 @@ export function Tip({
   delayDuration?: number;
 }) {
   return (
-    <span style={{ display: "inline-flex", flexShrink: 0 } as CSSProperties}>
-      <TooltipTrigger delay={400}>
-        {children}
-        <Tooltip>{label}</Tooltip>
-      </TooltipTrigger>
-    </span>
+    <TooltipTrigger delay={400}>
+      {children}
+      <Tooltip>{label}</Tooltip>
+    </TooltipTrigger>
   );
 }

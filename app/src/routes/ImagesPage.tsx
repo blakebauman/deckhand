@@ -6,7 +6,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
-import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
+import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
 import { Field } from "@/components/spectrum/Field";
 import { RowMenu } from "@/components/spectrum/RowMenu";
@@ -99,7 +99,7 @@ export function ImagesPage() {
   };
 
   return (
-    <div className={style({ display: "flex", height: "full", minHeight: 0, gap: 24 })}>
+    <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
       <ListPane
         title="Images"
         loading={list.isLoading}
@@ -121,6 +121,8 @@ export function ImagesPage() {
         {filtered.map((img) => (
           <RowMenu
             key={img.Id}
+            active={selected === img.Id}
+            onSelect={() => setSelected(img.Id)}
             items={[
               { id: "open", label: "Open", onAction: () => setSelected(img.Id) },
               ...(img.RepoTags?.[0]
@@ -142,14 +144,12 @@ export function ImagesPage() {
               },
             ]}
           >
-            <ListItem active={selected === img.Id} onClick={() => setSelected(img.Id)}>
-              <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
-                {img.RepoTags?.[0] || shortId(img.Id)}
-              </div>
-              <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, marginTop: 2, minWidth: 0 })}>
-                {formatBytes(img.Size)}
-              </div>
-            </ListItem>
+            <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+              {img.RepoTags?.[0] || shortId(img.Id)}
+            </div>
+            <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+              {formatBytes(img.Size)}
+            </div>
           </RowMenu>
         ))}
       </ListPane>

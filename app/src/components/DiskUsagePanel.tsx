@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, ProgressBar, Switch, Text } from "@react-spectrum/s2";
+import { Button, Checkbox, ProgressBar, ProgressCircle, Text } from "@react-spectrum/s2";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api, type SystemPruneBody } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -64,7 +64,14 @@ const defaultSelected: SystemPruneBody = {
   buildCache: true,
 };
 
-export function DiskUsagePanel({ compact }: { compact?: boolean }) {
+export function DiskUsagePanel({
+  compact,
+  /** When true, omit the built-in title (parent card already labels it). */
+  hideTitle,
+}: {
+  compact?: boolean;
+  hideTitle?: boolean;
+}) {
   const qc = useQueryClient();
   const confirmPrune = useUIStore((s) => s.confirmPrune);
   const df = useQuery({ queryKey: ["system-df"], queryFn: api.systemDf, refetchInterval: 20000 });
@@ -81,6 +88,8 @@ export function DiskUsagePanel({ compact }: { compact?: boolean }) {
     data?.buildCacheSize || 0,
     1,
   );
+  const reclaimable = data?.reclaimable || 0;
+  const selectedCount = rows.filter((r) => selected[r.pruneKey]).length + (selected.networks ? 1 : 0);
 
   const runPrune = async () => {
     setPruning(true);
@@ -121,14 +130,45 @@ export function DiskUsagePanel({ compact }: { compact?: boolean }) {
   };
 
   if (df.isLoading && !data) {
-    return <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>Measuring disk usage…</Text>;
+    return (
+      <div
+        className={style({
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
+          flexGrow: 1,
+          textAlign: "center",
+        })}
+        style={{ minHeight: compact ? 200 : 160 }}
+      >
+        <ProgressCircle aria-label="Measuring disk usage" isIndeterminate size="S" />
+        <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>Measuring disk usage…</Text>
+      </div>
+    );
   }
 
   if (df.isError) {
     return (
-      <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
-        Disk usage unavailable — is Docker running?
-      </Text>
+      <div
+        className={style({
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          flexGrow: 1,
+          textAlign: "center",
+          paddingX: 16,
+        })}
+        style={{ minHeight: compact ? 200 : 160 }}
+      >
+        <Text styles={style({ font: "title-sm" })}>Disk usage unavailable</Text>
+        <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
+          Is the Docker engine running?
+        </Text>
+      </div>
     );
   }
 
@@ -140,11 +180,15 @@ export function DiskUsagePanel({ compact }: { compact?: boolean }) {
               display: "flex",
               flexDirection: "column",
               gap: 12,
+              flexGrow: 1,
+              minHeight: 0,
             })
           : style({
               display: "flex",
               flexDirection: "column",
               gap: 16,
+              flexGrow: 1,
+              minHeight: 0,
             })
       }
     >
@@ -152,46 +196,75 @@ export function DiskUsagePanel({ compact }: { compact?: boolean }) {
         className={style({
           display: "flex",
           flexWrap: "wrap",
-          alignItems: "end",
+          alignItems: "start",
           justifyContent: "space-between",
-          gap: 8,
+          gap: 12,
+          flexShrink: 0,
         })}
       >
-        <div>
-          <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
-            <Text
-              styles={style({
-                font: "detail",
-                fontWeight: "medium",
-                color: "neutral-subdued",
-              })}
-            >
-              Engine disk
-            </Text>
-            <HelpHint label="From docker system df — reclaimable is unused layers, stopped containers, and idle cache" />
-          </div>
-          <div className={style({ marginTop: 4, display: "flex", alignItems: "baseline", gap: 8 })}>
+        <div className={style({ minWidth: 0 })}>
+          {!hideTitle ? (
+            <div className={style({ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 })}>
+              <Text
+                styles={style({
+                  font: "detail",
+                  fontWeight: "medium",
+                  color: "neutral-subdued",
+                })}
+              >
+                Engine disk
+              </Text>
+              <HelpHint label="From docker system df — reclaimable is unused layers, stopped containers, and idle cache" />
+            </div>
+          ) : null}
+          <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 8 })}>
             <Text styles={style({ font: "heading-lg", fontWeight: "bold" })}>
-              {formatBytes(data?.reclaimable || 0)}
+              {formatBytes(reclaimable)}
             </Text>
             <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>reclaimable</Text>
           </div>
         </div>
         {!compact ? (
-          <Button variant="secondary" size="S" onPress={requestPrune} isDisabled={pruning} isPending={pruning}>
+          <Button
+            variant="secondary"
+            fillStyle="outline"
+            size="S"
+            onPress={requestPrune}
+            isDisabled={pruning || selectedCount === 0}
+            isPending={pruning}
+          >
             Prune selected…
           </Button>
         ) : null}
       </div>
 
-      <div className={style({ display: "flex", flexDirection: "column", gap: 12 })}>
+      <div
+        className={
+          compact
+            ? style({
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                flexGrow: 1,
+                minHeight: 0,
+              })
+            : style({
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                flexGrow: 1,
+                minHeight: 0,
+              })
+        }
+      >
         {rows.map((row) => {
           const size = data?.[row.key] || 0;
+          const active = data?.[row.active] ?? 0;
+          const total = data?.[row.total] ?? 0;
           return (
-            <div key={row.key}>
+            <div key={row.key} className={style({ display: "flex", flexDirection: "column", gap: 4 })}>
               <div
                 className={style({
-                  marginBottom: 4,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
@@ -199,17 +272,28 @@ export function DiskUsagePanel({ compact }: { compact?: boolean }) {
                 })}
               >
                 <div className={style({ display: "flex", alignItems: "center", gap: 8, minWidth: 0 })}>
-                  <Switch
+                  <Checkbox
                     isSelected={!!selected[row.pruneKey]}
                     onChange={(next) => setSelected((s) => ({ ...s, [row.pruneKey]: next }))}
                   >
                     {row.label}
-                  </Switch>
+                  </Checkbox>
                   <HelpHint label={row.tip} />
                 </div>
-                <Text styles={style({ font: "body-xs", color: "neutral-subdued", flexShrink: 0 })}>
-                  {formatBytes(size)} · {data?.[row.active] ?? 0}/{data?.[row.total] ?? 0} in use
-                </Text>
+                <div
+                  className={style({
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "end",
+                    flexShrink: 0,
+                    gap: 2,
+                  })}
+                >
+                  <Text styles={style({ font: "ui-sm", fontWeight: "medium" })}>{formatBytes(size)}</Text>
+                  <Text styles={style({ font: "detail-sm", color: "neutral-subdued" })}>
+                    {active}/{total} in use
+                  </Text>
+                </div>
               </div>
               <ProgressBar aria-label={`${row.label} size`} value={size} maxValue={max} size="S" />
             </div>
@@ -217,18 +301,39 @@ export function DiskUsagePanel({ compact }: { compact?: boolean }) {
         })}
       </div>
 
-      <Switch
-        isSelected={selected.networks}
-        onChange={(networks) => setSelected((s) => ({ ...s, networks }))}
+      <div
+        className={style({
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          flexShrink: 0,
+        })}
       >
-        Also prune unused networks
-      </Switch>
-
-      {compact ? (
-        <Button variant="secondary" size="S" onPress={requestPrune} isDisabled={pruning} isPending={pruning}>
-          Prune selected…
-        </Button>
-      ) : null}
+        <Checkbox
+          isSelected={selected.networks}
+          onChange={(networks) => setSelected((s) => ({ ...s, networks }))}
+        >
+          Unused networks
+        </Checkbox>
+        {compact ? (
+          <Button
+            variant="secondary"
+            fillStyle="outline"
+            size="S"
+            onPress={requestPrune}
+            isDisabled={pruning || selectedCount === 0}
+            isPending={pruning}
+          >
+            Prune…
+          </Button>
+        ) : (
+          <Text styles={style({ font: "detail-sm", color: "neutral-subdued" })}>
+            {selectedCount} selected
+          </Text>
+        )}
+      </div>
 
       {result ? (
         <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>{result}</Text>

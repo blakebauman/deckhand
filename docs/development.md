@@ -24,6 +24,8 @@ bun install
 bun run dev          # build sidecar + Tauri + Vite
 ```
 
+`tauri:dev` starts Vite via `scripts/tauri-frontend-dev.sh`, which always uses this repo’s `tauri/` tree (never a sibling copy), checks that `app/` is the Spectrum 2 UI, and refuses to bind `:1420` if another project already owns it. The desktop shell prefers sidecar `127.0.0.1:7420` and falls back to an ephemeral port only if that bind fails.
+
 ### Split processes
 
 Useful when iterating on the UI or sidecar alone:
@@ -32,7 +34,7 @@ Useful when iterating on the UI or sidecar alone:
 bun run build:sidecar
 ./tauri/src-tauri/binaries/deckhand-sidecar --addr 127.0.0.1:7420
 
-# separate terminal
+# separate terminal (stop any Tauri Vite on :1420 first)
 VITE_SIDECAR_URL=http://127.0.0.1:7420 bun run dev:ui
 ```
 

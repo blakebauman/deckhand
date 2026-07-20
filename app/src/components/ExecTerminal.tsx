@@ -5,13 +5,46 @@ import "@xterm/xterm/css/xterm.css";
 import {
   ActionButton,
   StatusLight,
-  Text,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
+  TooltipTrigger,
 } from "@react-spectrum/s2";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { RefreshCw } from "lucide-react";
+import { lucideProps } from "@/components/Icon";
+import {
+  TerminalFrame,
+  TerminalToolbarEnd,
+  TerminalToolbarStart,
+} from "@/components/TerminalChrome";
 
 type Shell = "sh" | "bash" | "ash";
+
+const TERM_THEME = {
+  background: "#1B1B1B",
+  foreground: "#E8E8E8",
+  cursor: "#E8E8E8",
+  cursorAccent: "#1B1B1B",
+  selectionBackground: "rgba(20, 115, 230, 0.35)",
+  selectionInactiveBackground: "rgba(110, 110, 110, 0.35)",
+  black: "#1B1B1B",
+  red: "#F15B50",
+  green: "#49B87A",
+  yellow: "#E8C47C",
+  blue: "#5AA6F0",
+  magenta: "#C98BE8",
+  cyan: "#5EC4C4",
+  white: "#E8E8E8",
+  brightBlack: "#6E6E6E",
+  brightRed: "#FF7B72",
+  brightGreen: "#6DD49A",
+  brightYellow: "#F0D78C",
+  brightBlue: "#79BBF5",
+  brightMagenta: "#D4A0E8",
+  brightCyan: "#7ED4D4",
+  brightWhite: "#FFFFFF",
+} as const;
 
 /** Interactive TTY over WebSocket (xterm.js). */
 export function ExecTerminal({
@@ -38,14 +71,13 @@ export function ExecTerminal({
 
     const term = new Terminal({
       cursorBlink: true,
-      fontSize: 12,
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
-      theme: {
-        background: "#0a0a0a",
-        foreground: "#e8e8e8",
-        cursor: "#e8e8e8",
-        selectionBackground: "rgba(110, 110, 110, 0.45)",
-      },
+      cursorStyle: "bar",
+      fontSize: 13,
+      lineHeight: 1.4,
+      fontFamily:
+        '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+      theme: TERM_THEME,
+      scrollback: 8000,
       allowProposedApi: true,
     });
     const fit = new FitAddon();
@@ -58,7 +90,7 @@ export function ExecTerminal({
     const url = new URL(wsUrl);
     url.searchParams.set("shell", shell);
     setStatus("connecting");
-    term.writeln(`\x1b[90mconnecting (${shell})…\x1b[0m`);
+    term.writeln(`\x1b[90mconnecting · ${shell}\x1b[0m`);
 
     const ws = new WebSocket(url.toString());
     ws.binaryType = "arraybuffer";
@@ -92,7 +124,7 @@ export function ExecTerminal({
 
     ws.onclose = () => {
       setStatus("closed");
-      term.writeln("\r\n\x1b[90mdisconnected — reconnect to open a new shell\x1b[0m");
+      term.writeln("\r\n\x1b[90mdisconnected — reconnect for a new shell\x1b[0m");
     };
 
     const onData = term.onData((data) => {
@@ -123,90 +155,70 @@ export function ExecTerminal({
 
   const statusVariant =
     status === "open" ? "positive" : status === "connecting" ? "notice" : "neutral";
+  const statusLabel =
+    status === "open" ? "Connected" : status === "connecting" ? "Connecting…" : "Disconnected";
 
   return (
-    <div
-      className={style({
-        display: "flex",
-        flexDirection: "column",
-        minHeight: 0,
-        overflow: "hidden",
-        borderRadius: "xl",
-        borderWidth: 1,
-        borderStyle: "solid",
-        borderColor: "gray-300",
-        backgroundColor: "black",
-      })}
+    <TerminalFrame
+      tall
+      toolbar={
+        <>
+          <TerminalToolbarStart>
+            <StatusLight size="S" variant={statusVariant} aria-label={statusLabel} />
+            <div className={style({ display: "flex", flexDirection: "column", minWidth: 0, gap: 2 })}>
+              <span className={["dh-terminal__title", style({ font: "ui-sm", fontWeight: "medium" })].join(" ")}>
+                {title}
+              </span>
+              <span className={["dh-terminal__meta", style({ font: "detail-sm" })].join(" ")}>
+                {statusLabel} · {shell}
+              </span>
+            </div>
+          </TerminalToolbarStart>
+          <TerminalToolbarEnd>
+            <ToggleButtonGroup
+              aria-label="Shell"
+              selectionMode="single"
+              selectedKeys={[shell]}
+              onSelectionChange={(keys) => {
+                const next = [...keys][0] as Shell | undefined;
+                if (next) setShell(next);
+              }}
+              density="compact"
+              size="S"
+              staticColor="white"
+              isQuiet
+            >
+              <ToggleButton id="sh" aria-label="Shell: /bin/sh">
+                sh
+              </ToggleButton>
+              <ToggleButton id="bash" aria-label="Shell: /bin/bash">
+                bash
+              </ToggleButton>
+              <ToggleButton id="ash" aria-label="Shell: /bin/ash">
+                ash
+              </ToggleButton>
+            </ToggleButtonGroup>
+            <TooltipTrigger placement="bottom">
+              <ActionButton
+                aria-label="Reconnect shell"
+                isQuiet
+                staticColor="white"
+                size="S"
+                onPress={() => setNonce((n) => n + 1)}
+              >
+                <RefreshCw {...lucideProps("S")} />
+              </ActionButton>
+              <Tooltip>Reconnect</Tooltip>
+            </TooltipTrigger>
+          </TerminalToolbarEnd>
+        </>
+      }
     >
       <div
-        className={style({
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          borderBottomWidth: 1,
-          borderStyle: "solid",
-          borderColor: "gray-700",
-          paddingX: 12,
-          paddingY: 8,
-        })}
-      >
-        <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
-          <StatusLight size="S" variant={statusVariant} aria-label={status} />
-          <Text
-            styles={style({
-              font: "detail",
-              fontWeight: "medium",
-              color: "gray-400",
-            })}
-          >
-            {title}
-          </Text>
-        </div>
-        <div className={style({ display: "flex", alignItems: "center", gap: 4 })}>
-          <ToggleButtonGroup
-            aria-label="Shell"
-            selectionMode="single"
-            selectedKeys={[shell]}
-            onSelectionChange={(keys) => {
-              const next = [...keys][0] as Shell | undefined;
-              if (next) setShell(next);
-            }}
-            density="compact"
-            size="S"
-            staticColor="white"
-            isQuiet
-          >
-            <ToggleButton id="sh" aria-label="Shell: /bin/sh">
-              sh
-            </ToggleButton>
-            <ToggleButton id="bash" aria-label="Shell: /bin/bash">
-              bash
-            </ToggleButton>
-            <ToggleButton id="ash" aria-label="Shell: /bin/ash">
-              ash
-            </ToggleButton>
-          </ToggleButtonGroup>
-          <ActionButton
-            aria-label="Reconnect shell"
-            isQuiet
-            staticColor="white"
-            size="S"
-            onPress={() => setNonce((n) => n + 1)}
-          >
-            <Text>Reconnect</Text>
-          </ActionButton>
-        </div>
-      </div>
-      <div
         ref={hostRef}
-        className={style({
-          minHeight: 240,
-          flexGrow: 1,
-          paddingX: 8,
-          paddingY: 8,
-        })}
+        className={["dh-xterm-host", style({ minHeight: 0, flexGrow: 1 })].join(" ")}
+        onClick={() => termRef.current?.focus()}
       />
-    </div>
+    </TerminalFrame>
   );
 }

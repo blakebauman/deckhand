@@ -5,22 +5,16 @@ import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-/** Spectrum-aligned chart colors (work in light/dark via currentColor where possible). */
-const CHART_FG = "var(--spectrum-gray-800)";
-const CHART_FG_SOFT = "color-mix(in srgb, var(--spectrum-gray-800) 55%, transparent)";
-const CHART_FILL = "color-mix(in srgb, var(--spectrum-gray-800) 12%, transparent)";
-const CHART_BORDER = "var(--spectrum-gray-300)";
-
-/** Animated bar waveform for live metric series. */
+/** Animated bar waveform — Spectrum gray tokens via style macro. */
 export function WaveBars({
   values,
   max,
-  color = CHART_FG_SOFT,
 }: {
   values: number[];
   max?: number;
   /** @deprecated Unused — kept for call-site compatibility. */
   className?: string;
+  /** @deprecated Unused — Spectrum tokens drive color. */
   color?: string;
 }) {
   const peak = Math.max(max ?? 0, ...values, 1);
@@ -45,11 +39,11 @@ export function WaveBars({
             minWidth: 2,
             flexGrow: 1,
             borderRadius: "full",
+            backgroundColor: "gray-500",
           })}
           animate={{
             height: `${Math.max(8, (v / peak) * 100)}%`,
-            backgroundColor: color,
-            opacity: 0.28 + (i / Math.max(pads.length, 1)) * 0.72,
+            opacity: 0.35 + (i / Math.max(pads.length, 1)) * 0.65,
           }}
           transition={{ duration: 0.35, ease, delay: Math.min(i * 0.008, 0.12) }}
         />
@@ -58,12 +52,10 @@ export function WaveBars({
   );
 }
 
-/** Smooth SVG area chart for CPU / memory history. */
+/** Smooth SVG area — inherits Spectrum `color: neutral` from wrapper. */
 export function AreaChart({
   values,
   max,
-  stroke = CHART_FG_SOFT,
-  fill = CHART_FILL,
 }: {
   values: number[];
   max?: number;
@@ -94,35 +86,36 @@ export function AreaChart({
   }, [values, max]);
 
   return (
-    <svg
-      viewBox="0 0 240 72"
-      className={style({ height: 64, width: "full", overflow: "visible" })}
-      preserveAspectRatio="none"
-    >
-      <defs>
-        <linearGradient id={`areaFill-${gid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={fill} />
-          <stop offset="100%" stopColor="transparent" />
-        </linearGradient>
-      </defs>
-      {area ? <path d={area} fill={`url(#areaFill-${gid})`} /> : null}
-      {line ? (
-        <motion.path
-          d={line}
-          fill="none"
-          stroke={stroke}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          initial={false}
-          animate={{ pathLength: 1, opacity: 1 }}
-        />
-      ) : null}
-    </svg>
+    <div className={style({ color: "neutral", width: "full" })}>
+      <svg
+        viewBox="0 0 240 72"
+        className={style({ height: 64, width: "full", overflow: "visible" })}
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <linearGradient id={`areaFill-${gid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="currentColor" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {area ? <path d={area} fill={`url(#areaFill-${gid})`} /> : null}
+        {line ? (
+          <path
+            d={line}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={0.85}
+          />
+        ) : null}
+      </svg>
+    </div>
   );
 }
 
-/** Circular utilization gauge (GPU / CPU). */
+/** Circular utilization gauge — Spectrum neutral stroke. */
 export function RingGauge({
   value,
   max = 100,
@@ -142,15 +135,15 @@ export function RingGauge({
   const offset = c - (pct / 100) * c;
 
   return (
-    <div className={style({ display: "flex", alignItems: "center", gap: 12 })}>
+    <div className={style({ display: "flex", alignItems: "center", gap: 12, color: "neutral" })}>
       <svg width="84" height="84" viewBox="0 0 84 84" style={{ transform: "rotate(-90deg)" }}>
-        <circle cx="42" cy="42" r={r} fill="none" stroke={CHART_BORDER} strokeWidth="7" />
+        <circle cx="42" cy="42" r={r} fill="none" stroke="currentColor" strokeWidth="7" opacity={0.22} />
         <motion.circle
           cx="42"
           cy="42"
           r={r}
           fill="none"
-          stroke={CHART_FG}
+          stroke="currentColor"
           strokeWidth="7"
           strokeLinecap="round"
           strokeDasharray={c}
@@ -179,6 +172,7 @@ export function RingGauge({
   );
 }
 
+/** Metric surface aligned with ChartPanel: label + meta, value, optional chart. */
 export function MetricCard({
   label,
   value,
@@ -202,32 +196,43 @@ export function MetricCard({
           ? style({
               overflow: "hidden",
               minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
             })
           : style({
               backgroundColor: "layer-1",
               overflow: "hidden",
               borderRadius: "xl",
+              borderWidth: 1,
+              borderStyle: "solid",
+              borderColor: "gray-200",
               paddingX: 16,
               paddingY: 16,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              minWidth: 0,
             })
       }
     >
-      <Text
-        styles={style({
-          font: "detail",
-          fontWeight: "medium",
-          color: "neutral-subdued",
+      <div
+        className={style({
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: 8,
         })}
       >
-        {label}
-      </Text>
-      <div className={style({ marginTop: 4 })}>
-        <Text styles={style({ font: "title-lg", fontWeight: "bold" })}>{value}</Text>
+        <Text styles={style({ font: "detail", fontWeight: "medium", color: "neutral-subdued" })}>
+          {label}
+        </Text>
+        {hint ? (
+          <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>{hint}</Text>
+        ) : null}
       </div>
-      {hint ? (
-        <Text styles={style({ marginTop: 2, font: "detail", color: "neutral-subdued" })}>{hint}</Text>
-      ) : null}
-      {children ? <div className={style({ marginTop: 12 })}>{children}</div> : null}
+      <Text styles={style({ font: "title-lg", fontWeight: "bold" })}>{value}</Text>
+      {children ? <div className={style({ marginTop: 4, minWidth: 0 })}>{children}</div> : null}
     </div>
   );
 }

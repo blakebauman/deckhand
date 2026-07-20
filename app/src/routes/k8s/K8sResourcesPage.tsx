@@ -253,7 +253,7 @@ export function K8sResourcesPage() {
                 const ok = ready?.status === "True";
                 return (
                   <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" })}>
-                    <StatusBadge tone={ok ? "success" : "warn"}>{ok ? "Ready" : "NotReady"}</StatusBadge>
+                    <StatusBadge tone={ok ? "success" : "muted"}>{ok ? "Ready" : "NotReady"}</StatusBadge>
                     <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
                       {n.status?.nodeInfo?.kubeletVersion || ""}
                     </span>
@@ -273,7 +273,7 @@ export function K8sResourcesPage() {
               renderMeta={(ev) => (
                 <div className={style({ display: "flex", flexDirection: "column", gap: 2 })}>
                   <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" })}>
-                    <StatusBadge tone={ev.type === "Warning" ? "warn" : "muted"}>
+                    <StatusBadge tone="muted">
                       {ev.reason || ev.type || "Event"}
                     </StatusBadge>
                     <span className={style({ font: "body-xs", color: "neutral-subdued" })}>

@@ -2,11 +2,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type VolumeFileEntry } from "@/lib/api";
 import { Button } from "@react-spectrum/s2";
+import { CodeBlock } from "@/components/CodeBlock";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { InspectFields, LabelChips } from "@/components/InspectFields";
-import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
+import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
 import { Field } from "@/components/spectrum/Field";
 import { RowMenu } from "@/components/spectrum/RowMenu";
@@ -77,7 +78,7 @@ export function VolumesPage() {
   };
 
   return (
-    <div className={style({ display: "flex", height: "full", minHeight: 0, gap: 24 })}>
+    <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
       <ListPane
         title="Volumes"
         loading={list.isLoading}
@@ -92,6 +93,8 @@ export function VolumesPage() {
         {filtered.map((v) => (
           <RowMenu
             key={v.Name}
+            active={selected === v.Name}
+            onSelect={() => setSelected(v.Name)}
             items={[
               { id: "open", label: "Open", onAction: () => setSelected(v.Name) },
               { id: "copy-name", label: "Copy name", onAction: () => void copyText(v.Name) },
@@ -107,12 +110,10 @@ export function VolumesPage() {
               },
             ]}
           >
-            <ListItem active={selected === v.Name} onClick={() => setSelected(v.Name)}>
-              <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>{v.Name}</div>
-              <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, marginTop: 2, minWidth: 0 })}>
-                {v.Driver}
-              </div>
-            </ListItem>
+            <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>{v.Name}</div>
+            <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+              {v.Driver}
+            </div>
           </RowMenu>
         ))}
       </ListPane>
@@ -331,24 +332,11 @@ export function VolumesPage() {
               ) : null}
 
               {showRaw ? (
-                <div className={style({ position: "relative" })}>
-                  <div className={style({ position: "absolute", top: 12, insetEnd: 12, zIndex: 10 })}>
-                    <CopyButton value={JSON.stringify(detail.data || insp, null, 2)} label="Copy JSON" />
-                  </div>
-                  <pre
-                    className={style({
-                      backgroundColor: "layer-1",
-                      borderRadius: "xl",
-                      padding: 16,
-                      paddingTop: 48,
-                      font: "code-xs",
-                      maxHeight: "100%",
-                      overflow: "auto",
-                    })}
-                  >
-                    {JSON.stringify(detail.data || insp, null, 2)}
-                  </pre>
-                </div>
+                <CodeBlock
+                  title="Inspect"
+                  meta="volume"
+                  value={JSON.stringify(detail.data || insp, null, 2)}
+                />
               ) : null}
             </div>
           ) : null}

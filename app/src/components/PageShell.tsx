@@ -1,6 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Heading, Text, Tooltip, TooltipTrigger } from "@react-spectrum/s2";
+import { CloudOff } from "lucide-react";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { lucideProps } from "@/components/Icon";
 import { useWindowDragProps } from "@/components/TitleBarDragRegion";
 
 export function PageShell({
@@ -87,17 +89,33 @@ export function EmptyState({
       className={style({
         display: "flex",
         flexDirection: "column",
-        alignItems: "start",
+        alignItems: "center",
+        justifyContent: "center",
         gap: 12,
         backgroundColor: "layer-1",
         borderRadius: "xl",
         paddingX: 32,
-        paddingY: 40,
+        paddingY: 48,
+        textAlign: "center",
+        minHeight: 280,
       })}
     >
+      <div
+        className={style({
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          size: 44,
+          borderRadius: "full",
+          backgroundColor: "gray-100",
+          marginBottom: 4,
+        })}
+      >
+        <CloudOff {...lucideProps("L")} />
+      </div>
       <Heading
         styles={style({
-          font: "title",
+          font: "title-sm",
           margin: 0,
         })}
       >
@@ -107,12 +125,12 @@ export function EmptyState({
         styles={style({
           font: "body-sm",
           color: "neutral-subdued",
-          maxWidth: 448,
+          maxWidth: 400,
         })}
       >
         {description}
       </Text>
-      {action}
+      {action ? <div className={style({ marginTop: 8 })}>{action}</div> : null}
     </div>
   );
 }

@@ -6,16 +6,16 @@ import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { HelpHint } from "@/components/HelpHint";
-import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
+import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
 import { Area, Field } from "@/components/spectrum/Field";
 import { RowMenu } from "@/components/spectrum/RowMenu";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
 import { Tip } from "@/components/spectrum/Tip";
 import { useUIStore } from "@/stores/uiStore";
-import FolderAdd from "@react-spectrum/s2/icons/FolderAdd";
-import DataRefresh from "@react-spectrum/s2/icons/DataRefresh";
-import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
+import { FolderPlus, RefreshCw } from "lucide-react";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { lucideProps } from "@/components/Icon";
 
 import { copyText, composeProjectKey, composeStatusLabel } from "@/routes/shared";
 import type { ComposeProject } from "@/lib/api";
@@ -176,7 +176,7 @@ export function ProjectsPage() {
           }}
         />
         <Button variant="secondary" aria-label="Add scan root" onPress={addRoot}>
-          <FolderAdd styles={iconStyle({ size: "S" })} />
+          <FolderPlus {...lucideProps("S")} />
         </Button>
       </div>
       {composeRoots.length > 0 ? (
@@ -217,7 +217,7 @@ export function ProjectsPage() {
   );
 
   return (
-    <div className={style({ display: "flex", height: "full", minHeight: 0, gap: 24 })}>
+    <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
       <ListPane
         title="Projects"
         search={{ value: q, onChange: setQ, placeholder: "Search projects" }}
@@ -256,7 +256,7 @@ export function ProjectsPage() {
                   void scanned.refetch();
                 }}
               >
-                <DataRefresh />
+                <RefreshCw {...lucideProps("S")} />
               </ActionButton>
             </Tip>
             <Tip label="Deploy from YAML or path">
@@ -273,6 +273,8 @@ export function ProjectsPage() {
           return (
             <RowMenu
               key={key}
+              active={selectedKey === key}
+              onSelect={() => setSelectedKey(key)}
               items={[
                 { id: "open", label: "Open", onAction: () => setSelectedKey(key) },
                 ...(p.path || p.configFiles?.length
@@ -290,17 +292,15 @@ export function ProjectsPage() {
               ]}
               suffix={<StatusBadge tone={p.running ? "success" : "muted"}>{label}</StatusBadge>}
             >
-              <ListItem active={selectedKey === key} onClick={() => setSelectedKey(key)}>
-                <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
-                  {p.name}
-                </div>
-                <div
-                  className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, marginTop: 2 })}
-                  title={p.path || "no compose file"}
-                >
-                  {p.path || "no compose file"}
-                </div>
-              </ListItem>
+              <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+                {p.name}
+              </div>
+              <div
+                className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}
+                title={p.path || "no compose file"}
+              >
+                {p.path || "no compose file"}
+              </div>
             </RowMenu>
           );
         })}

@@ -15,6 +15,9 @@ type UIState = {
   showStoppedContainers: boolean;
   /** When false, prune runs without the confirm dialog. */
   confirmPrune: boolean;
+  /** When false, icon-rail hover labels are hidden. */
+  sidebarTooltips: boolean;
+  commandPaletteOpen: boolean;
   runSheetOpen: boolean;
   runSheetImage?: string;
   pruneSheetOpen: boolean;
@@ -27,6 +30,11 @@ type UIState = {
   setStartAfterCreate: (v: boolean) => void;
   setShowStoppedContainers: (v: boolean) => void;
   setConfirmPrune: (v: boolean) => void;
+  setSidebarTooltips: (v: boolean) => void;
+  setCommandPaletteOpen: (open: boolean) => void;
+  openCommandPalette: () => void;
+  closeCommandPalette: () => void;
+  toggleCommandPalette: () => void;
   addComposeRoot: (root: string) => void;
   removeComposeRoot: (root: string) => void;
   openRunSheet: (image?: string) => void;
@@ -48,6 +56,8 @@ export const useUIStore = create<UIState>()(
       startAfterCreate: true,
       showStoppedContainers: true,
       confirmPrune: true,
+      sidebarTooltips: true,
+      commandPaletteOpen: false,
       runSheetOpen: false,
       runSheetImage: undefined,
       pruneSheetOpen: false,
@@ -60,6 +70,11 @@ export const useUIStore = create<UIState>()(
       setStartAfterCreate: (startAfterCreate) => set({ startAfterCreate }),
       setShowStoppedContainers: (showStoppedContainers) => set({ showStoppedContainers }),
       setConfirmPrune: (confirmPrune) => set({ confirmPrune }),
+      setSidebarTooltips: (sidebarTooltips) => set({ sidebarTooltips }),
+      setCommandPaletteOpen: (commandPaletteOpen) => set({ commandPaletteOpen }),
+      openCommandPalette: () => set({ commandPaletteOpen: true }),
+      closeCommandPalette: () => set({ commandPaletteOpen: false }),
+      toggleCommandPalette: () => set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
       addComposeRoot: (root) =>
         set((s) => {
           const trimmed = root.trim();
@@ -86,6 +101,7 @@ export const useUIStore = create<UIState>()(
         startAfterCreate: s.startAfterCreate,
         showStoppedContainers: s.showStoppedContainers,
         confirmPrune: s.confirmPrune,
+        sidebarTooltips: s.sidebarTooltips,
       }),
     },
   ),

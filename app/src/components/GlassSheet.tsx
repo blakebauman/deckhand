@@ -78,6 +78,7 @@ export function GlassSheet({
   );
 }
 
+/** Dark output block for build/pull/compose streams in sheets. */
 export function TerminalBlock({
   children,
   copyValue,
@@ -88,44 +89,16 @@ export function TerminalBlock({
   copyValue?: string;
 }) {
   const text = copyValue ?? (typeof children === "string" ? children : "");
+  const hasCopyable = Boolean(text.trim());
+
   return (
-    <div className={style({ position: "relative" })}>
-      {text ? (
-        <div
-          className={style({
-            position: "absolute",
-            top: 8,
-            insetEnd: 8,
-            zIndex: 1,
-          })}
-        >
-          <CopyButton value={text} label="Copy" dark />
+    <div className="dh-terminal dh-terminal-block">
+      {hasCopyable ? (
+        <div className="dh-terminal-block__copy">
+          <CopyButton value={text} label="Copy" iconOnly dark />
         </div>
       ) : null}
-      <pre
-        className={
-          text
-            ? style({
-                maxHeight: "50vh",
-                overflow: "auto",
-                borderRadius: "xl",
-                backgroundColor: "black",
-                padding: 16,
-                paddingTop: 44,
-                font: "code-xs",
-                color: "chartreuse-400",
-              })
-            : style({
-                maxHeight: "50vh",
-                overflow: "auto",
-                borderRadius: "xl",
-                backgroundColor: "black",
-                padding: 16,
-                font: "code-xs",
-                color: "chartreuse-400",
-              })
-        }
-      >
+      <pre className={hasCopyable ? "dh-terminal-block__pre" : "dh-terminal-block__pre is-muted"}>
         {children}
       </pre>
     </div>

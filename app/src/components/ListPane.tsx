@@ -1,6 +1,8 @@
 import { forwardRef, type CSSProperties, type ReactNode } from "react";
 import { Heading, SearchField, Text, Skeleton } from "@react-spectrum/s2";
+import { List } from "lucide-react";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { lucideProps } from "@/components/Icon";
 import { useWindowDragProps } from "@/components/TitleBarDragRegion";
 
 /** Master list shell (compound pieces + convenience wrapper). */
@@ -211,6 +213,19 @@ export function ListEmpty({
         textAlign: "center",
       })}
     >
+      <div
+        className={style({
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          size: 36,
+          marginBottom: 4,
+          borderRadius: "full",
+          backgroundColor: "gray-100",
+        })}
+      >
+        <List {...lucideProps("M")} />
+      </div>
       <Text styles={style({ font: "title-sm" })}>{title}</Text>
       {description ? (
         <Text
@@ -273,7 +288,7 @@ export function ListPaneScroll({
           display: "flex",
           flexDirection: "column",
           gap: 4,
-          paddingBottom: 24,
+          paddingBottom: 40,
         })}
       >
         {loading ? (

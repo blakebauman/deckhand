@@ -17,7 +17,126 @@ body {
   height: 0;
 }
 
+/* Forced-dark terminal chrome (stays dark in light app theme) */
+.dh-terminal {
+  --dh-term-bg: #1b1b1b;
+  --dh-term-toolbar: #242424;
+  --dh-term-border: rgba(255, 255, 255, 0.1);
+  --dh-term-fg: #e8e8e8;
+  --dh-term-muted: #8e8e8e;
+  --dh-term-danger: #ff8b80;
+  min-height: 240px;
+  background: var(--dh-term-bg);
+  border-color: var(--dh-term-border) !important;
+  color: var(--dh-term-fg);
+}
+
+.dh-terminal--tall {
+  min-height: 360px;
+  height: min(56vh, 640px);
+}
+
+.dh-terminal__toolbar {
+  background: var(--dh-term-toolbar);
+  border-bottom: 1px solid var(--dh-term-border);
+}
+
+.dh-terminal__title {
+  color: var(--dh-term-fg) !important;
+}
+
+.dh-terminal__meta {
+  color: var(--dh-term-muted) !important;
+}
+
+.dh-terminal__banner {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--dh-term-border);
+  background: rgba(241, 91, 80, 0.12);
+}
+
+.dh-terminal__banner-text {
+  color: var(--dh-term-danger) !important;
+}
+
+.dh-terminal__body {
+  background: transparent;
+  color: var(--dh-term-fg);
+}
+
+.dh-terminal__body.is-muted {
+  color: var(--dh-term-muted);
+}
+
+.dh-terminal pre::-webkit-scrollbar,
+.dh-xterm-host .xterm-viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dh-terminal pre::-webkit-scrollbar-thumb,
+.dh-xterm-host .xterm-viewport::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+}
+
+.dh-terminal pre::-webkit-scrollbar-track,
+.dh-xterm-host .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dh-terminal-block {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--dh-term-border);
+  border-radius: 12px;
+}
+
+.dh-terminal-block__copy {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 8px;
+  z-index: 1;
+}
+
+.dh-terminal-block__pre {
+  max-height: 50vh;
+  margin: 0;
+  overflow: auto;
+  padding: 14px 16px;
+  padding-top: 44px;
+  font: inherit;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--dh-term-fg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: transparent;
+}
+
+.dh-terminal-block__pre.is-muted {
+  padding-top: 14px;
+  color: var(--dh-term-muted);
+}
+
 /* xterm host */
+.dh-xterm-host {
+  min-height: 0;
+  background: var(--dh-term-bg, #1b1b1b);
+}
+
+.dh-xterm-host .xterm {
+  height: 100%;
+  padding: 10px 12px;
+}
+
+.dh-xterm-host .xterm-viewport {
+  overflow-y: auto !important;
+}
+
 .xterm {
   height: 100%;
   padding: 8px;
@@ -27,10 +146,48 @@ body {
   overflow-y: auto !important;
 }
 
+/* Status dock — top hairline only (Spectrum borderStyle paints every side). */
+.dh-status-dock {
+  border-top: 1px solid var(--spectrum-gray-300, #393939);
+  border-bottom: none;
+  border-left: none;
+  border-right: none;
+}
+
+/* Sidebar rail tooltips — wider than S2’s 160px default; match app chrome in dark. */
+.dh-rail-tooltip {
+  max-width: 240px !important;
+}
+
+html[data-color-scheme="dark"] .dh-rail-tooltip {
+  background-color: #2c2c2c !important;
+  color: #f5f5f5 !important;
+}
+
+html[data-color-scheme="dark"] .dh-rail-tooltip svg {
+  fill: #2c2c2c !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-color-scheme="light"]) .dh-rail-tooltip {
+    background-color: #2c2c2c !important;
+    color: #f5f5f5 !important;
+  }
+
+  html:not([data-color-scheme="light"]) .dh-rail-tooltip svg {
+    fill: #2c2c2c !important;
+  }
+}
+
 /* Interactive chrome that uses native buttons + Spectrum tokens */
 button.dh-chip:hover,
 .dh-list-item:hover:not(.dh-list-item-selected) {
   background-color: var(--s2-gray-100, rgba(128, 128, 128, 0.12));
+}
+
+button.dh-chip:focus-visible {
+  outline: 2px solid var(--spectrum-blue-800, #1473e6);
+  outline-offset: 2px;
 }
 
 /* Native metric tiles — kill UA button chrome */
@@ -39,6 +196,42 @@ button.dh-metric-tile {
   -webkit-appearance: none;
   border: none;
   box-shadow: none;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+button.dh-metric-tile:hover {
+  background-color: var(--s2-gray-100, rgba(128, 128, 128, 0.1));
+}
+
+button.dh-metric-tile:active {
+  transform: scale(0.985);
+}
+
+button.dh-metric-tile:focus-visible {
+  outline: 2px solid var(--spectrum-blue-800, #1473e6);
+  outline-offset: 2px;
+}
+
+.dh-code-block__body {
+  color: inherit;
+}
+
+.dh-code-block__body.is-muted {
+  color: var(--spectrum-gray-600, #6e6e6e);
+}
+
+.dh-code-block__body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dh-code-block__body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--spectrum-gray-800, #2c2c2c) 22%, transparent);
+  border-radius: 4px;
+}
+
+.dh-code-block__body::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* Keep Spectrum icons square inside circular sidebar hits */

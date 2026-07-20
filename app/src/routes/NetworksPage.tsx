@@ -1,24 +1,49 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { api } from "@/lib/api";
+import { useNavigate } from "@tanstack/react-router";
 import { Button, Picker, PickerItem } from "@react-spectrum/s2";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { api } from "@/lib/api";
+import { CodeBlock } from "@/components/CodeBlock";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
+import { GlassSheet } from "@/components/GlassSheet";
 import { InspectFields, LabelChips } from "@/components/InspectFields";
-import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
+import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
 import { Field } from "@/components/spectrum/Field";
 import { RowMenu } from "@/components/spectrum/RowMenu";
+import { StatusBadge } from "@/components/spectrum/StatusBadge";
+import { Tip } from "@/components/spectrum/Tip";
 import { shortId } from "@/lib/utils";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { useUIStore } from "@/stores/uiStore";
 
 import { copyText } from "@/routes/shared";
 
+function driverTone(driver?: string): "info" | "muted" | "accent" | "default" {
+  switch ((driver || "").toLowerCase()) {
+    case "bridge":
+      return "info";
+    case "overlay":
+      return "accent";
+    case "host":
+    case "none":
+      return "muted";
+    default:
+      return "default";
+  }
+}
+
 export function NetworksPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const setPendingContainerId = useUIStore((s) => s.setPendingContainerId);
+  const setMode = useUIStore((s) => s.setMode);
   const [name, setName] = useState("");
   const [driver, setDriver] = useState("bridge");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -35,7 +60,11 @@ export function NetworksPage() {
     if (!q) return items;
     const needle = q.toLowerCase();
     return items.filter(
-      (n) => n.Name?.toLowerCase().includes(needle) || n.Driver?.toLowerCase().includes(needle) || n.Id?.toLowerCase().includes(needle),
+      (n) =>
+        n.Name?.toLowerCase().includes(needle) ||
+        n.Driver?.toLowerCase().includes(needle) ||
+        n.Id?.toLowerCase().includes(needle) ||
+        n.Scope?.toLowerCase().includes(needle),
     );
   }, [list.data, q]);
 
@@ -44,22 +73,55 @@ export function NetworksPage() {
   const ipam = insp?.IPAM?.Config?.[0];
   const attached = Object.entries(insp?.Containers || {}) as [string, any][];
 
+  const createNetwork = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setCreating(true);
+    try {
+      const res = await api.createNetwork(trimmed, driver);
+      setSelected(res.Id);
+      setName("");
+      setCreateOpen(false);
+      await qc.invalidateQueries({ queryKey: ["networks"] });
+      toast.success("Network created", { description: `${trimmed} (${driver})` });
+    } catch (e: any) {
+      toast.error("Create failed", { description: e?.message });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const openContainer = (id: string) => {
+    setMode("docker");
+    setPendingContainerId(id);
+    navigate({ to: "/containers" });
+  };
+
   return (
-    <div className={style({ display: "flex", height: "full", minHeight: 0, gap: 24 })}>
+    <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
       <ListPane
         title="Networks"
         loading={list.isLoading}
         empty={
           <ListEmpty
             title={q ? "No matches" : "No networks"}
-            description={q ? "Try another name." : "Create a bridge network on the right."}
+            description={q ? "Try another name or driver." : "Create a bridge network to isolate Compose stacks."}
           />
         }
         search={{ value: q, onChange: setQ, placeholder: "Search networks" }}
+        actions={
+          <Tip label="Create a Docker network">
+            <Button size="S" onPress={() => setCreateOpen(true)}>
+              Create
+            </Button>
+          </Tip>
+        }
       >
         {filtered.map((n) => (
           <RowMenu
             key={n.Id}
+            active={selected === n.Id}
+            onSelect={() => setSelected(n.Id)}
             items={[
               { id: "open", label: "Open", onAction: () => setSelected(n.Id) },
               { id: "copy-id", label: "Copy ID", onAction: () => void copyText(n.Id) },
@@ -75,169 +137,188 @@ export function NetworksPage() {
                 destructive: true,
               },
             ]}
+            suffix={<StatusBadge tone={driverTone(n.Driver)}>{n.Driver || "—"}</StatusBadge>}
           >
-            <ListItem active={selected === n.Id} onClick={() => setSelected(n.Id)}>
-              <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>{n.Name}</div>
-              <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, marginTop: 2, minWidth: 0 })}>
-                {n.Driver}
-              </div>
-            </ListItem>
+            <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+              {n.Name}
+            </div>
+            <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+              {n.Scope || "local"}
+              {n.Id ? ` · ${shortId(n.Id)}` : ""}
+            </div>
           </RowMenu>
         ))}
       </ListPane>
-      <div
-        className={style({
-          display: "flex",
-          flexDirection: "column",
-          flexGrow: 1,
-          minWidth: 0,
-          minHeight: 0,
-          height: "full",
-          gap: 16,
-        })}
+
+      <DetailPane
+        selectionKey={selected}
+        empty={
+          <DetailEmpty
+            title="Select a network"
+            description="Inspect subnet, gateway, and attached containers — or create a new network."
+            action={
+              <Button size="S" variant="secondary" onPress={() => setCreateOpen(true)}>
+                Create network
+              </Button>
+            }
+          />
+        }
       >
-        <DetailPane
-          selectionKey={selected}
-          empty={<DetailEmpty title="Select a network" description="Inspect a network, or create one below." />}
-        >
-          {insp ? (
-            <div className={style({ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 8 })}>
-              <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "start", justifyContent: "space-between", gap: 8 })}>
-                <div className={style({ minWidth: 0, flexGrow: 1 })}>
+        {insp ? (
+          <div className={style({ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 8 })}>
+            <div
+              className={style({
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "start",
+                justifyContent: "space-between",
+                gap: 12,
+              })}
+            >
+              <div className={style({ minWidth: 0, flexGrow: 1, display: "flex", flexDirection: "column", gap: 8 })}>
+                <div className={style({ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" })}>
                   <DetailHeading>{insp.Name || row?.Name}</DetailHeading>
-                  <p className={style({ font: "code-xs", color: "neutral-subdued", marginTop: 4 })}>{shortId(insp.Id || selected || "")}</p>
-                  <p className={style({ font: "body-sm", color: "neutral-subdued", marginTop: 4 })}>Driver · {insp.Driver || "—"}</p>
+                  <StatusBadge tone={driverTone(insp.Driver)}>{insp.Driver || "—"}</StatusBadge>
                 </div>
-                <CopyButton value={insp.Id || selected || ""} label="Copy ID" />
+                <div className={style({ font: "code-xs", color: "neutral-subdued" })}>
+                  {shortId(insp.Id || selected || "")}
+                  {insp.Scope ? ` · ${insp.Scope}` : ""}
+                </div>
               </div>
-              <InspectFields
-                rows={[
-                  { label: "Scope", value: insp.Scope },
-                  { label: "Subnet", value: ipam?.Subnet, mono: true },
-                  { label: "Gateway", value: ipam?.Gateway, mono: true },
-                  { label: "IP range", value: ipam?.IPRange, mono: true },
-                  {
-                    label: "Internal",
-                    value: insp.Internal != null ? (insp.Internal ? "yes" : "no") : undefined,
-                  },
-                  {
-                    label: "Attachable",
-                    value: insp.Attachable != null ? (insp.Attachable ? "yes" : "no") : undefined,
-                  },
-                  { label: "Created", value: insp.Created },
-                ]}
-              />
-              {attached.length ? (
-                <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                  <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
-                    Attached ({attached.length})
-                  </div>
-                  <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                    {attached.map(([id, c]) => (
-                      <div
-                        key={id}
-                        className={style({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, backgroundColor: "layer-2", borderRadius: "lg", paddingX: 12, paddingY: 8, font: "body-sm" })}
-                      >
-                        <span className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
-                          {c.Name || shortId(id)}
-                        </span>
-                        <span className={style({ font: "code-xs", color: "neutral-subdued", flexShrink: 0 })}>
-                          {c.IPv4Address || c.IPv6Address || shortId(id)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              {Object.keys(insp.Labels || {}).length ? (
-                <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                  <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Labels</div>
-                  <LabelChips labels={insp.Labels} />
-                </div>
-              ) : null}
               <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
-                <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setShowRaw((v) => !v)}>
-                  {showRaw ? "Hide JSON" : "Inspect JSON"}
-                </Button>
+                <CopyButton value={insp.Id || selected || ""} label="Copy ID" />
                 <Button size="S" variant="negative" onPress={() => setConfirmRemove(true)}>
                   Remove
                 </Button>
               </div>
-              {showRaw ? (
-                <div className={style({ position: "relative" })}>
-                  <div className={style({ position: "absolute", top: 12, insetEnd: 12, zIndex: 10 })}>
-                    <CopyButton value={JSON.stringify(detail.data || insp, null, 2)} label="Copy JSON" />
-                  </div>
-                  <pre
-                    className={style({
-                      backgroundColor: "layer-1",
-                      borderRadius: "xl",
-                      padding: 16,
-                      paddingTop: 48,
-                      font: "code-xs",
-                      maxHeight: "100%",
-                      overflow: "auto",
-                    })}
-                  >
-                    {JSON.stringify(detail.data || insp, null, 2)}
-                  </pre>
-                </div>
-              ) : null}
             </div>
-          ) : null}
-        </DetailPane>
-        <div
-          className={style({
-            flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-            backgroundColor: "layer-1",
-            borderRadius: "xl",
-            padding: 16,
-          })}
-        >
-          <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Create network</div>
-          <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "end" })}>
-            <Field value={name} onChange={setName} placeholder="network name" />
-            <Picker
-              aria-label="Driver"
-              selectedKey={driver}
-              onSelectionChange={(k) => {
-                if (k) setDriver(String(k));
-              }}
-            >
-              <PickerItem id="bridge">bridge</PickerItem>
-              <PickerItem id="overlay">overlay</PickerItem>
-              <PickerItem id="macvlan">macvlan</PickerItem>
-              <PickerItem id="ipvlan">ipvlan</PickerItem>
-              <PickerItem id="host">host</PickerItem>
-              <PickerItem id="none">none</PickerItem>
-            </Picker>
-            <Button
-              isDisabled={!name.trim()}
-              onPress={() =>
-                api
-                  .createNetwork(name.trim(), driver)
-                  .then((res) => {
-                    setSelected(res.Id);
-                    setName("");
-                    qc.invalidateQueries({ queryKey: ["networks"] });
-                    toast.success("Network created", { description: `${name} (${driver})` });
-                  })
-                  .catch((e: any) => toast.error("Create failed", { description: e?.message }))
-              }
-            >
+
+            <InspectFields
+              rows={[
+                { label: "Subnet", value: ipam?.Subnet, mono: true },
+                { label: "Gateway", value: ipam?.Gateway, mono: true },
+                { label: "IP range", value: ipam?.IPRange, mono: true },
+                {
+                  label: "Internal",
+                  value: insp.Internal != null ? (insp.Internal ? "yes" : "no") : undefined,
+                },
+                {
+                  label: "Attachable",
+                  value: insp.Attachable != null ? (insp.Attachable ? "yes" : "no") : undefined,
+                },
+                { label: "Created", value: insp.Created },
+              ]}
+            />
+
+            <div className={style({ display: "flex", flexDirection: "column", gap: 12 })}>
+              <div className={style({ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 })}>
+                <div className={style({ font: "title-sm" })}>Attached containers</div>
+                <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                  {detail.isLoading ? "Loading…" : `${attached.length}`}
+                </div>
+              </div>
+              {attached.length === 0 && !detail.isLoading ? (
+                <div className={style({ font: "body-sm", color: "neutral-subdued" })}>
+                  Nothing attached. Point a container or Compose service at this network to see it here.
+                </div>
+              ) : (
+                <div className={style({ display: "flex", flexDirection: "column", gap: 4 })}>
+                  {attached.map(([id, c]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={style({
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        paddingX: 12,
+                        paddingY: 8,
+                        borderRadius: "lg",
+                        borderWidth: 0,
+                        textAlign: "start",
+                        cursor: "pointer",
+                        backgroundColor: "gray-100",
+                        color: "neutral",
+                      })}
+                      onClick={() => openContainer(id)}
+                    >
+                      <span className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+                        {c.Name || shortId(id)}
+                      </span>
+                      <span className={style({ font: "code-xs", color: "neutral-subdued", flexShrink: 0 })}>
+                        {c.IPv4Address || c.IPv6Address || shortId(id)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {Object.keys(insp.Labels || {}).length ? (
+              <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
+                <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Labels</div>
+                <LabelChips labels={insp.Labels} />
+              </div>
+            ) : null}
+
+            <div>
+              <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setShowRaw((v) => !v)}>
+                {showRaw ? "Hide JSON" : "Inspect JSON"}
+              </Button>
+            </div>
+            {showRaw ? (
+              <CodeBlock
+                title="Inspect"
+                meta="network"
+                value={JSON.stringify(detail.data || insp, null, 2)}
+              />
+            ) : null}
+          </div>
+        ) : null}
+      </DetailPane>
+
+      <GlassSheet
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        title="Create network"
+        description="Isolates containers — bridge for local stacks, overlay for Swarm."
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onPress={() => setCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="accent" isDisabled={!name.trim() || creating} isPending={creating} onPress={() => void createNetwork()}>
               Create
             </Button>
-          </div>
+          </>
+        }
+      >
+        <div className={style({ display: "flex", flexDirection: "column", gap: 16 })}>
+          <Field value={name} onChange={setName} placeholder="my-network" aria-label="Network name" />
+          <Picker
+            label="Driver"
+            selectedKey={driver}
+            onSelectionChange={(k) => {
+              if (k) setDriver(String(k));
+            }}
+          >
+            <PickerItem id="bridge">bridge</PickerItem>
+            <PickerItem id="overlay">overlay</PickerItem>
+            <PickerItem id="macvlan">macvlan</PickerItem>
+            <PickerItem id="ipvlan">ipvlan</PickerItem>
+            <PickerItem id="host">host</PickerItem>
+            <PickerItem id="none">none</PickerItem>
+          </Picker>
         </div>
-      </div>
+      </GlassSheet>
+
       <ConfirmDialog
         open={confirmRemove}
         onOpenChange={setConfirmRemove}
         title="Remove network"
-        description={`Remove network “${insp?.Name || row?.Name}”?`}
+        description={`Remove network “${insp?.Name || row?.Name}”? Containers must be disconnected first.`}
         confirmLabel="Remove"
         destructive
         onConfirm={async () => {

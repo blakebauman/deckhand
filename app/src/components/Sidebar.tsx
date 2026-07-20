@@ -4,64 +4,68 @@ import {
   Text,
   Tooltip,
   TooltipTrigger,
-  type IconProps,
 } from "@react-spectrum/s2";
-import Home from "@react-spectrum/s2/icons/Home";
-import Apps from "@react-spectrum/s2/icons/Apps";
-import SocialNetwork from "@react-spectrum/s2/icons/SocialNetwork";
-import Data from "@react-spectrum/s2/icons/Data";
-import Settings from "@react-spectrum/s2/icons/Settings";
-import Collection from "@react-spectrum/s2/icons/Collection";
-import Cloud from "@react-spectrum/s2/icons/Cloud";
-import Archive from "@react-spectrum/s2/icons/Archive";
-import DeviceDesktop from "@react-spectrum/s2/icons/DeviceDesktop";
-import Layers from "@react-spectrum/s2/icons/Layers";
-import Project from "@react-spectrum/s2/icons/Project";
-import Tools from "@react-spectrum/s2/icons/Tools";
-import ViewList from "@react-spectrum/s2/icons/ViewList";
-import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
-import { useEffect, type CSSProperties, type ComponentType, type ReactNode } from "react";
+import { Focusable } from "react-aria-components";
+import type { LucideIcon } from "lucide-react";
+import {
+  Archive,
+  Boxes,
+  ChartColumn,
+  Cloud,
+  Code,
+  Container,
+  Database,
+  FolderOpen,
+  Globe,
+  Layers,
+  Monitor,
+  Search,
+  Settings,
+  Table,
+} from "lucide-react";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { useEffect, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import { useUIStore, type AppMode } from "@/stores/uiStore";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { lucideProps } from "@/components/Icon";
 import { LogoMark } from "@/components/Logo";
 import { DockerMark, KubernetesMark, MicroVMMark } from "@/components/ModeMarks";
 import { APP_VERSION } from "@/lib/version";
 import { isTauriShell } from "@/lib/platform";
-
-type NavIcon = ComponentType<IconProps>;
+import { modKeyLabel } from "@/lib/hotkeys";
 
 type NavItem = {
   to: string;
-  icon: NavIcon;
+  icon: LucideIcon;
   label: string;
   hint?: string;
   exact?: boolean;
 };
 
 const dockerNav: NavItem[] = [
-  { to: "/", icon: Home, label: "Dashboard", hint: "Engine health and GPU overview", exact: true },
-  { to: "/projects", icon: Project, label: "Projects", hint: "Compose up and down" },
-  { to: "/containers", icon: Apps, label: "Containers", hint: "Monitor, logs, and exec" },
+  { to: "/", icon: ChartColumn, label: "Dashboard", hint: "Engine health and GPU overview", exact: true },
+  { to: "/projects", icon: FolderOpen, label: "Projects", hint: "Compose up and down" },
+  { to: "/containers", icon: Container, label: "Containers", hint: "Monitor, logs, and exec" },
   { to: "/images", icon: Layers, label: "Images", hint: "Pull, prune, and remove images" },
-  { to: "/builds", icon: Tools, label: "Builds", hint: "Build images and search Hub" },
-  { to: "/networks", icon: SocialNetwork, label: "Networks", hint: "Bridge and custom networks" },
-  { to: "/volumes", icon: Data, label: "Volumes", hint: "Named volumes on this engine" },
+  { to: "/builds", icon: Code, label: "Builds", hint: "Build images and search Hub" },
+  { to: "/networks", icon: Globe, label: "Networks", hint: "Bridge and custom networks" },
+  { to: "/volumes", icon: Database, label: "Volumes", hint: "Named volumes on this engine" },
   { to: "/settings", icon: Settings, label: "Settings", hint: "Theme and connection status" },
 ];
 
 const k8sNav: NavItem[] = [
-  { to: "/k8s", icon: Home, label: "Overview", hint: "Namespace workload summary", exact: true },
-  { to: "/k8s/pods", icon: Collection, label: "Pods", hint: "Logs and exec for pods" },
+  { to: "/k8s", icon: ChartColumn, label: "Overview", hint: "Namespace workload summary", exact: true },
+  { to: "/k8s/pods", icon: Boxes, label: "Pods", hint: "Logs and exec for pods" },
   { to: "/k8s/deployments", icon: Cloud, label: "Deployments", hint: "Scale, restart, delete" },
-  { to: "/k8s/resources", icon: ViewList, label: "Resources", hint: "Services, secrets, jobs, and more" },
+  { to: "/k8s/resources", icon: Table, label: "Resources", hint: "Services, secrets, jobs, and more" },
   { to: "/k8s/helm", icon: Archive, label: "Helm", hint: "Install and manage releases" },
   { to: "/settings", icon: Settings, label: "Settings", hint: "Theme and connection status" },
 ];
 
 const microNav: NavItem[] = [
-  { to: "/microvms", icon: Home, label: "Overview", hint: "Firecracker availability", exact: true },
-  { to: "/microvms/vms", icon: DeviceDesktop, label: "VMs", hint: "Create and manage microVMs" },
+  { to: "/microvms", icon: ChartColumn, label: "Overview", hint: "Firecracker availability", exact: true },
+  { to: "/microvms/vms", icon: Monitor, label: "VMs", hint: "Create and manage microVMs" },
   { to: "/settings", icon: Settings, label: "Settings", hint: "Theme and connection status" },
 ];
 
@@ -108,7 +112,9 @@ const asideStyle = style({
   borderStyle: "solid",
   borderColor: "gray-300",
   backgroundColor: "layer-1",
-  paddingY: 20,
+  paddingTop: 20,
+  // Keep version chip above the in-flow status dock
+  paddingBottom: 96,
 });
 
 const asideStyleDesktop = style({
@@ -125,8 +131,8 @@ const asideStyleDesktop = style({
   borderStyle: "solid",
   borderColor: "gray-300",
   backgroundColor: "layer-1",
-  paddingY: 20,
   paddingTop: 64,
+  paddingBottom: 96,
 });
 
 const navBtn = style({
@@ -220,11 +226,50 @@ const modeBtnActive = style({
   backgroundColor: "accent",
 });
 
-function TipRight({ label, children }: { label: ReactNode; children: ReactNode }) {
+/**
+ * Tooltip body for the icon rail.
+ * Must inherit the Tooltip’s inverted text color — Spectrum `Text` / `neutral-*`
+ * tokens follow the page scheme and read as grey-on-white in dark mode.
+ */
+function RailTip({ title, hint }: { title: string; hint?: string }) {
   return (
-    <TooltipTrigger placement="end" delay={400}>
-      {children}
-      <Tooltip>{label}</Tooltip>
+    <div
+      className={style({
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        textAlign: "start",
+      })}
+    >
+      <span className={style({ font: "ui-sm", fontWeight: "bold" })}>{title}</span>
+      {hint ? (
+        <span className={style({ font: "detail-sm" })} style={{ opacity: 0.72 }}>
+          {hint}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/** Icon-rail tooltips — Focusable so custom buttons work with TooltipTrigger. */
+function TipRight({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: ReactElement;
+}) {
+  const enabled = useUIStore((s) => s.sidebarTooltips);
+  if (!enabled) return children;
+  return (
+    <TooltipTrigger placement="end" delay={400} containerPadding={10} crossOffset={0}>
+      {/* Focusable child generics reject plain <button>; runtime merge is fine. */}
+      <Focusable>{children as never}</Focusable>
+      <Tooltip UNSAFE_className="dh-rail-tooltip">
+        <RailTip title={title} hint={hint} />
+      </Tooltip>
     </TooltipTrigger>
   );
 }
@@ -232,11 +277,13 @@ function TipRight({ label, children }: { label: ReactNode; children: ReactNode }
 export function Sidebar() {
   const mode = useUIStore((s) => s.mode);
   const setMode = useUIStore((s) => s.setMode);
+  const openCommandPalette = useUIStore((s) => s.openCommandPalette);
   const navigate = useNavigate();
   const matchRoute = useMatchRoute();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const runtimes = useQuery({ queryKey: ["runtimes"], queryFn: api.runtimes, refetchInterval: 15000 });
   const fcAvailable = runtimes.data?.some((r) => r.name === "firecracker" && r.available);
+  const mod = modKeyLabel();
 
   useEffect(() => {
     const next = modeFromPath(pathname);
@@ -257,12 +304,12 @@ export function Sidebar() {
 
   return (
     <aside className={isTauriShell() ? asideStyleDesktop : asideStyle}>
-      <TipRight label="Deckhand">
+      <TipRight title="Deckhand" hint="Open dashboard">
         <button
           type="button"
           className={logoBtn}
           style={noDrag}
-          aria-label="Deckhand"
+          aria-label="Deckhand, open dashboard"
           onClick={() => navigate({ to: "/" })}
         >
           <LogoMark size={28} />
@@ -287,23 +334,7 @@ export function Sidebar() {
           const Icon = m.icon;
           const selected = mode === m.id;
           return (
-            <TipRight
-              key={m.id}
-              label={
-                <div>
-                  <Text styles={style({ font: "ui", display: "block" })}>{m.title}</Text>
-                  <Text
-                    styles={style({
-                      font: "detail-sm",
-                      color: "neutral-subdued",
-                      display: "block",
-                    })}
-                  >
-                    {m.hint}
-                  </Text>
-                </div>
-              }
-            >
+            <TipRight key={m.id} title={m.title} hint={m.hint}>
               <button
                 type="button"
                 className={selected ? modeBtnActive : modeBtn}
@@ -335,25 +366,7 @@ export function Sidebar() {
             : !!matchRoute({ to: item.to, fuzzy: true });
           const Icon = item.icon;
           return (
-            <TipRight
-              key={item.to + item.label}
-              label={
-                <div>
-                  <Text styles={style({ font: "ui", display: "block" })}>{item.label}</Text>
-                  {item.hint ? (
-                    <Text
-                      styles={style({
-                        font: "detail-sm",
-                        color: "neutral-subdued",
-                        display: "block",
-                      })}
-                    >
-                      {item.hint}
-                    </Text>
-                  ) : null}
-                </div>
-              }
-            >
+            <TipRight key={item.to + item.label} title={item.label} hint={item.hint}>
               <button
                 type="button"
                 className={active ? navBtnActive : navBtn}
@@ -361,15 +374,35 @@ export function Sidebar() {
                 aria-current={active ? "page" : undefined}
                 onClick={() => navigate({ to: item.to })}
               >
-                <Icon styles={iconStyle({ size: "M" })} />
+                <Icon {...lucideProps("M")} />
               </button>
             </TipRight>
           );
         })}
       </nav>
 
-      <div className={style({ marginTop: "auto", paddingBottom: 4 })} style={noDrag}>
-        <TipRight label={`Deckhand v${APP_VERSION}`}>
+      <div
+        className={style({
+          marginTop: "auto",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 8,
+          paddingBottom: 4,
+        })}
+        style={noDrag}
+      >
+        <TipRight title="Command palette" hint={`${mod}K`}>
+          <button
+            type="button"
+            className={navBtn}
+            aria-label={`Command palette (${mod}K)`}
+            onClick={() => openCommandPalette()}
+          >
+            <Search {...lucideProps("M")} />
+          </button>
+        </TipRight>
+        <TipRight title={`Deckhand v${APP_VERSION}`}>
           <ActionButton isQuiet aria-label={`Deckhand v${APP_VERSION}`}>
             <Text
               styles={style({

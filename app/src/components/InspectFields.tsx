@@ -18,6 +18,9 @@ export function InspectFields({
       className={style({
         backgroundColor: "layer-1",
         borderRadius: "xl",
+        borderWidth: 1,
+        borderStyle: "solid",
+        borderColor: "gray-200",
         overflow: "hidden",
         margin: 0,
       })}

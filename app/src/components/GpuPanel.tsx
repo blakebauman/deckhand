@@ -19,7 +19,23 @@ export function GpuPanel() {
   const gpus = useQuery({ queryKey: ["gpus"], queryFn: api.gpus, refetchInterval: 4000 });
 
   if (gpus.isLoading) {
-    return <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>Probing GPUs…</Text>;
+    return (
+      <div
+        className={style({
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
+          flexGrow: 1,
+          minHeight: 200,
+          textAlign: "center",
+        })}
+      >
+        <WaveBars values={[0.25, 0.5, 0.35, 0.7, 0.45, 0.6, 0.8, 0.4, 0.55, 0.65]} max={1} />
+        <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>Probing GPUs…</Text>
+      </div>
+    );
   }
 
   const data = gpus.data as GPUStatus | undefined;

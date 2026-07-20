@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,23 +8,27 @@ import {
   SearchField,
   Text,
 } from "@react-spectrum/s2";
-import { style, iconStyle } from "@react-spectrum/s2/style" with { type: "macro" };
-import ViewGrid from "@react-spectrum/s2/icons/ViewGrid";
-import Layers from "@react-spectrum/s2/icons/Layers";
-import Collection from "@react-spectrum/s2/icons/Collection";
-import Data from "@react-spectrum/s2/icons/Data";
-import GlobeGrid from "@react-spectrum/s2/icons/GlobeGrid";
-import Folder from "@react-spectrum/s2/icons/Folder";
-import AppsAll from "@react-spectrum/s2/icons/AppsAll";
-import DeviceLaptop from "@react-spectrum/s2/icons/DeviceLaptop";
-import Apps from "@react-spectrum/s2/icons/Apps";
-import Settings from "@react-spectrum/s2/icons/Settings";
-import Play from "@react-spectrum/s2/icons/Play";
-import Delete from "@react-spectrum/s2/icons/Delete";
-import Tools from "@react-spectrum/s2/icons/Tools";
-import ViewList from "@react-spectrum/s2/icons/ViewList";
-import Cloud from "@react-spectrum/s2/icons/Cloud";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import type { LucideIcon } from "lucide-react";
+import {
+  Archive,
+  Boxes,
+  Cloud,
+  Container,
+  Database,
+  FolderOpen,
+  Globe,
+  Layers,
+  LayoutGrid,
+  List,
+  Play,
+  Settings,
+  Trash2,
+  Wrench,
+} from "lucide-react";
 import { api } from "@/lib/api";
+import { lucideProps } from "@/components/Icon";
+import { isTauriShell } from "@/lib/platform";
 import { useUIStore } from "@/stores/uiStore";
 import { containerName, shortId } from "@/lib/utils";
 
@@ -33,7 +37,7 @@ type Action = {
   label: string;
   hint?: string;
   group: string;
-  icon: ComponentType<{ styles?: ReturnType<typeof iconStyle> }>;
+  icon: LucideIcon;
   run: () => void;
 };
 
@@ -109,18 +113,18 @@ export function CommandPalette({
       onOpenChange(false);
     };
     return [
-      { id: "dash", label: "Dashboard", hint: "Docker", group: "Navigate", icon: ViewGrid, run: go("/", "docker") },
-      { id: "projects", label: "Projects", hint: "Compose", group: "Navigate", icon: Layers, run: go("/projects", "docker") },
-      { id: "containers", label: "Containers", group: "Navigate", icon: Collection, run: go("/containers", "docker") },
-      { id: "images", label: "Images", group: "Navigate", icon: Data, run: go("/images", "docker") },
-      { id: "builds", label: "Builds", hint: "Build & Hub search", group: "Navigate", icon: Tools, run: go("/builds", "docker") },
-      { id: "networks", label: "Networks", group: "Navigate", icon: GlobeGrid, run: go("/networks", "docker") },
-      { id: "volumes", label: "Volumes", group: "Navigate", icon: Folder, run: go("/volumes", "docker") },
-      { id: "k8s", label: "Kubernetes overview", group: "Navigate", icon: ViewGrid, run: go("/k8s", "kubernetes") },
-      { id: "pods", label: "Pods", group: "Navigate", icon: AppsAll, run: go("/k8s/pods", "kubernetes") },
-      { id: "deps", label: "Deployments", group: "Navigate", icon: DeviceLaptop, run: go("/k8s/deployments", "kubernetes") },
-      { id: "resources", label: "Resources", hint: "Services, secrets, jobs…", group: "Navigate", icon: ViewList, run: go("/k8s/resources", "kubernetes") },
-      { id: "helm", label: "Helm", group: "Navigate", icon: Apps, run: go("/k8s/helm", "kubernetes") },
+      { id: "dash", label: "Dashboard", hint: "Docker", group: "Navigate", icon: LayoutGrid, run: go("/", "docker") },
+      { id: "projects", label: "Projects", hint: "Compose", group: "Navigate", icon: FolderOpen, run: go("/projects", "docker") },
+      { id: "containers", label: "Containers", group: "Navigate", icon: Container, run: go("/containers", "docker") },
+      { id: "images", label: "Images", group: "Navigate", icon: Layers, run: go("/images", "docker") },
+      { id: "builds", label: "Builds", hint: "Build & Hub search", group: "Navigate", icon: Wrench, run: go("/builds", "docker") },
+      { id: "networks", label: "Networks", group: "Navigate", icon: Globe, run: go("/networks", "docker") },
+      { id: "volumes", label: "Volumes", group: "Navigate", icon: Database, run: go("/volumes", "docker") },
+      { id: "k8s", label: "Kubernetes overview", group: "Navigate", icon: LayoutGrid, run: go("/k8s", "kubernetes") },
+      { id: "pods", label: "Pods", group: "Navigate", icon: Boxes, run: go("/k8s/pods", "kubernetes") },
+      { id: "deps", label: "Deployments", group: "Navigate", icon: Cloud, run: go("/k8s/deployments", "kubernetes") },
+      { id: "resources", label: "Resources", hint: "Services, secrets, jobs…", group: "Navigate", icon: List, run: go("/k8s/resources", "kubernetes") },
+      { id: "helm", label: "Helm", group: "Navigate", icon: Archive, run: go("/k8s/helm", "kubernetes") },
       { id: "settings", label: "Settings", group: "Navigate", icon: Settings, run: go("/settings") },
       {
         id: "run",
@@ -138,7 +142,7 @@ export function CommandPalette({
         label: "Prune engine disk…",
         hint: "System df",
         group: "Actions",
-        icon: Delete,
+        icon: Trash2,
         run: () => {
           onOpenChange(false);
           onOpenPrune?.();
@@ -156,7 +160,7 @@ export function CommandPalette({
         label: name,
         hint: `${c.state || "?"} · ${c.image || ""}`.slice(0, 48),
         group: "Containers",
-        icon: Collection,
+        icon: Container,
         run: () => {
           setMode("docker");
           setPendingContainerId(c.id);
@@ -171,7 +175,7 @@ export function CommandPalette({
         label: p.name,
         hint: p.status || p.source || "compose",
         group: "Compose",
-        icon: Layers,
+        icon: FolderOpen,
         run: () => {
           setMode("docker");
           navigate({ to: "/projects" });
@@ -186,7 +190,7 @@ export function CommandPalette({
         label: tag,
         hint: "image",
         group: "Images",
-        icon: Data,
+        icon: Layers,
         run: () => {
           setMode("docker");
           setPendingImageId(img.Id);
@@ -203,7 +207,7 @@ export function CommandPalette({
         label: name,
         hint: "volume",
         group: "Volumes",
-        icon: Folder,
+        icon: Database,
         run: () => {
           setMode("docker");
           setPendingVolumeName(name);
@@ -364,7 +368,7 @@ export function CommandPalette({
                           })
                     }
                   >
-                    <Icon styles={iconStyle({ size: "S", color: "neutral" })} />
+                    <Icon {...lucideProps("S")} />
                     <span
                       className={style({
                         minWidth: 0,
@@ -407,7 +411,7 @@ export function CommandPalette({
   );
 }
 
-/** Global ⌘K / Ctrl+K listener + palette host. */
+/** Global ⌘K / Ctrl+K listener + palette host (Tauri menu emits the same toggle). */
 export function CommandPaletteHost({
   onRunContainer,
   onOpenPrune,
@@ -415,18 +419,42 @@ export function CommandPaletteHost({
   onRunContainer?: () => void;
   onOpenPrune?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const open = useUIStore((s) => s.commandPaletteOpen);
+  const setOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const toggle = useUIStore((s) => s.toggleCommandPalette);
 
   useEffect(() => {
+    let last = 0;
+    const fire = () => {
+      const now = Date.now();
+      // Dedupe webview keydown + native menu accelerator on the same press.
+      if (now - last < 80) return;
+      last = now;
+      toggle();
+    };
+
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setOpen((v) => !v);
-      }
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "k") return;
+      if (e.altKey || e.shiftKey || e.repeat) return;
+      e.preventDefault();
+      fire();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+
+    let unlisten: (() => void) | undefined;
+    if (isTauriShell()) {
+      void import("@tauri-apps/api/event").then(({ listen }) =>
+        listen("deckhand://command-palette", () => fire()).then((fn) => {
+          unlisten = fn;
+        }),
+      );
+    }
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      unlisten?.();
+    };
+  }, [toggle]);
 
   return (
     <CommandPalette

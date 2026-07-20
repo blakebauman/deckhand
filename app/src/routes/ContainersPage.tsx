@@ -16,12 +16,13 @@ import {
   Tabs,
 } from "@react-spectrum/s2";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { CodeBlock } from "@/components/CodeBlock";
 import { ConsolePanel } from "@/components/ConsolePanel";
 import { ContainerMonitor } from "@/components/ContainerMonitor";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { ExecTerminal } from "@/components/ExecTerminal";
-import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
+import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
 import { RowMenu } from "@/components/spectrum/RowMenu";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
@@ -29,8 +30,9 @@ import { Tip } from "@/components/spectrum/Tip";
 import { containerBrowseUrl, openExternalUrl } from "@/lib/openUrl";
 import { containerName, shortId } from "@/lib/utils";
 import { useUIStore } from "@/stores/uiStore";
-import Filter from "@react-spectrum/s2/icons/Filter";
-import { iconStyle, style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { Filter } from "lucide-react";
+import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { lucideProps } from "@/components/Icon";
 
 import { copyText } from "@/routes/shared";
 
@@ -111,7 +113,7 @@ export function ContainersPage() {
   ];
 
   return (
-    <div className={style({ display: "flex", height: "full", minHeight: 0, gap: 24 })}>
+    <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
       <ListPane
         title="Containers"
         loading={list.isLoading}
@@ -130,7 +132,7 @@ export function ContainersPage() {
           <div className={style({ display: "flex", alignItems: "center", gap: 8 })} data-no-drag>
             <DialogTrigger>
               <ActionButton isQuiet aria-label="Filter by container state">
-                <Filter styles={iconStyle({ size: "S" })} />
+                <Filter {...lucideProps("S")} />
               </ActionButton>
               <Popover>
                 <Content>
@@ -153,6 +155,7 @@ export function ContainersPage() {
                   <Button
                     size="S"
                     variant="secondary"
+                    fillStyle="outline"
                     onPress={() =>
                       act(() => api.bulkContainers(selectedIds, "stop"), "Containers stopped").then(() =>
                         setChecked({}),
@@ -163,7 +166,7 @@ export function ContainersPage() {
                   </Button>
                 </Tip>
                 <Tip label="Force-remove selected containers">
-                  <Button size="S" variant="negative" onPress={() => setConfirmBulk(true)}>
+                  <Button size="S" variant="negative" fillStyle="outline" onPress={() => setConfirmBulk(true)}>
                     Remove
                   </Button>
                 </Tip>
@@ -181,6 +184,15 @@ export function ContainersPage() {
         {filtered.map((c) => (
           <RowMenu
             key={c.id}
+            active={selected === c.id}
+            onSelect={() => setSelected(c.id)}
+            leading={
+              <Checkbox
+                aria-label={`Select ${containerName(c.names)}`}
+                isSelected={!!checked[c.id]}
+                onChange={(v) => setChecked((prev) => ({ ...prev, [c.id]: v }))}
+              />
+            }
             items={[
               { id: "open", label: "Open", onAction: () => setSelected(c.id) },
               { id: "start", label: "Start", onAction: () => void act(() => api.startContainer(c.id), "Started") },
@@ -211,34 +223,17 @@ export function ContainersPage() {
               </>
             }
           >
-            <div className={style({ display: "flex", alignItems: "center", gap: 4, width: "full", minWidth: 0 })}>
-              <div
-                className={style({ paddingStart: 4, flexShrink: 0 })}
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
-              >
-                <Checkbox
-                  aria-label={`Select ${containerName(c.names)}`}
-                  isSelected={!!checked[c.id]}
-                  onChange={(v) => setChecked((prev) => ({ ...prev, [c.id]: v }))}
-                />
-              </div>
-              <div className={style({ flexGrow: 1, minWidth: 0 })}>
-                <ListItem active={selected === c.id} onClick={() => setSelected(c.id)}>
-                  <div
-                    className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}
-                    title={containerName(c.names)}
-                  >
-                    {containerName(c.names)}
-                  </div>
-                  <div
-                    className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, marginTop: 2 })}
-                    title={c.image}
-                  >
-                    {c.image}
-                  </div>
-                </ListItem>
-              </div>
+            <div
+              className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}
+              title={containerName(c.names)}
+            >
+              {containerName(c.names)}
+            </div>
+            <div
+              className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}
+              title={c.image}
+            >
+              {c.image}
             </div>
           </RowMenu>
         ))}
@@ -276,17 +271,37 @@ export function ContainersPage() {
                 <StatusBadge tone="accent">GPU</StatusBadge>
               ) : null}
             </div>
-            <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
-              <Button size="S" onPress={() => act(() => api.startContainer(selected!), "Started")}>
+            <div
+              className={style({
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: 8,
+              })}
+            >
+              <Button
+                size="S"
+                variant="secondary"
+                fillStyle="outline"
+                isDisabled={!!running}
+                onPress={() => act(() => api.startContainer(selected!), "Started")}
+              >
                 Start
               </Button>
-              <Button size="S" variant="secondary" onPress={() => act(() => api.stopContainer(selected!), "Stopped")}>
+              <Button
+                size="S"
+                variant="secondary"
+                fillStyle="outline"
+                isDisabled={!running}
+                onPress={() => act(() => api.stopContainer(selected!), "Stopped")}
+              >
                 Stop
               </Button>
               <Button
                 size="S"
                 variant="secondary"
                 fillStyle="outline"
+                isDisabled={!running}
                 onPress={() => act(() => api.restartContainer(selected!), "Restarted")}
               >
                 Restart
@@ -356,7 +371,7 @@ export function ContainersPage() {
                   Open in browser
                 </Button>
               </Tip>
-              <Button size="S" variant="negative" onPress={() => setConfirmRemove(true)}>
+              <Button size="S" variant="negative" fillStyle="outline" onPress={() => setConfirmRemove(true)}>
                 Remove
               </Button>
             </div>
@@ -426,7 +441,7 @@ export function ContainersPage() {
                         <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
                           <StatusBadge tone="muted">{m.Type || "mount"}</StatusBadge>
                           {m.RW === false || m.Mode === "ro" ? (
-                            <StatusBadge tone="warn">ro</StatusBadge>
+                            <StatusBadge tone="muted">ro</StatusBadge>
                           ) : null}
                           <span className={style({ font: "code-xs", truncate: true, minWidth: 0 })}>
                             {m.Source || m.Name || "—"}
@@ -440,24 +455,12 @@ export function ContainersPage() {
                   </div>
                 </div>
               ) : null}
-              <div className={style({ position: "relative" })}>
-                <div className={style({ position: "absolute", top: 12, insetEnd: 12, zIndex: 10 })}>
-                  <CopyButton value={JSON.stringify(detail.data || {}, null, 2)} label="Copy JSON" />
-                </div>
-                <pre
-                  className={style({
-                    backgroundColor: "layer-1",
-                    borderRadius: "xl",
-                    padding: 16,
-                    paddingTop: 48,
-                    font: "code-xs",
-                    maxHeight: "100%",
-                    overflow: "auto",
-                  })}
-                >
-                  {JSON.stringify(detail.data || {}, null, 2)}
-                </pre>
-              </div>
+              <CodeBlock
+                title="Inspect"
+                meta="docker inspect"
+                value={JSON.stringify(detail.data || {}, null, 2)}
+                empty="No inspect data"
+              />
             </div>
           </TabPanel>
         </Tabs>

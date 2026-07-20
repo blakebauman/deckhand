@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "identifier": "dev.deckhand.app",
   "build": {
-    "beforeDevCommand": "vite --port 1420 --strictPort",
+    "beforeDevCommand": {
+      "script": "bash ./scripts/tauri-frontend-dev.sh",
+      "cwd": "../.."
+    },
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "bun run --cwd ../.. build:sidecar && bun run --cwd .. build",
     "frontendDist": "../dist"
@@ -13,10 +16,10 @@
     "windows": [
       {
         "title": "",
-        "width": 1200,
-        "height": 800,
-        "minWidth": 800,
-        "minHeight": 600,
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1100,
+        "minHeight": 700,
         "resizable": true,
         "fullscreen": false,
         "titleBarStyle": "Overlay",
