@@ -14,7 +14,7 @@ Localhost HTTP API served by `deckhand-sidecar`. Routes are defined in `sidecar/
 | `GET` | `/api/status` | Docker / Kubernetes / Firecracker availability |
 | `GET` | `/api/audit` | Query: `n` — tail of local JSONL audit log |
 | `GET` / `PUT` | `/api/engine` | Dual-mode engine config (attach / embed scaffold) |
-| `GET` / `POST` | `/api/domains` | `*.deckhand.local` reverse-proxy status / enable |
+| `GET` / `POST` | `/api/domains` | `*.deckhand.local` reverse-proxy status / enable; labels `dev.deckhand.domains`, `dev.deckhand.http-port` |
 
 ## Docker
 
@@ -26,7 +26,7 @@ Localhost HTTP API served by `deckhand-sidecar`. Routes are defined in `sidecar/
 | `GET` | `/api/docker/diagnose` | Troubleshoot snapshot |
 | `GET` / `POST` | `/api/docker/contexts` | List / switch Docker CLI contexts |
 | `GET` | `/api/docker/containers` | Query: `all` (default true) |
-| `POST` | `/api/docker/containers` | Create / run (supports `mounts[]`) |
+| `POST` | `/api/docker/containers` | Create / run (supports `mounts[]`, `labels`) |
 | `GET` | `/api/docker/containers/{id}` | Inspect |
 | `POST` | `/api/docker/containers/{id}/start` | Start |
 | `POST` | `/api/docker/containers/{id}/stop` | Stop |
@@ -42,6 +42,7 @@ Localhost HTTP API served by `deckhand-sidecar`. Routes are defined in `sidecar/
 | `POST` | `/api/docker/images/pull` | Body: `{ ref }`; NDJSON progress |
 | `DELETE` | `/api/docker/images/{id}` | Query: `force` |
 | `POST` | `/api/docker/images/prune` | Dangling images |
+| `POST` | `/api/docker/images/{id}/scan` | Body optional `{ ref }` — Trivy/Grype if on PATH |
 | `GET` | `/api/docker/images/{id}/files` | Browse image filesystem |
 | `GET` | `/api/docker/builders` | Buildx builders |
 | `POST` | `/api/docker/build` | Body: `{ context, dockerfile?, tag? }`; text stream |

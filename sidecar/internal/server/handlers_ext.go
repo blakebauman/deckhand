@@ -114,6 +114,33 @@ func (s *Server) handleImageFiles(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, entries)
 }
 
+func (s *Server) handleImageScan(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	ref := id
+	if bodyRef := r.URL.Query().Get("ref"); bodyRef != "" {
+		ref = bodyRef
+	}
+	var body struct {
+		Ref string `json:"ref"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&body)
+	if body.Ref != "" {
+		ref = body.Ref
+	}
+	res, err := docker.ScanImage(r.Context(), ref)
+	s.audit.Log("image.scan", ref, res.Tool, err)
+	// Return partial results even when tool missing (200 with ok:false) for UI
+	if err != nil && !res.OK && res.Tool == "" {
+		writeJSON(w, http.StatusOK, res)
+		return
+	}
+	if err != nil && !res.OK {
+		writeJSON(w, http.StatusOK, res)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
 func (s *Server) handleBuilders(w http.ResponseWriter, r *http.Request) {
 	list, err := docker.ListBuilders(r.Context())
 	if err != nil {

@@ -11,6 +11,7 @@ import { toast } from "@/components/Toaster";
 import { Field } from "@/components/spectrum/Field";
 import { RowMenu } from "@/components/spectrum/RowMenu";
 import { formatBytes } from "@/lib/utils";
+import { useUIStore } from "@/stores/uiStore";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 
 import { copyText } from "@/routes/shared";
@@ -18,6 +19,8 @@ import { copyText } from "@/routes/shared";
 export function VolumesPage() {
   const qc = useQueryClient();
   const [name, setName] = useState("");
+  const pendingVolumeName = useUIStore((s) => s.pendingVolumeName);
+  const setPendingVolumeName = useUIStore((s) => s.setPendingVolumeName);
   const [selected, setSelected] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -38,6 +41,12 @@ export function VolumesPage() {
     queryFn: () => api.volumeFiles(selected!, filePath),
     enabled: !!selected && browsing,
   });
+
+  useEffect(() => {
+    if (!pendingVolumeName) return;
+    setSelected(pendingVolumeName);
+    setPendingVolumeName(undefined);
+  }, [pendingVolumeName, setPendingVolumeName]);
 
   useEffect(() => {
     setFilePath("");

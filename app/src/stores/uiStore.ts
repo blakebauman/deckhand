@@ -19,6 +19,8 @@ type UIState = {
   runSheetImage?: string;
   pruneSheetOpen: boolean;
   pendingContainerId?: string;
+  pendingImageId?: string;
+  pendingVolumeName?: string;
   setMode: (mode: AppMode) => void;
   setTheme: (theme: ThemeMode) => void;
   setNamespace: (ns: string) => void;
@@ -32,6 +34,8 @@ type UIState = {
   openPruneSheet: () => void;
   closePruneSheet: () => void;
   setPendingContainerId: (id?: string) => void;
+  setPendingImageId: (id?: string) => void;
+  setPendingVolumeName: (name?: string) => void;
 };
 
 export const useUIStore = create<UIState>()(
@@ -48,6 +52,8 @@ export const useUIStore = create<UIState>()(
       runSheetImage: undefined,
       pruneSheetOpen: false,
       pendingContainerId: undefined,
+      pendingImageId: undefined,
+      pendingVolumeName: undefined,
       setMode: (mode) => set({ mode }),
       setTheme: (theme) => set({ theme }),
       setNamespace: (namespace) => set({ namespace }),
@@ -67,6 +73,8 @@ export const useUIStore = create<UIState>()(
       openPruneSheet: () => set({ pruneSheetOpen: true }),
       closePruneSheet: () => set({ pruneSheetOpen: false }),
       setPendingContainerId: (pendingContainerId) => set({ pendingContainerId }),
+      setPendingImageId: (pendingImageId) => set({ pendingImageId }),
+      setPendingVolumeName: (pendingVolumeName) => set({ pendingVolumeName }),
     }),
     {
       name: "deckhand-ui",

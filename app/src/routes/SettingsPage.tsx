@@ -13,12 +13,14 @@ import {
 } from "@react-spectrum/s2";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api, type EngineConfig } from "@/lib/api";
+import { getLaunchAtLogin, setLaunchAtLogin } from "@/lib/autostart";
 import { DiskUsagePanel } from "@/components/DiskUsagePanel";
 import { LogoWordmark } from "@/components/Logo";
 import { PageShell } from "@/components/PageShell";
 import { SettingRow, SettingSection } from "@/components/SettingRow";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
 import { toast } from "@/components/Toaster";
+import { isTauriShell } from "@/lib/platform";
 import { APP_VERSION } from "@/lib/version";
 import { useUIStore } from "@/stores/uiStore";
 
@@ -32,6 +34,14 @@ export function SettingsPage() {
   const setShowStoppedContainers = useUIStore((s) => s.setShowStoppedContainers);
   const confirmPrune = useUIStore((s) => s.confirmPrune);
   const setConfirmPrune = useUIStore((s) => s.setConfirmPrune);
+  const [launchAtLogin, setLaunchAtLoginState] = useState(false);
+  const [launchBusy, setLaunchBusy] = useState(false);
+  const desktop = isTauriShell();
+
+  useEffect(() => {
+    if (!desktop) return;
+    void getLaunchAtLogin().then(setLaunchAtLoginState);
+  }, [desktop]);
 
   const status = useQuery({ queryKey: ["status"], queryFn: api.status });
   const info = useQuery({ queryKey: ["docker-info"], queryFn: api.dockerInfo, retry: false });
@@ -192,6 +202,36 @@ export function SettingsPage() {
           description="Ask before reclaiming unused disk resources"
           htmlFor="pref-prune"
           action={<Switch id="pref-prune" isSelected={confirmPrune} onChange={setConfirmPrune} />}
+        />
+        <SettingRow
+          title="Launch at login"
+          description={
+            desktop
+              ? "Start Deckhand when you sign in to this computer"
+              : "Available in the desktop app only"
+          }
+          htmlFor="pref-autostart"
+          action={
+            <Switch
+              id="pref-autostart"
+              isSelected={launchAtLogin}
+              isDisabled={!desktop || launchBusy}
+              onChange={(enabled) => {
+                setLaunchBusy(true);
+                void setLaunchAtLogin(enabled)
+                  .then(() => {
+                    setLaunchAtLoginState(enabled);
+                    toast.success(enabled ? "Launch at login on" : "Launch at login off");
+                  })
+                  .catch((e: any) =>
+                    toast.error("Could not update launch at login", {
+                      description: e?.message || String(e),
+                    }),
+                  )
+                  .finally(() => setLaunchBusy(false));
+              }}
+            />
+          }
         />
       </SettingSection>
 

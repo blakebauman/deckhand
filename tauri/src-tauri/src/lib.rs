@@ -7,6 +7,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager, WindowEvent,
 };
+use tauri_plugin_autostart::MacosLauncher;
 
 static SIDECAR_URL: OnceCell<Mutex<String>> = OnceCell::new();
 static SIDECAR_CHILD: OnceCell<Mutex<Option<Child>>> = OnceCell::new();
@@ -102,6 +103,10 @@ fn kill_sidecar() {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
         .invoke_handler(tauri::generate_handler![sidecar_url])
         .setup(|app| {
             if let Err(err) = spawn_sidecar() {

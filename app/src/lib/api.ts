@@ -148,6 +148,11 @@ export const api = {
     request<VolumeFileEntry[]>(
       `/api/docker/images/${encodeURIComponent(id)}/files?path=${encodeURIComponent(path)}`,
     ),
+  scanImage: (id: string, ref?: string) =>
+    request<ImageScanResult>(`/api/docker/images/${encodeURIComponent(id)}/scan`, {
+      method: "POST",
+      body: JSON.stringify({ ref: ref || id }),
+    }),
   dockerContexts: () =>
     request<{ contexts: DockerContextInfo[]; current: string }>("/api/docker/contexts"),
   useDockerContext: (name: string) =>
@@ -397,6 +402,7 @@ export type RunContainerBody = {
   env?: string[];
   ports?: string[];
   mounts?: MountSpec[];
+  labels?: Record<string, string>;
   start?: boolean;
   gpu?: boolean;
   autoRemove?: boolean;
@@ -412,6 +418,26 @@ export type VolumeFileEntry = {
   size: number;
   mode?: string;
   modTime?: string;
+};
+
+export type ImageScanResult = {
+  tool: string;
+  image: string;
+  ok: boolean;
+  error?: string;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  unknown: number;
+  findings?: {
+    id: string;
+    severity: string;
+    package?: string;
+    title?: string;
+    fixedBy?: string;
+  }[];
+  scannedAt: string;
 };
 
 export type DockerContextInfo = {

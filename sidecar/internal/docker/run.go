@@ -21,18 +21,19 @@ type MountSpec struct {
 
 // RunOptions is a create/run form payload.
 type RunOptions struct {
-	Image      string      `json:"image"`
-	Name       string      `json:"name"`
-	Cmd        string      `json:"cmd"`
-	Env        []string    `json:"env"`
-	Ports      []string    `json:"ports"`
-	Mounts     []MountSpec `json:"mounts"`
-	Start      bool        `json:"start"`
-	GPU        bool        `json:"gpu"`
-	AutoRemove bool        `json:"autoRemove"`
-	Restart    string      `json:"restart"`
-	WorkDir    string      `json:"workdir"`
-	Network    string      `json:"network"`
+	Image      string            `json:"image"`
+	Name       string            `json:"name"`
+	Cmd        string            `json:"cmd"`
+	Env        []string          `json:"env"`
+	Ports      []string          `json:"ports"`
+	Mounts     []MountSpec       `json:"mounts"`
+	Labels     map[string]string `json:"labels"`
+	Start      bool              `json:"start"`
+	GPU        bool              `json:"gpu"`
+	AutoRemove bool              `json:"autoRemove"`
+	Restart    string            `json:"restart"`
+	WorkDir    string            `json:"workdir"`
+	Network    string            `json:"network"`
 }
 
 type RunResult struct {
@@ -74,6 +75,7 @@ func (c *Client) CreateAndRun(ctx context.Context, opts RunOptions) (RunResult, 
 		Env:          normalizeEnv(opts.Env),
 		ExposedPorts: exposed,
 		WorkingDir:   strings.TrimSpace(opts.WorkDir),
+		Labels:       normalizeLabels(opts.Labels),
 	}
 	if cmd := strings.TrimSpace(opts.Cmd); cmd != "" {
 		cfg.Cmd = []string{"sh", "-c", cmd}
@@ -144,6 +146,24 @@ func normalizeEnv(env []string) []string {
 			e = e + "="
 		}
 		out = append(out, e)
+	}
+	return out
+}
+
+func normalizeLabels(in map[string]string) map[string]string {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(in))
+	for k, v := range in {
+		k = strings.TrimSpace(k)
+		if k == "" {
+			continue
+		}
+		out[k] = strings.TrimSpace(v)
+	}
+	if len(out) == 0 {
+		return nil
 	}
 	return out
 }

@@ -156,22 +156,66 @@ func (m *Manager) handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Manager) resolveContainer(ctx context.Context, name string) (string, error) {
+	name = strings.ToLower(strings.TrimSpace(name))
 	ctrs, err := m.docker.ListContainers(ctx, false)
 	if err != nil {
 		return "", err
 	}
 	for _, c := range ctrs {
-		cname := docker.ContainerName(c.Names)
-		if cname == name || strings.TrimPrefix(cname, "/") == name {
-			for _, p := range c.Ports {
-				if p.PublicPort > 0 {
-					return fmt.Sprintf("http://127.0.0.1:%d", p.PublicPort), nil
-				}
+		cname := strings.ToLower(docker.ContainerName(c.Names))
+		if cname == name || matchDomainLabels(c.Labels, name) {
+			if port := preferredPort(c); port > 0 {
+				return fmt.Sprintf("http://127.0.0.1:%d", port), nil
 			}
 			return "", fmt.Errorf("container %q has no published ports", name)
 		}
 	}
 	return "", fmt.Errorf("running container %q not found", name)
+}
+
+// matchDomainLabels supports OrbStack-compatible and Deckhand labels:
+//
+//	dev.deckhand.domains=api.local,web.local
+//	dev.orbstack.domains=…
+func matchDomainLabels(labels map[string]string, host string) bool {
+	if labels == nil {
+		return false
+	}
+	for _, key := range []string{"dev.deckhand.domains", "dev.orbstack.domains"} {
+		raw := labels[key]
+		for _, part := range strings.Split(raw, ",") {
+			d := strings.ToLower(strings.TrimSpace(part))
+			d = strings.TrimSuffix(d, ".deckhand.local")
+			d = strings.TrimSuffix(d, ".orb.local")
+			d = strings.TrimSuffix(d, ".local")
+			if d != "" && (d == host || strings.HasPrefix(host, d+".")) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func preferredPort(c docker.ContainerSummary) uint16 {
+	if c.Labels != nil {
+		if v := strings.TrimSpace(c.Labels["dev.deckhand.http-port"]); v != "" {
+			var want uint16
+			fmt.Sscanf(v, "%d", &want)
+			if want > 0 {
+				for _, p := range c.Ports {
+					if p.PrivatePort == want && p.PublicPort > 0 {
+						return p.PublicPort
+					}
+				}
+			}
+		}
+	}
+	for _, p := range c.Ports {
+		if p.PublicPort > 0 {
+			return p.PublicPort
+		}
+	}
+	return 0
 }
 
 func selfSignedCert() (tls.Certificate, error) {

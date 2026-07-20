@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { api, type VolumeFileEntry } from "@/lib/api";
+import { api, type ImageScanResult, type VolumeFileEntry } from "@/lib/api";
 import { Button } from "@react-spectrum/s2";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
@@ -21,6 +21,8 @@ import { copyText } from "@/routes/shared";
 export function ImagesPage() {
   const qc = useQueryClient();
   const openRunSheet = useUIStore((s) => s.openRunSheet);
+  const pendingImageId = useUIStore((s) => s.pendingImageId);
+  const setPendingImageId = useUIStore((s) => s.setPendingImageId);
   const [ref, setRef] = useState("nginx:alpine");
   const [pullLog, setPullLog] = useState("");
   const [pulling, setPulling] = useState(false);
@@ -31,6 +33,8 @@ export function ImagesPage() {
   const [confirmPrune, setConfirmPrune] = useState(false);
   const [browsing, setBrowsing] = useState(false);
   const [filePath, setFilePath] = useState("");
+  const [scan, setScan] = useState<ImageScanResult | null>(null);
+  const [scanning, setScanning] = useState(false);
   const list = useQuery({ queryKey: ["images"], queryFn: api.images, refetchInterval: 8000 });
   const files = useQuery({
     queryKey: ["image-files", selected, filePath],
@@ -39,8 +43,15 @@ export function ImagesPage() {
   });
 
   useEffect(() => {
+    if (!pendingImageId) return;
+    setSelected(pendingImageId);
+    setPendingImageId(undefined);
+  }, [pendingImageId, setPendingImageId]);
+
+  useEffect(() => {
     setBrowsing(false);
     setFilePath("");
+    setScan(null);
   }, [selected]);
 
   const filtered = useMemo(() => {
@@ -198,10 +209,70 @@ export function ImagesPage() {
                 >
                   Browse files
                 </Button>
+                <Tip label="Scan with Trivy or Grype if installed on PATH">
+                  <Button
+                    size="S"
+                    variant="secondary"
+                    fillStyle="outline"
+                    isPending={scanning}
+                    onPress={() => {
+                      void (async () => {
+                        if (!selected) return;
+                        setScanning(true);
+                        try {
+                          const res = await api.scanImage(
+                            selected,
+                            selectedImg.RepoTags?.[0] || selected,
+                          );
+                          setScan(res);
+                          if (!res.ok) {
+                            toast.error("Scan unavailable", { description: res.error });
+                          } else {
+                            toast.success(`Scanned with ${res.tool}`, {
+                              description: `${res.critical} critical · ${res.high} high`,
+                            });
+                          }
+                        } catch (e: any) {
+                          toast.error("Scan failed", { description: e?.message });
+                        } finally {
+                          setScanning(false);
+                        }
+                      })();
+                    }}
+                  >
+                    Scan vulns
+                  </Button>
+                </Tip>
                 <Button size="S" variant="negative" onPress={() => setConfirmRemove(true)}>
                   Remove
                 </Button>
               </div>
+
+              {scan ? (
+                <div
+                  className={style({
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    backgroundColor: "layer-1",
+                    borderRadius: "xl",
+                    padding: 12,
+                  })}
+                >
+                  <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                    {scan.tool || "scanner"} · C{scan.critical} H{scan.high} M{scan.medium} L{scan.low}
+                    {scan.error ? ` · ${scan.error}` : ""}
+                  </div>
+                  {(scan.findings || []).slice(0, 12).map((f) => (
+                    <div key={`${f.id}-${f.package}`} className={style({ font: "code-xs" })}>
+                      <StatusBadge tone={f.severity === "CRITICAL" || f.severity === "HIGH" ? "destructive" : "muted"}>
+                        {f.severity}
+                      </StatusBadge>{" "}
+                      {f.id} {f.package ? `· ${f.package}` : ""}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               {browsing ? (
                 <div
