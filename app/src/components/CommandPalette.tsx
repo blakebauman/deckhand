@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   CustomDialog,
   DialogContainer,
@@ -22,7 +23,10 @@ import Play from "@react-spectrum/s2/icons/Play";
 import Delete from "@react-spectrum/s2/icons/Delete";
 import Tools from "@react-spectrum/s2/icons/Tools";
 import ViewList from "@react-spectrum/s2/icons/ViewList";
+import Cloud from "@react-spectrum/s2/icons/Cloud";
+import { api } from "@/lib/api";
 import { useUIStore } from "@/stores/uiStore";
+import { containerName, shortId } from "@/lib/utils";
 
 type Action = {
   id: string;
@@ -46,17 +50,59 @@ export function CommandPalette({
 }) {
   const navigate = useNavigate();
   const setMode = useUIStore((s) => s.setMode);
+  const setPendingContainerId = useUIStore((s) => s.setPendingContainerId);
+  const setPendingImageId = useUIStore((s) => s.setPendingImageId);
+  const setPendingVolumeName = useUIStore((s) => s.setPendingVolumeName);
+  const openRunSheet = useUIStore((s) => s.openRunSheet);
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
+  const [debounced, setDebounced] = useState("");
 
   useEffect(() => {
     if (!open) {
       setQ("");
       setActive(0);
+      setDebounced("");
     }
   }, [open]);
 
-  const actions = useMemo<Action[]>(() => {
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebounced(q.trim()), 220);
+    return () => window.clearTimeout(t);
+  }, [q]);
+
+  const containers = useQuery({
+    queryKey: ["containers", "palette"],
+    queryFn: () => api.containers(true),
+    enabled: open,
+    staleTime: 10_000,
+  });
+  const images = useQuery({
+    queryKey: ["images", "palette"],
+    queryFn: api.images,
+    enabled: open,
+    staleTime: 15_000,
+  });
+  const volumes = useQuery({
+    queryKey: ["volumes", "palette"],
+    queryFn: api.volumes,
+    enabled: open,
+    staleTime: 15_000,
+  });
+  const projects = useQuery({
+    queryKey: ["compose-projects", "palette"],
+    queryFn: api.composeProjects,
+    enabled: open,
+    staleTime: 15_000,
+  });
+  const hub = useQuery({
+    queryKey: ["hub-search", debounced],
+    queryFn: () => api.registrySearch(debounced, 8),
+    enabled: open && debounced.length >= 2,
+    staleTime: 30_000,
+  });
+
+  const navActions = useMemo<Action[]>(() => {
     const go = (to: string, mode?: "docker" | "kubernetes" | "microvms") => () => {
       if (mode) setMode(mode);
       navigate({ to });
@@ -101,20 +147,122 @@ export function CommandPalette({
     ];
   }, [navigate, onOpenChange, onOpenPrune, onRunContainer, setMode]);
 
+  const resourceActions = useMemo<Action[]>(() => {
+    const out: Action[] = [];
+    for (const c of containers.data || []) {
+      const name = containerName(c.names) || shortId(c.id);
+      out.push({
+        id: `ctr-${c.id}`,
+        label: name,
+        hint: `${c.state || "?"} · ${c.image || ""}`.slice(0, 48),
+        group: "Containers",
+        icon: Collection,
+        run: () => {
+          setMode("docker");
+          setPendingContainerId(c.id);
+          navigate({ to: "/containers" });
+          onOpenChange(false);
+        },
+      });
+    }
+    for (const p of projects.data || []) {
+      out.push({
+        id: `proj-${p.name}-${p.path || ""}`,
+        label: p.name,
+        hint: p.status || p.source || "compose",
+        group: "Compose",
+        icon: Layers,
+        run: () => {
+          setMode("docker");
+          navigate({ to: "/projects" });
+          onOpenChange(false);
+        },
+      });
+    }
+    for (const img of images.data || []) {
+      const tag = img.RepoTags?.[0] || shortId(img.Id);
+      out.push({
+        id: `img-${img.Id}`,
+        label: tag,
+        hint: "image",
+        group: "Images",
+        icon: Data,
+        run: () => {
+          setMode("docker");
+          setPendingImageId(img.Id);
+          navigate({ to: "/images" });
+          onOpenChange(false);
+        },
+      });
+    }
+    for (const v of volumes.data || []) {
+      const name = v.Name || v.name;
+      if (!name) continue;
+      out.push({
+        id: `vol-${name}`,
+        label: name,
+        hint: "volume",
+        group: "Volumes",
+        icon: Folder,
+        run: () => {
+          setMode("docker");
+          setPendingVolumeName(name);
+          navigate({ to: "/volumes" });
+          onOpenChange(false);
+        },
+      });
+    }
+    for (const h of hub.data || []) {
+      out.push({
+        id: `hub-${h.name}`,
+        label: h.name,
+        hint: h.isOfficial ? "Hub · official" : `Hub · ★${h.starCount}`,
+        group: "Docker Hub",
+        icon: Cloud,
+        run: () => {
+          setMode("docker");
+          openRunSheet(h.name.includes(":") ? h.name : `${h.name}:latest`);
+          onOpenChange(false);
+        },
+      });
+    }
+    return out;
+  }, [
+    containers.data,
+    projects.data,
+    images.data,
+    volumes.data,
+    hub.data,
+    navigate,
+    onOpenChange,
+    openRunSheet,
+    setMode,
+    setPendingContainerId,
+    setPendingImageId,
+    setPendingVolumeName,
+  ]);
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return actions;
-    return actions.filter(
+    const all = [...resourceActions, ...navActions];
+    if (!needle) {
+      // Prefer navigate + a few live resources when empty
+      return [
+        ...navActions,
+        ...resourceActions.filter((a) => a.group === "Containers").slice(0, 8),
+      ];
+    }
+    return all.filter(
       (a) =>
         a.label.toLowerCase().includes(needle) ||
         a.hint?.toLowerCase().includes(needle) ||
         a.group.toLowerCase().includes(needle),
     );
-  }, [actions, q]);
+  }, [navActions, resourceActions, q]);
 
   useEffect(() => {
     setActive(0);
-  }, [q]);
+  }, [q, filtered.length]);
 
   return (
     <DialogContainer onDismiss={() => onOpenChange(false)}>
@@ -145,7 +293,7 @@ export function CommandPalette({
           >
             <SearchField
               autoFocus
-              aria-label="Search pages and actions"
+              aria-label="Search containers, images, volumes, Hub"
               value={q}
               onChange={setQ}
               onKeyDown={(e) => {
@@ -160,7 +308,7 @@ export function CommandPalette({
                   filtered[active]?.run();
                 }
               }}
-              placeholder="Search pages and actions…"
+              placeholder="Search containers, Compose, images, volumes, Hub…"
             />
           </div>
           <div
@@ -227,6 +375,9 @@ export function CommandPalette({
                       })}
                     >
                       <Text styles={style({ font: "ui", fontWeight: "medium" })}>{a.label}</Text>
+                      <span className={style({ display: "block", font: "detail", color: "neutral-subdued" })}>
+                        {a.group}
+                      </span>
                     </span>
                     {a.hint ? (
                       <Text styles={style({ font: "detail", color: "neutral-subdued" })}>{a.hint}</Text>
@@ -247,6 +398,7 @@ export function CommandPalette({
           >
             <Text styles={style({ font: "detail", color: "neutral-subdued" })}>
               ↑↓ navigate · ↵ select · esc close
+              {hub.isFetching ? " · searching Hub…" : ""}
             </Text>
           </div>
         </CustomDialog>

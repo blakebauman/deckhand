@@ -26,6 +26,7 @@ import { toast } from "@/components/Toaster";
 import { RowMenu } from "@/components/spectrum/RowMenu";
 import { StatusBadge } from "@/components/spectrum/StatusBadge";
 import { Tip } from "@/components/spectrum/Tip";
+import { containerBrowseUrl, openExternalUrl } from "@/lib/openUrl";
 import { containerName, shortId } from "@/lib/utils";
 import { useUIStore } from "@/stores/uiStore";
 import Filter from "@react-spectrum/s2/icons/Filter";
@@ -54,6 +55,7 @@ export function ContainersPage() {
     queryFn: () => api.container(selected!),
     enabled: !!selected,
   });
+  const domains = useQuery({ queryKey: ["domains"], queryFn: api.domainsStatus, staleTime: 30_000 });
 
   useEffect(() => {
     if (!pendingContainerId) return;
@@ -314,6 +316,44 @@ export function ContainersPage() {
                   }}
                 >
                   Debug shell
+                </Button>
+              </Tip>
+              <Tip
+                label={
+                  domains.data?.enabled
+                    ? "Open via *.deckhand.local or published port (label: dev.deckhand.domains)"
+                    : "Open first published port on localhost"
+                }
+              >
+                <Button
+                  size="S"
+                  variant="secondary"
+                  fillStyle="outline"
+                  isDisabled={!running}
+                  onPress={() => {
+                    const name = containerName(
+                      detail.data?.Name ? [detail.data.Name] : selectedRow?.names,
+                    );
+                    const url = containerBrowseUrl({
+                      name,
+                      ports: selectedRow?.ports,
+                      labels: selectedRow?.labels || detail.data?.Config?.Labels,
+                      domainsEnabled: !!domains.data?.enabled,
+                      domainHttpPort: domains.data?.addr?.split(":").pop(),
+                    });
+                    if (!url) {
+                      toast.error("No published port", {
+                        description: "Publish a port or enable Domains in Settings",
+                      });
+                      return;
+                    }
+                    void openExternalUrl(url).then(
+                      () => toast.success("Opened browser", { description: url }),
+                      (e: any) => toast.error("Open failed", { description: e?.message }),
+                    );
+                  }}
+                >
+                  Open in browser
                 </Button>
               </Tip>
               <Button size="S" variant="negative" onPress={() => setConfirmRemove(true)}>

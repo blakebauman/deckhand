@@ -25,6 +25,7 @@ const emptyForm = {
   ports: "8080:80",
   env: "",
   mounts: "",
+  labels: "",
   network: "",
   workdir: "",
   restart: "no" as RunContainerBody["restart"],
@@ -32,6 +33,26 @@ const emptyForm = {
   autoRemove: false,
   start: true,
 };
+
+/** Parse lines like `key=value` into a label map. */
+function parseLabelLines(text: string): Record<string, string> {
+  const labels: Record<string, string> = {};
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line) continue;
+    const eq = line.indexOf("=");
+    if (eq <= 0) {
+      throw new Error(`Invalid label (need key=value): ${line}`);
+    }
+    const key = line.slice(0, eq).trim();
+    const value = line.slice(eq + 1).trim();
+    if (!key) {
+      throw new Error(`Invalid label (need key=value): ${line}`);
+    }
+    labels[key] = value;
+  }
+  return labels;
+}
 
 /** Parse lines like `/host:/container:ro` or `volname:/path` into MountSpec[]. */
 function parseMountLines(text: string): MountSpec[] {
@@ -99,6 +120,7 @@ export function RunContainerSheet({
         .map((e) => e.trim())
         .filter(Boolean);
       const mounts = parseMountLines(form.mounts);
+      const labels = parseLabelLines(form.labels);
       const body: RunContainerBody = {
         image: form.image.trim(),
         name: form.name.trim() || undefined,
@@ -106,6 +128,7 @@ export function RunContainerSheet({
         ports,
         env,
         mounts: mounts.length ? mounts : undefined,
+        labels: Object.keys(labels).length ? labels : undefined,
         network: form.network.trim() || undefined,
         workdir: form.workdir.trim() || undefined,
         restart: form.restart || "no",
@@ -209,6 +232,15 @@ export function RunContainerSheet({
           value={form.mounts}
           onChange={(mounts) => setForm({ ...form, mounts })}
           placeholder={"/data:/app/data:ro\nmyvol:/var/lib/app"}
+        />
+        <TextArea
+          label="Labels"
+          contextualHelp={
+            <HelpHint label="One key=value per line. Domains: dev.deckhand.domains=api.local (optional dev.deckhand.http-port=80)" />
+          }
+          value={form.labels}
+          onChange={(labels) => setForm({ ...form, labels })}
+          placeholder={"dev.deckhand.domains=myapp.local"}
         />
         <div
           className={style({

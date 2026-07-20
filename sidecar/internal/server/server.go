@@ -108,6 +108,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/docker/volumes/{name}/export", s.handleVolumeExport)
 	s.mux.HandleFunc("POST /api/docker/volumes/{name}/import", s.handleVolumeImport)
 	s.mux.HandleFunc("GET /api/docker/images/{id}/files", s.handleImageFiles)
+	s.mux.HandleFunc("POST /api/docker/images/{id}/scan", s.handleImageScan)
 	s.mux.HandleFunc("GET /api/docker/builders", s.handleBuilders)
 	s.mux.HandleFunc("POST /api/docker/build", s.handleDockerBuild)
 	s.mux.HandleFunc("POST /api/docker/containers/{id}/debug", s.handleContainerDebug)
