@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Deckhand",
   "version": "../../package.json",
-  "identifier": "dev.deckhand.app",
+  "identifier": "dev.deckhand.desktop",
   "build": {
     "beforeDevCommand": {
       "script": "bash ./scripts/tauri-frontend-dev.sh",
@@ -50,7 +50,8 @@
     ],
     "externalBin": ["binaries/deckhand-sidecar"],
     "macOS": {
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "10.15",
+      "signingIdentity": "-"
     },
     "linux": {
       "deb": {

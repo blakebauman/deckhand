@@ -23,6 +23,16 @@ bun run dev
 
 See [docs/development.md](docs/development.md) for prerequisites, split-process workflows, and packaging.
 
+## Downloads
+
+Pre-release builds: [GitHub Releases](https://github.com/blakebauman/deckhand/releases).
+
+macOS Apple Silicon DMGs are **ad-hoc signed** (not notarized). After install, if macOS blocks the app, right-click → **Open**, or:
+
+```bash
+xattr -cr /Applications/Deckhand.app
+```
+
 ## Docs
 
 | Doc | Description |

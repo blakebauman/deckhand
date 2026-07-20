@@ -107,8 +107,8 @@ jobs:
           releaseBody: |
             Automated packaging for `${{ steps.tag.outputs.name }}`.
 
-            **Unsigned** builds (no Apple notarization / code signing yet).
-            macOS artifacts are Apple Silicon; Linux is x86_64 `.deb` + AppImage.
-            Windows packaging is deferred.
+            macOS builds are **ad-hoc signed** (not Apple notarized / Developer ID).
+            First launch: right-click the app → **Open**, or run `xattr -cr /Applications/Deckhand.app`.
+            Linux is x86_64 `.deb` + AppImage. Windows packaging is deferred.
           prerelease: ${{ contains(steps.tag.outputs.name, 'alpha') || contains(steps.tag.outputs.name, 'beta') || contains(steps.tag.outputs.name, 'rc') }}
           args: ${{ matrix.args }}

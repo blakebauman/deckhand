@@ -86,7 +86,17 @@ git push origin main v0.1.0-alpha.2
 - **macOS** (`macos-latest`) — Apple Silicon `.dmg` / `.app`
 - **Linux** (`ubuntu-22.04`) — x86_64 `.deb` + AppImage
 
-Tags containing `alpha`, `beta`, or `rc` are marked prerelease. Builds are **unsigned**. The workflow requires `package.json` version to match the tag (without the leading `v`).
+Tags containing `alpha`, `beta`, or `rc` are marked prerelease. macOS builds use **ad-hoc** code signing (`signingIdentity: "-"`) so Gatekeeper does not falsely report the app as damaged; users still need right-click → **Open** once (unidentified developer). Apple Developer ID + notarization is not configured yet. The workflow requires `package.json` version to match the tag (without the leading `v`).
+
+### macOS install tip (current alpha)
+
+If a downloaded build says it is **damaged**, clear quarantine after copying to Applications:
+
+```bash
+xattr -cr /Applications/Deckhand.app
+```
+
+Then open normally (or right-click → Open). That symptom is fixed in builds that include ad-hoc bundle signing (`v0.1.0-alpha.2`+).
 
 Regular CI (`.github/workflows/ci.yml`) still only builds the sidecar + UI — not full installers.
 
