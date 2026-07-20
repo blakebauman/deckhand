@@ -3,16 +3,20 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import {
   ActionButton,
+  ActionMenu,
   Button,
   Checkbox,
   CheckboxGroup,
   Content,
   DialogTrigger,
+  MenuItem,
+  MenuSection,
   Popover,
   Tab,
   TabList,
   TabPanel,
   Tabs,
+  Text,
 } from "@react-spectrum/s2";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CodeBlock } from "@/components/CodeBlock";
@@ -69,6 +73,7 @@ export function ContainersPage() {
   const [stateFilter, setStateFilter] = useState<string[]>([]);
   const [tab, setTab] = useState<ContainerTab>("monitor");
   const [showRaw, setShowRaw] = useState(false);
+  const [showAllLabels, setShowAllLabels] = useState(false);
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const list = useQuery({ queryKey: ["containers"], queryFn: () => api.containers(true), refetchInterval: 4000 });
@@ -87,6 +92,7 @@ export function ContainersPage() {
 
   useEffect(() => {
     setShowRaw(false);
+    setShowAllLabels(false);
     setTab("monitor");
   }, [selected]);
 
@@ -121,6 +127,9 @@ export function ContainersPage() {
   const image = selectedRow?.image || detail.data?.Config?.Image || "—";
   const hasGpu =
     !!selectedRow?.gpu || (detail.data?.HostConfig?.DeviceRequests?.length ?? 0) > 0;
+  const allLabels = (detail.data?.Config?.Labels || selectedRow?.labels || {}) as Record<string, string>;
+  const composeProject = allLabels["com.docker.compose.project"];
+  const composeService = allLabels["com.docker.compose.service"];
 
   const selectedIds = Object.entries(checked)
     .filter(([, v]) => v)
@@ -339,104 +348,134 @@ export function ContainersPage() {
             <div
               className={style({
                 display: "flex",
-                flexWrap: "wrap",
-                alignItems: "start",
+                alignItems: "center",
                 justifyContent: "space-between",
-                gap: 12,
+                gap: 16,
+                minWidth: 0,
               })}
             >
-              <div className={style({ minWidth: 0, flexGrow: 1, display: "flex", flexDirection: "column", gap: 8 })}>
-                <div className={style({ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" })}>
+              <div className={style({ minWidth: 0, flexGrow: 1, display: "flex", flexDirection: "column", gap: 4 })}>
+                <div className={style({ display: "flex", alignItems: "center", gap: 8, minWidth: 0 })}>
                   <DetailHeading>{displayName}</DetailHeading>
                   <StatusBadge tone={running ? "success" : "muted"}>
                     {running ? "running" : selectedRow?.state || "—"}
                   </StatusBadge>
                   {hasGpu ? <StatusBadge tone="accent">GPU</StatusBadge> : null}
                 </div>
-                <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })} title={image}>
-                  {shortId(selected)}
-                  {selectedRow?.status ? ` · ${selectedRow.status}` : ""}
-                </div>
-                <div className={style({ font: "code-xs", color: "neutral-subdued", truncate: true })} title={image}>
-                  {image}
-                  {portSummary ? ` · ${portSummary}` : ""}
+                <div
+                  className={style({
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    minWidth: 0,
+                  })}
+                >
+                  <div
+                    className={style({
+                      display: "inline-flex",
+                      flexShrink: 0,
+                      alignItems: "center",
+                      gap: 2,
+                    })}
+                  >
+                    <span className={style({ font: "code-xs", color: "neutral-subdued" })}>
+                      {shortId(selected)}
+                    </span>
+                    <CopyButton value={selected} label="Copy ID" iconOnly />
+                  </div>
+                  <span
+                    className={style({
+                      font: "code-xs",
+                      color: "neutral-subdued",
+                      truncate: true,
+                      minWidth: 0,
+                    })}
+                    title={[selectedRow?.status, image, portSummary].filter(Boolean).join(" · ")}
+                  >
+                    {[selectedRow?.status, portSummary].filter(Boolean).join(" · ")}
+                  </span>
                 </div>
               </div>
-              <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "end" })}>
-                <CopyButton value={selected} label="Copy ID" />
-                <Button
-                  size="S"
-                  variant="secondary"
-                  fillStyle="outline"
-                  isDisabled={!!running}
-                  onPress={() => act(() => api.startContainer(selected), "Started")}
-                >
-                  Start
-                </Button>
-                <Button
-                  size="S"
-                  variant="secondary"
-                  fillStyle="outline"
-                  isDisabled={!running}
-                  onPress={() => act(() => api.stopContainer(selected), "Stopped")}
-                >
-                  Stop
-                </Button>
-                <Button
-                  size="S"
-                  variant="secondary"
-                  fillStyle="outline"
-                  isDisabled={!running}
-                  onPress={() => act(() => api.restartContainer(selected), "Restarted")}
-                >
-                  Restart
-                </Button>
-                <Tip
-                  label={
-                    domains.data?.enabled
-                      ? "Open via *.deckhand.local or published port"
-                      : "Open first published port on localhost"
-                  }
-                >
+              <div
+                className={style({
+                  display: "flex",
+                  flexShrink: 0,
+                  alignItems: "center",
+                  gap: 8,
+                })}
+              >
+                {running ? (
                   <Button
                     size="S"
                     variant="secondary"
-                    fillStyle="outline"
-                    isDisabled={!running}
-                    onPress={openInBrowser}
+                    onPress={() => act(() => api.stopContainer(selected), "Stopped")}
                   >
-                    Open
+                    Stop
                   </Button>
-                </Tip>
-                <Tip label="Start an ephemeral debug sidecar attached to this container">
+                ) : (
                   <Button
                     size="S"
-                    variant="secondary"
-                    fillStyle="outline"
-                    onPress={() => {
-                      void (async () => {
-                        try {
-                          const res = await api.debugContainer(selected);
-                          await qc.invalidateQueries({ queryKey: ["containers"] });
-                          setSelected(res.id);
-                          setTab("exec");
-                          toast.success("Debug shell ready", {
-                            description: shortId(res.id),
-                          });
-                        } catch (e: any) {
-                          toast.error("Debug shell failed", {
-                            description: e?.message || String(e),
-                          });
-                        }
-                      })();
-                    }}
+                    variant="accent"
+                    onPress={() => act(() => api.startContainer(selected), "Started")}
                   >
-                    Debug
+                    Start
                   </Button>
-                </Tip>
-                <Button size="S" variant="negative" fillStyle="outline" onPress={() => setConfirmRemove(true)}>
-                  Remove
-                </Button>
+                )}
+                {running ? (
+                  <Tip
+                    label={
+                      domains.data?.enabled
+                        ? "Open via *.deckhand.local or published port"
+                        : "Open first published port on localhost"
+                    }
+                  >
+                    <Button size="S" variant="secondary" fillStyle="outline" onPress={openInBrowser}>
+                      Open
+                    </Button>
+                  </Tip>
+                ) : null}
+                <ActionMenu aria-label="More container actions" isQuiet align="end" size="S">
+                  <MenuSection>
+                    <MenuItem
+                      id="restart"
+                      textValue="Restart"
+                      isDisabled={!running}
+                      onAction={() => void act(() => api.restartContainer(selected), "Restarted")}
+                    >
+                      <Text slot="label">Restart</Text>
+                    </MenuItem>
+                    <MenuItem
+                      id="debug"
+                      textValue="Debug shell"
+                      onAction={() => {
+                        void (async () => {
+                          try {
+                            const res = await api.debugContainer(selected);
+                            await qc.invalidateQueries({ queryKey: ["containers"] });
+                            setSelected(res.id);
+                            setTab("exec");
+                            toast.success("Debug shell ready", {
+                              description: shortId(res.id),
+                            });
+                          } catch (e: any) {
+                            toast.error("Debug shell failed", {
+                              description: e?.message || String(e),
+                            });
+                          }
+                        })();
+                      }}
+                    >
+                      <Text slot="label">Debug shell</Text>
+                    </MenuItem>
+                  </MenuSection>
+                  <MenuSection>
+                    <MenuItem id="remove" textValue="Remove" onAction={() => setConfirmRemove(true)}>
+                      <Text slot="label" styles={style({ color: "negative" })}>
+                        Remove…
+                      </Text>
+                    </MenuItem>
+                  </MenuSection>
+                </ActionMenu>
               </div>
             </div>
 
@@ -480,21 +519,33 @@ export function ContainersPage() {
                   <InspectFields
                     rows={[
                       { label: "Image", value: image, mono: true, copy: image !== "—" ? image : undefined },
-                      { label: "Status", value: selectedRow?.status || selectedRow?.state },
                       { label: "Ports", value: portSummary || undefined, mono: true },
                       { label: "Network", value: primaryNetwork(detail.data), mono: true },
-                      { label: "Command", value: commandLine(detail.data), mono: true },
-                      { label: "Created", value: detail.data?.Created },
                       {
-                        label: "Restart policy",
+                        label: "Compose",
+                        value: composeProject
+                          ? `${composeProject}${composeService ? ` / ${composeService}` : ""}`
+                          : undefined,
+                      },
+                      { label: "Command", value: commandLine(detail.data), mono: true },
+                      {
+                        label: "Restart",
                         value: detail.data?.HostConfig?.RestartPolicy?.Name,
                       },
+                      { label: "Created", value: detail.data?.Created },
                     ]}
                   />
 
                   {(detail.data?.Mounts || []).length > 0 ? (
                     <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                      <div className={style({ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 })}>
+                      <div
+                        className={style({
+                          display: "flex",
+                          alignItems: "baseline",
+                          justifyContent: "space-between",
+                          gap: 8,
+                        })}
+                      >
                         <div className={style({ font: "title-sm" })}>Mounts</div>
                         <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
                           {(detail.data.Mounts as any[]).length}
@@ -515,7 +566,14 @@ export function ContainersPage() {
                               minWidth: 0,
                             })}
                           >
-                            <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
+                            <div
+                              className={style({
+                                display: "flex",
+                                flexWrap: "wrap",
+                                alignItems: "center",
+                                gap: 8,
+                              })}
+                            >
                               <StatusBadge tone="muted">{m.Type || "mount"}</StatusBadge>
                               {m.RW === false || m.Mode === "ro" ? (
                                 <StatusBadge tone="muted">ro</StatusBadge>
@@ -533,18 +591,22 @@ export function ContainersPage() {
                     </div>
                   ) : null}
 
-                  {Object.keys(detail.data?.Config?.Labels || selectedRow?.labels || {}).length ? (
-                    <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                      <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Labels</div>
-                      <LabelChips labels={detail.data?.Config?.Labels || selectedRow?.labels} />
-                    </div>
-                  ) : null}
-
-                  <div>
+                  <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
+                    {Object.keys(allLabels).length > 0 ? (
+                      <Button
+                        size="S"
+                        variant="secondary"
+                        fillStyle="outline"
+                        onPress={() => setShowAllLabels((v) => !v)}
+                      >
+                        {showAllLabels ? "Hide labels" : `Labels (${Object.keys(allLabels).length})`}
+                      </Button>
+                    ) : null}
                     <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setShowRaw((v) => !v)}>
                       {showRaw ? "Hide JSON" : "Inspect JSON"}
                     </Button>
                   </div>
+                  {showAllLabels ? <LabelChips labels={allLabels} /> : null}
                   {showRaw ? (
                     <CodeBlock
                       title="Inspect"
