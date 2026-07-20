@@ -2,6 +2,11 @@ use once_cell::sync::OnceCell;
 use std::io::{BufRead, BufReader};
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager, WindowEvent,
+};
 
 static SIDECAR_URL: OnceCell<Mutex<String>> = OnceCell::new();
 static SIDECAR_CHILD: OnceCell<Mutex<Option<Child>>> = OnceCell::new();
@@ -35,7 +40,6 @@ fn find_sidecar_binary() -> Option<std::path::PathBuf> {
             return Some(p);
         }
     }
-    // Triple-suffixed externalBin names used by Tauri bundling
     let triple = std::env::consts::ARCH;
     let os = std::env::consts::OS;
     let triple_name = match (os, triple) {
@@ -45,7 +49,9 @@ fn find_sidecar_binary() -> Option<std::path::PathBuf> {
         ("linux", "aarch64") => "deckhand-sidecar-aarch64-unknown-linux-gnu",
         _ => "deckhand-sidecar",
     };
-    let p = std::path::PathBuf::from(manifest_dir).join("binaries").join(triple_name);
+    let p = std::path::PathBuf::from(manifest_dir)
+        .join("binaries")
+        .join(triple_name);
     if p.exists() {
         Some(p)
     } else {
@@ -54,7 +60,8 @@ fn find_sidecar_binary() -> Option<std::path::PathBuf> {
 }
 
 fn spawn_sidecar() -> Result<(), String> {
-    let bin = find_sidecar_binary().ok_or("sidecar binary not found — run: bun run build:sidecar")?;
+    let bin =
+        find_sidecar_binary().ok_or("sidecar binary not found — run: bun run build:sidecar")?;
     let mut child = Command::new(&bin)
         .args(["--addr", "127.0.0.1:0"])
         .stdout(Stdio::piped())
@@ -96,12 +103,56 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![sidecar_url])
-        .setup(|_app| {
+        .setup(|app| {
             if let Err(err) = spawn_sidecar() {
                 eprintln!("sidecar spawn warning: {err}");
                 set_url("http://127.0.0.1:7420".into());
             }
+
+            let show = MenuItem::with_id(app, "show", "Open Deckhand", true, None::<&str>)?;
+            let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show, &quit])?;
+
+            let _tray = TrayIconBuilder::new()
+                .menu(&menu)
+                .tooltip("Deckhand")
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "show" => {
+                        if let Some(win) = app.get_webview_window("main") {
+                            let _ = win.show();
+                            let _ = win.set_focus();
+                        }
+                    }
+                    "quit" => {
+                        kill_sidecar();
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(win) = app.get_webview_window("main") {
+                            let _ = win.show();
+                            let _ = win.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                // Keep running in tray on macOS/Linux desktop
+                let _ = window.hide();
+                api.prevent_close();
+            }
         })
         .build(tauri::generate_context!())
         .expect("error while building Deckhand")

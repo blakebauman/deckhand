@@ -1,6 +1,5 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "@react-spectrum/s2/page.css";
 import App from "./App";
 import "./index.css";
 

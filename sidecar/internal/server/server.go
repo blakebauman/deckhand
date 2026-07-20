@@ -10,8 +10,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/blake/deckhand/sidecar/internal/audit"
 	"github.com/blake/deckhand/sidecar/internal/compose"
 	"github.com/blake/deckhand/sidecar/internal/docker"
+	"github.com/blake/deckhand/sidecar/internal/domains"
+	"github.com/blake/deckhand/sidecar/internal/engine"
 	"github.com/blake/deckhand/sidecar/internal/helm"
 	"github.com/blake/deckhand/sidecar/internal/k8s"
 	"github.com/blake/deckhand/sidecar/internal/runtime"
@@ -24,16 +27,23 @@ type Server struct {
 	k8s      *k8s.Client
 	helm     *helm.Service
 	runtimes *runtime.Registry
+	audit    *audit.Logger
+	engine   *engine.Store
+	domains  *domains.Manager
 }
 
 func New() *Server {
+	d := docker.New()
 	s := &Server{
 		mux:      http.NewServeMux(),
-		docker:   docker.New(),
+		docker:   d,
 		compose:  compose.New(),
 		k8s:      k8s.New(),
 		helm:     helm.New(),
 		runtimes: runtime.NewRegistry(runtime.NewFirecracker()),
+		audit:    audit.New(""),
+		engine:   engine.NewStore(""),
+		domains:  domains.New(d),
 	}
 	s.routes()
 	return s
@@ -90,6 +100,21 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/docker/events", s.handleDockerEvents)
 	s.mux.HandleFunc("GET /api/docker/system/df", s.handleSystemDf)
 	s.mux.HandleFunc("POST /api/docker/system/prune", s.handleSystemPrune)
+	s.mux.HandleFunc("GET /api/docker/contexts", s.handleDockerContexts)
+	s.mux.HandleFunc("POST /api/docker/contexts", s.handleDockerUseContext)
+	s.mux.HandleFunc("GET /api/docker/diagnose", s.handleDockerDiagnose)
+	s.mux.HandleFunc("GET /api/docker/volumes/{name}/files", s.handleVolumeFiles)
+	s.mux.HandleFunc("POST /api/docker/volumes/clone", s.handleVolumeClone)
+	s.mux.HandleFunc("GET /api/docker/volumes/{name}/export", s.handleVolumeExport)
+	s.mux.HandleFunc("POST /api/docker/volumes/{name}/import", s.handleVolumeImport)
+	s.mux.HandleFunc("GET /api/docker/images/{id}/files", s.handleImageFiles)
+	s.mux.HandleFunc("GET /api/docker/builders", s.handleBuilders)
+	s.mux.HandleFunc("POST /api/docker/build", s.handleDockerBuild)
+	s.mux.HandleFunc("POST /api/docker/containers/{id}/debug", s.handleContainerDebug)
+	s.mux.HandleFunc("GET /api/docker/registry/search", s.handleRegistrySearch)
+	s.mux.HandleFunc("POST /api/docker/registry/login", s.handleRegistryLogin)
+	s.mux.HandleFunc("GET /api/docker/daemon-json", s.handleDaemonJSONGet)
+	s.mux.HandleFunc("PUT /api/docker/daemon-json", s.handleDaemonJSONPut)
 
 	s.mux.HandleFunc("GET /api/compose/projects", s.handleComposeProjects)
 	s.mux.HandleFunc("POST /api/compose/discover", s.handleComposeDiscover)
@@ -97,6 +122,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/compose/down", s.handleComposeDown)
 	s.mux.HandleFunc("POST /api/compose/restart", s.handleComposeRestart)
 	s.mux.HandleFunc("POST /api/compose/ps", s.handleComposePs)
+	s.mux.HandleFunc("POST /api/compose/services", s.handleComposeServices)
+	s.mux.HandleFunc("POST /api/compose/service-action", s.handleComposeServiceAction)
 
 	s.mux.HandleFunc("GET /api/k8s/status", s.handleK8sStatus)
 	s.mux.HandleFunc("GET /api/k8s/contexts", s.handleK8sContexts)
@@ -113,6 +140,15 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/k8s/deployments/{ns}/{name}/scale", s.handleK8sDeploymentScale)
 	s.mux.HandleFunc("POST /api/k8s/deployments/{ns}/{name}/restart", s.handleK8sDeploymentRestart)
 	s.mux.HandleFunc("DELETE /api/k8s/deployments/{ns}/{name}", s.handleK8sDeploymentDelete)
+	s.mux.HandleFunc("GET /api/k8s/services", s.handleK8sServices)
+	s.mux.HandleFunc("GET /api/k8s/ingresses", s.handleK8sIngresses)
+	s.mux.HandleFunc("GET /api/k8s/configmaps", s.handleK8sConfigMaps)
+	s.mux.HandleFunc("GET /api/k8s/secrets", s.handleK8sSecrets)
+	s.mux.HandleFunc("GET /api/k8s/nodes", s.handleK8sNodes)
+	s.mux.HandleFunc("GET /api/k8s/events", s.handleK8sEvents)
+	s.mux.HandleFunc("GET /api/k8s/jobs", s.handleK8sJobs)
+	s.mux.HandleFunc("GET /api/k8s/cronjobs", s.handleK8sCronJobs)
+	s.mux.HandleFunc("GET /api/k8s/statefulsets", s.handleK8sStatefulSets)
 
 	s.mux.HandleFunc("GET /api/helm/releases", s.handleHelmList)
 	s.mux.HandleFunc("GET /api/helm/releases/{ns}/{name}", s.handleHelmGet)
@@ -128,6 +164,12 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/runtimes/firecracker/vms/{id}/stop", s.handleFCStop)
 	s.mux.HandleFunc("DELETE /api/runtimes/firecracker/vms/{id}", s.handleFCDestroy)
 	s.mux.HandleFunc("GET /api/runtimes/firecracker/vms/{id}/logs", s.handleFCLogs)
+
+	s.mux.HandleFunc("GET /api/audit", s.handleAuditTail)
+	s.mux.HandleFunc("GET /api/engine", s.handleEngineGet)
+	s.mux.HandleFunc("PUT /api/engine", s.handleEnginePut)
+	s.mux.HandleFunc("GET /api/domains", s.handleDomainsStatus)
+	s.mux.HandleFunc("POST /api/domains", s.handleDomainsSet)
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -209,6 +251,7 @@ func (s *Server) handleContainerCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res, err := s.docker.CreateAndRun(r.Context(), body)
+	s.audit.Log("container.create", body.Image, body.Name, err)
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return

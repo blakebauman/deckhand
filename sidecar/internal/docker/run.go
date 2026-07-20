@@ -6,23 +6,33 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 )
 
+// MountSpec is a bind or named-volume mount for create/run.
+type MountSpec struct {
+	Type     string `json:"type"`     // bind | volume (default volume if Source has no path sep)
+	Source   string `json:"source"`   // host path or volume name
+	Target   string `json:"target"`   // container path
+	ReadOnly bool   `json:"readOnly"`
+}
+
 // RunOptions is a create/run form payload.
 type RunOptions struct {
-	Image      string   `json:"image"`
-	Name       string   `json:"name"`
-	Cmd        string   `json:"cmd"`
-	Env        []string `json:"env"`
-	Ports      []string `json:"ports"`
-	Start      bool     `json:"start"`
-	GPU        bool     `json:"gpu"`
-	AutoRemove bool     `json:"autoRemove"`
-	Restart    string   `json:"restart"`
-	WorkDir    string   `json:"workdir"`
-	Network    string   `json:"network"`
+	Image      string      `json:"image"`
+	Name       string      `json:"name"`
+	Cmd        string      `json:"cmd"`
+	Env        []string    `json:"env"`
+	Ports      []string    `json:"ports"`
+	Mounts     []MountSpec `json:"mounts"`
+	Start      bool        `json:"start"`
+	GPU        bool        `json:"gpu"`
+	AutoRemove bool        `json:"autoRemove"`
+	Restart    string      `json:"restart"`
+	WorkDir    string      `json:"workdir"`
+	Network    string      `json:"network"`
 }
 
 type RunResult struct {
@@ -72,6 +82,11 @@ func (c *Client) CreateAndRun(ctx context.Context, opts RunOptions) (RunResult, 
 	host := &container.HostConfig{
 		PortBindings: bindings,
 		AutoRemove:   opts.AutoRemove,
+	}
+	if mounts, err := parseMounts(opts.Mounts); err != nil {
+		return RunResult{}, err
+	} else if len(mounts) > 0 {
+		host.Mounts = mounts
 	}
 	if opts.GPU {
 		host.DeviceRequests = []container.DeviceRequest{{
@@ -131,4 +146,41 @@ func normalizeEnv(env []string) []string {
 		out = append(out, e)
 	}
 	return out
+}
+
+func parseMounts(specs []MountSpec) ([]mount.Mount, error) {
+	if len(specs) == 0 {
+		return nil, nil
+	}
+	out := make([]mount.Mount, 0, len(specs))
+	for _, s := range specs {
+		src := strings.TrimSpace(s.Source)
+		tgt := strings.TrimSpace(s.Target)
+		if src == "" || tgt == "" {
+			return nil, fmt.Errorf("mount requires source and target")
+		}
+		typ := strings.TrimSpace(strings.ToLower(s.Type))
+		if typ == "" {
+			if strings.HasPrefix(src, "/") || strings.HasPrefix(src, "./") || strings.HasPrefix(src, "../") ||
+				(len(src) > 1 && src[1] == ':') {
+				typ = "bind"
+			} else {
+				typ = "volume"
+			}
+		}
+		m := mount.Mount{Source: src, Target: tgt, ReadOnly: s.ReadOnly}
+		switch typ {
+		case "bind":
+			m.Type = mount.TypeBind
+		case "volume":
+			m.Type = mount.TypeVolume
+		case "tmpfs":
+			m.Type = mount.TypeTmpfs
+			m.Source = ""
+		default:
+			return nil, fmt.Errorf("unsupported mount type %q", typ)
+		}
+		out = append(out, m)
+	}
+	return out, nil
 }

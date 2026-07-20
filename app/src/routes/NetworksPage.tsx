@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { api } from "@/lib/api";
-import { Button } from "@react-spectrum/s2";
+import { Button, Picker, PickerItem } from "@react-spectrum/s2";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
@@ -18,6 +18,7 @@ import { copyText } from "@/routes/shared";
 export function NetworksPage() {
   const qc = useQueryClient();
   const [name, setName] = useState("");
+  const [driver, setDriver] = useState("bridge");
   const [selected, setSelected] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -197,18 +198,32 @@ export function NetworksPage() {
           })}
         >
           <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Create network</div>
-          <div className={style({ display: "flex", gap: 8, alignItems: "end" })}>
+          <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "end" })}>
             <Field value={name} onChange={setName} placeholder="network name" />
+            <Picker
+              aria-label="Driver"
+              selectedKey={driver}
+              onSelectionChange={(k) => {
+                if (k) setDriver(String(k));
+              }}
+            >
+              <PickerItem id="bridge">bridge</PickerItem>
+              <PickerItem id="overlay">overlay</PickerItem>
+              <PickerItem id="macvlan">macvlan</PickerItem>
+              <PickerItem id="ipvlan">ipvlan</PickerItem>
+              <PickerItem id="host">host</PickerItem>
+              <PickerItem id="none">none</PickerItem>
+            </Picker>
             <Button
               isDisabled={!name.trim()}
               onPress={() =>
                 api
-                  .createNetwork(name)
+                  .createNetwork(name.trim(), driver)
                   .then((res) => {
                     setSelected(res.Id);
                     setName("");
                     qc.invalidateQueries({ queryKey: ["networks"] });
-                    toast.success("Network created", { description: name });
+                    toast.success("Network created", { description: `${name} (${driver})` });
                   })
                   .catch((e: any) => toast.error("Create failed", { description: e?.message }))
               }

@@ -21,14 +21,42 @@ import (
 )
 
 type Client struct {
-	cli *client.Client
-	err error
+	cli           *client.Client
+	err           error
+	activeHost    string
+	activeContext string
 }
 
 func New() *Client {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	return &Client{cli: cli, err: err}
 }
+
+// ReconnectWithHost replaces the underlying SDK client for a Docker context switch.
+func (c *Client) ReconnectWithHost(host string) error {
+	opts := []client.Opt{client.WithAPIVersionNegotiation()}
+	if host != "" {
+		opts = append(opts, client.WithHost(host))
+	} else {
+		opts = append(opts, client.FromEnv)
+	}
+	cli, err := client.NewClientWithOpts(opts...)
+	if err != nil {
+		c.err = err
+		return err
+	}
+	if c.cli != nil {
+		_ = c.cli.Close()
+	}
+	c.cli = cli
+	c.err = nil
+	c.activeHost = host
+	return nil
+}
+
+func (c *Client) SetActiveContext(name string) { c.activeContext = name }
+func (c *Client) ActiveContext() string        { return c.activeContext }
+func (c *Client) ActiveHost() string           { return c.activeHost }
 
 func (c *Client) Ready() bool {
 	return c.cli != nil && c.err == nil

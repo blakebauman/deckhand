@@ -13,12 +13,14 @@ import { StatusDock } from "@/components/StatusDock";
 import { Toaster } from "@/components/Toaster";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import {
+  BuildsPage,
   ContainersPage,
   DashboardPage,
   DeploymentsPage,
   HelmPage,
   ImagesPage,
   K8sOverviewPage,
+  K8sResourcesPage,
   MicroVMsOverviewPage,
   MicroVMsPage,
   NetworksPage,
@@ -77,9 +79,11 @@ const routeDefs = [
   createRoute({ getParentRoute: () => rootRoute, path: "/images", component: ImagesPage }),
   createRoute({ getParentRoute: () => rootRoute, path: "/networks", component: NetworksPage }),
   createRoute({ getParentRoute: () => rootRoute, path: "/volumes", component: VolumesPage }),
+  createRoute({ getParentRoute: () => rootRoute, path: "/builds", component: BuildsPage }),
   createRoute({ getParentRoute: () => rootRoute, path: "/k8s", component: K8sOverviewPage }),
   createRoute({ getParentRoute: () => rootRoute, path: "/k8s/pods", component: PodsPage }),
   createRoute({ getParentRoute: () => rootRoute, path: "/k8s/deployments", component: DeploymentsPage }),
+  createRoute({ getParentRoute: () => rootRoute, path: "/k8s/resources", component: K8sResourcesPage }),
   createRoute({ getParentRoute: () => rootRoute, path: "/k8s/helm", component: HelmPage }),
   createRoute({ getParentRoute: () => rootRoute, path: "/microvms", component: MicroVMsOverviewPage }),
   createRoute({ getParentRoute: () => rootRoute, path: "/microvms/vms", component: MicroVMsPage }),

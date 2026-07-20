@@ -17,7 +17,9 @@ export function ListPaneRoot({ className, children }: { className?: string; chil
           minHeight: 0,
           width: 420,
           maxWidth: 420,
-          overflow: "hidden",
+          // Clip only the scroll body — header buttons sit on the end edge and
+          // overflow:hidden here shaved their pill / label.
+          overflow: "visible",
         }),
         className,
       ]
@@ -48,7 +50,8 @@ export function ListPaneHeader({ className, children }: { className?: string; ch
         style({
           flexShrink: 0,
           zIndex: 20,
-          paddingX: 12,
+          paddingStart: 12,
+          paddingEnd: 20,
           paddingTop: 12,
           paddingBottom: 12,
           backgroundColor: "base",
@@ -70,10 +73,11 @@ export function ListPaneTitleRow({ className, children }: { className?: string; 
       className={[
         style({
           display: "flex",
-          flexWrap: "wrap",
+          flexWrap: "nowrap",
           alignItems: "center",
           gap: 8,
           marginBottom: 8,
+          minWidth: 0,
         }),
         className,
       ]
@@ -93,6 +97,9 @@ export function ListPaneTitle({ className, children }: { className?: string; chi
         margin: 0,
         paddingX: 4,
         truncate: true,
+        minWidth: 0,
+        flexGrow: 1,
+        flexShrink: 1,
       })}
       UNSAFE_className={className}
     >
@@ -110,6 +117,7 @@ export function ListPaneActions({ className, children }: { className?: string; c
           alignItems: "center",
           gap: 8,
           marginStart: "auto",
+          flexShrink: 0,
         }),
         className,
       ]

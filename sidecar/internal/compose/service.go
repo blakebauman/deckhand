@@ -37,6 +37,15 @@ type DiscoverRequest struct {
 	MaxDepth int      `json:"maxDepth"`
 }
 
+// ServiceInfo is one compose service from `docker compose config --services` / ps.
+type ServiceInfo struct {
+	Name    string `json:"name"`
+	Status  string `json:"status,omitempty"`
+	State   string `json:"state,omitempty"`
+	Image   string `json:"image,omitempty"`
+	Project string `json:"project,omitempty"`
+}
+
 type lsRow struct {
 	Name        string `json:"Name"`
 	Status      string `json:"Status"`
@@ -221,6 +230,81 @@ func (s *Service) Ps(ctx context.Context, req UpRequest) (string, error) {
 	}
 	args := composeArgs(files, req.ProjectName)
 	args = append(args, "ps", "--format", "json")
+	return runDocker(ctx, dir, args...)
+}
+
+// Services returns per-service status for a project.
+func (s *Service) Services(ctx context.Context, req UpRequest) ([]ServiceInfo, error) {
+	out, err := s.Ps(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	out = strings.TrimSpace(out)
+	if out == "" || out == "null" {
+		return []ServiceInfo{}, nil
+	}
+	parseRow := func(raw []byte) (ServiceInfo, error) {
+		var row map[string]any
+		if err := json.Unmarshal(raw, &row); err != nil {
+			return ServiceInfo{}, err
+		}
+		name, _ := row["Service"].(string)
+		if name == "" {
+			name, _ = row["Name"].(string)
+		}
+		state, _ := row["State"].(string)
+		status, _ := row["Status"].(string)
+		image, _ := row["Image"].(string)
+		proj, _ := row["Project"].(string)
+		return ServiceInfo{Name: name, State: state, Status: status, Image: image, Project: proj}, nil
+	}
+	var services []ServiceInfo
+	if strings.HasPrefix(out, "[") {
+		var rows []json.RawMessage
+		if err := json.Unmarshal([]byte(out), &rows); err != nil {
+			return nil, fmt.Errorf("parse compose ps: %w", err)
+		}
+		for _, raw := range rows {
+			svc, err := parseRow(raw)
+			if err != nil {
+				return nil, err
+			}
+			services = append(services, svc)
+		}
+		return services, nil
+	}
+	for _, line := range strings.Split(out, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		svc, err := parseRow([]byte(line))
+		if err != nil {
+			return nil, fmt.Errorf("parse compose ps: %w", err)
+		}
+		services = append(services, svc)
+	}
+	return services, nil
+}
+
+// ServiceAction runs start/stop/restart for one or more services.
+func (s *Service) ServiceAction(ctx context.Context, req UpRequest, action string, services []string) (string, error) {
+	action = strings.ToLower(strings.TrimSpace(action))
+	switch action {
+	case "start", "stop", "restart":
+	default:
+		return "", fmt.Errorf("unsupported action %q", action)
+	}
+	dir, files, cleanup, err := resolveComposeOptionalFile(req)
+	if err != nil {
+		return "", err
+	}
+	if cleanup != nil {
+		defer cleanup()
+	}
+	args := composeArgs(files, req.ProjectName)
+	args = append(args, action)
+	args = append(args, services...)
 	return runDocker(ctx, dir, args...)
 }
 

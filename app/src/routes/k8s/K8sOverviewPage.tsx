@@ -1,18 +1,25 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { MetricTile, PageShell } from "@/components/PageShell";
 import { BreakdownPie, ChartPanel, RunningAreaChart } from "@/components/charts/SpectrumChartsPanel";
+import { useMetricsStore } from "@/stores/metricsStore";
 import { useUIStore } from "@/stores/uiStore";
 import { K8sChrome } from "@/routes/k8s/K8sChrome";
 
 export function K8sOverviewPage() {
   const navigate = useNavigate();
   const namespace = useUIStore((s) => s.namespace);
-  const pods = useQuery({ queryKey: ["pods", namespace], queryFn: () => api.pods(namespace) });
+  const pods = useQuery({
+    queryKey: ["pods", namespace],
+    queryFn: () => api.pods(namespace),
+    refetchInterval: 5000,
+  });
   const deps = useQuery({ queryKey: ["deployments", namespace], queryFn: () => api.deployments(namespace) });
+  const pushK8sRunning = useMetricsStore((s) => s.pushK8sRunning);
+  const k8sRunningHistory = useMetricsStore((s) => s.k8sRunningHistory);
 
   const podList = pods.data || [];
   const depList = deps.data || [];
@@ -20,6 +27,11 @@ export function K8sOverviewPage() {
   const readyDeps = depList.filter(
     (d) => (d.status?.readyReplicas ?? 0) > 0 && (d.status?.readyReplicas ?? 0) === (d.spec?.replicas ?? 0),
   ).length;
+
+  useEffect(() => {
+    if (!pods.isSuccess) return;
+    pushK8sRunning(runningPods);
+  }, [pods.dataUpdatedAt, pods.isSuccess, runningPods, pushK8sRunning]);
 
   const phaseMix = useMemo(() => {
     const counts = new Map<string, number>();
@@ -32,12 +44,11 @@ export function K8sOverviewPage() {
   }, [podList]);
 
   const readySeries = useMemo(() => {
-    const base = runningPods;
-    return Array.from({ length: 12 }, (_, i) => ({
-      t: `${i * 5}s`,
-      running: Math.max(0, Math.round(base * (0.75 + ((i * 11) % 5) / 20))),
-    }));
-  }, [runningPods]);
+    if (k8sRunningHistory.length > 0) {
+      return k8sRunningHistory.map(({ t, running }) => ({ t, running }));
+    }
+    return [{ t: "now", running: runningPods }];
+  }, [k8sRunningHistory, runningPods]);
 
   return (
     <K8sChrome>

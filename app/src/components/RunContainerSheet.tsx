@@ -12,7 +12,7 @@ import {
   TextField,
 } from "@react-spectrum/s2";
 import { style } from "@react-spectrum/s2/style" with { type: "macro" };
-import { api, type RunContainerBody } from "@/lib/api";
+import { api, type MountSpec, type RunContainerBody } from "@/lib/api";
 import { GlassSheet } from "@/components/GlassSheet";
 import { HelpHint } from "@/components/HelpHint";
 import { toast } from "@/components/Toaster";
@@ -24,6 +24,7 @@ const emptyForm = {
   cmd: "",
   ports: "8080:80",
   env: "",
+  mounts: "",
   network: "",
   workdir: "",
   restart: "no" as RunContainerBody["restart"],
@@ -31,6 +32,32 @@ const emptyForm = {
   autoRemove: false,
   start: true,
 };
+
+/** Parse lines like `/host:/container:ro` or `volname:/path` into MountSpec[]. */
+function parseMountLines(text: string): MountSpec[] {
+  const mounts: MountSpec[] = [];
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line) continue;
+    let readOnly = false;
+    let rest = line;
+    if (rest.endsWith(":ro") || rest.endsWith(":rw")) {
+      readOnly = rest.endsWith(":ro");
+      rest = rest.slice(0, -3);
+    }
+    const colon = rest.lastIndexOf(":");
+    if (colon <= 0) {
+      throw new Error(`Invalid mount (need source:target): ${line}`);
+    }
+    const source = rest.slice(0, colon).trim();
+    const target = rest.slice(colon + 1).trim();
+    if (!source || !target) {
+      throw new Error(`Invalid mount (need source:target): ${line}`);
+    }
+    mounts.push({ source, target, readOnly: readOnly || undefined });
+  }
+  return mounts;
+}
 
 export function RunContainerSheet({
   open,
@@ -71,12 +98,14 @@ export function RunContainerSheet({
         .split("\n")
         .map((e) => e.trim())
         .filter(Boolean);
+      const mounts = parseMountLines(form.mounts);
       const body: RunContainerBody = {
         image: form.image.trim(),
         name: form.name.trim() || undefined,
         cmd: form.cmd.trim() || undefined,
         ports,
         env,
+        mounts: mounts.length ? mounts : undefined,
         network: form.network.trim() || undefined,
         workdir: form.workdir.trim() || undefined,
         restart: form.restart || "no",
@@ -171,6 +200,15 @@ export function RunContainerSheet({
           value={form.env}
           onChange={(env) => setForm({ ...form, env })}
           placeholder={"FOO=bar\nBAR=baz"}
+        />
+        <TextArea
+          label="Mounts"
+          contextualHelp={
+            <HelpHint label="One per line: /host:/container:ro or volname:/path (optional :ro / :rw)" />
+          }
+          value={form.mounts}
+          onChange={(mounts) => setForm({ ...form, mounts })}
+          placeholder={"/data:/app/data:ro\nmyvol:/var/lib/app"}
         />
         <div
           className={style({
