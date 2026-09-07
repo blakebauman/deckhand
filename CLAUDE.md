@@ -93,7 +93,9 @@ visited could `POST /api/docker/containers` with a bind mount of `/` and take th
 
 ### Sidecar-URL resolution (the fragile part)
 
-Tauri spawns the sidecar, prefers `127.0.0.1:7420`, and falls back to an ephemeral port; the child
+Tauri spawns the sidecar, prefers `127.0.0.1:7420`, and falls back to an ephemeral port. It reuses a sidecar already holding that port **only** when `DECKHAND_SIDECAR_TOKEN` is set, since it never sees the stdout of one it did not spawn: without a token, attaching to a current sidecar 401s every request, and attaching to one predating auth (an older installed build, or any local process squatting the port) would run the app unauthenticated against a server it did not start. Otherwise it starts its own on an ephemeral port and logs why.
+
+The child
 prints `DECKHAND_SIDECAR_ADDR=host:port` on stdout, which Tauri exposes via the `sidecar_url`
 command, alongside `sidecar_token`. `src/App.tsx` polls `invoke("sidecar_url")` (up to 40×250ms),
 calls `setApiBaseUrl` + `setApiToken`, then polls `/health` before rendering — and **re-invokes**

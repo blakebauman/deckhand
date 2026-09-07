@@ -131,7 +131,12 @@ fn spawn_sidecar_at(bin: &std::path::Path, addr: &str) -> Result<(Child, String,
     // Drain remaining stdout so the child cannot block on a full pipe.
     thread::spawn(move || {
         let mut sink = String::new();
-        while reader.read_line(&mut sink).ok().filter(|n| *n > 0).is_some() {
+        while reader
+            .read_line(&mut sink)
+            .ok()
+            .filter(|n| *n > 0)
+            .is_some()
+        {
             sink.clear();
         }
     });
@@ -146,24 +151,47 @@ fn spawn_sidecar_at(bin: &std::path::Path, addr: &str) -> Result<(Child, String,
 }
 
 fn spawn_sidecar() -> Result<(), String> {
-    let preferred = format!("http://{PREFERRED_SIDECAR_ADDR}");
-    // Reuse an already-running local sidecar (browser split-dev, prior launch).
-    if sidecar_port_open(PREFERRED_SIDECAR_ADDR) {
-        set_url(preferred);
-        // We never saw this one's stdout, so fall back to the token the
-        // operator exported when starting it by hand (bun run dev:sidecar).
-        set_token(std::env::var("DECKHAND_SIDECAR_TOKEN").unwrap_or_default());
-        return Ok(());
+    let port_taken = sidecar_port_open(PREFERRED_SIDECAR_ADDR);
+
+    // Reuse an already-running sidecar only when the operator has told us its
+    // token, because we never see the stdout of one we did not spawn.
+    //
+    // Attaching without a token is wrong in both directions: against a current
+    // sidecar every request 401s and the app is dead, and against one predating
+    // authentication — an older installed build still holding :7420, say — the
+    // app would run unauthenticated against a server it did not start. The
+    // second case also means any local process that squats the port first gets
+    // to sit in the middle of the app's Docker traffic.
+    if port_taken {
+        match std::env::var("DECKHAND_SIDECAR_TOKEN") {
+            Ok(token) if !token.trim().is_empty() => {
+                set_url(format!("http://{PREFERRED_SIDECAR_ADDR}"));
+                set_token(token.trim().to_string());
+                return Ok(());
+            }
+            _ => eprintln!(
+                "something already listens on {PREFERRED_SIDECAR_ADDR} but DECKHAND_SIDECAR_TOKEN \
+                 is unset, so it cannot be authenticated against; starting our own sidecar on an \
+                 ephemeral port instead"
+            ),
+        }
     }
 
     let bin =
         find_sidecar_binary().ok_or("sidecar binary not found — run: bun run build:sidecar")?;
 
-    let (child, url, token) = match spawn_sidecar_at(&bin, PREFERRED_SIDECAR_ADDR) {
-        Ok(v) => v,
-        Err(err) => {
-            eprintln!("sidecar bind {PREFERRED_SIDECAR_ADDR} failed ({err}); trying ephemeral port");
-            spawn_sidecar_at(&bin, "127.0.0.1:0")?
+    // Do not bother with the preferred port when something else already holds it.
+    let (child, url, token) = if port_taken {
+        spawn_sidecar_at(&bin, "127.0.0.1:0")?
+    } else {
+        match spawn_sidecar_at(&bin, PREFERRED_SIDECAR_ADDR) {
+            Ok(v) => v,
+            Err(err) => {
+                eprintln!(
+                    "sidecar bind {PREFERRED_SIDECAR_ADDR} failed ({err}); trying ephemeral port"
+                );
+                spawn_sidecar_at(&bin, "127.0.0.1:0")?
+            }
         }
     };
 

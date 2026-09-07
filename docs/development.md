@@ -39,6 +39,9 @@ VITE_SIDECAR_URL=http://127.0.0.1:7420 VITE_SIDECAR_TOKEN=deckhand-dev bun run d
 ```
 
 The sidecar authenticates every request, so browser split-dev needs a token both sides agree on.
+The desktop shell reuses a sidecar already on `:7420` only when `DECKHAND_SIDECAR_TOKEN` is exported
+in *its* environment too — otherwise it cannot authenticate against a server it did not start, and
+starts its own on an ephemeral port instead.
 `bun run dev:sidecar` defaults to `deckhand-dev` for this reason; pass `--no-auth` instead if you
 want it off entirely (it logs a warning — the API can bind-mount any host path into a container).
 
