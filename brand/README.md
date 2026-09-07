@@ -30,4 +30,4 @@ This is **not** affiliated with Real Time Data’s Deckhand electronic fishing l
 | `favicon.svg` | Browser favicon |
 | `reference/deckhand-mascot.png` | Unused mascot exploration |
 
-Raster outputs for Tauri live in `tauri/src-tauri/icons/` (generated from `mark.svg`).
+Raster outputs for Tauri live in `src-tauri/icons/` (generated from `mark.svg`).

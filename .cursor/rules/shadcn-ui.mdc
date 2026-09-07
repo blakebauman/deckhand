@@ -1,6 +1,6 @@
 ---
 description: Deckhand UI must use shadcn/ui Maia + Tailwind only
-globs: app/src/**/*.{tsx,ts,css}
+globs: src/**/*.{tsx,ts,css}
 alwaysApply: false
 ---
 
@@ -8,7 +8,7 @@ alwaysApply: false
 
 Deckhand’s React UI uses **shadcn/ui** with the **Maia** preset (`base-maia`, preset `bbVJxYW`) and **Tailwind CSS v4**.
 
-Icons use **[Lucide React](https://lucide.dev/guide/react/)** (`lucide-react`) via `lucideProps()` / `Icon` in `app/src/components/Icon.tsx`.
+Icons use **[Lucide React](https://lucide.dev/guide/react/)** (`lucide-react`) via `lucideProps()` / `Icon` in `src/components/Icon.tsx`.
 
 ## Required
 
@@ -26,7 +26,7 @@ Icons use **[Lucide React](https://lucide.dev/guide/react/)** (`lucide-react`) v
 
 ## App helpers
 
-Prefer shadcn primitives and small app helpers (`Tip`, `StatusBadge`, `RowMenu`, `Field`, `MoreActionsMenu`, `SegmentedControl`) under `app/src/components/` — do not reintroduce Spectrum providers or macros.
+Prefer shadcn primitives and small app helpers (`Tip`, `StatusBadge`, `RowMenu`, `Field`, `MoreActionsMenu`, `SegmentedControl`) under `src/components/` — do not reintroduce Spectrum providers or macros.
 
 ## Custom widgets
 

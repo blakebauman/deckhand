@@ -24,7 +24,7 @@ bun install
 bun run dev          # build sidecar + Tauri + Vite
 ```
 
-`tauri:dev` starts Vite via `scripts/tauri-frontend-dev.sh`, which always uses this repo’s `tauri/` tree (never a sibling copy), checks that `app/` is the Deckhand UI, and refuses to bind `:1420` if another project already owns it. The desktop shell prefers sidecar `127.0.0.1:7420` and falls back to an ephemeral port only if that bind fails.
+`tauri dev` runs `bun run dev:ui` (Vite on `:1420`) as its `beforeDevCommand`, then loads that URL. Vite uses `strictPort`, so a second instance fails loudly rather than silently serving from another port. The desktop shell prefers sidecar `127.0.0.1:7420` and falls back to an ephemeral port only if that bind fails.
 
 ### Split processes
 
@@ -32,9 +32,9 @@ Useful when iterating on the UI or sidecar alone:
 
 ```bash
 bun run build:sidecar
-./tauri/src-tauri/binaries/deckhand-sidecar --addr 127.0.0.1:7420
+./src-tauri/binaries/deckhand-sidecar --addr 127.0.0.1:7420
 
-# separate terminal (stop any Tauri Vite on :1420 first)
+# separate terminal (stop any Tauri-started Vite on :1420 first)
 VITE_SIDECAR_URL=http://127.0.0.1:7420 bun run dev:ui
 ```
 
@@ -49,10 +49,10 @@ bun run dev:sidecar
 | Script | Action |
 |--------|--------|
 | `bun run dev` | Build sidecar, then Tauri dev |
-| `bun run dev:ui` | Vite UI only (`@deckhand/app`) |
+| `bun run dev:ui` | Vite UI only, browser mode |
 | `bun run dev:sidecar` | Go sidecar on `127.0.0.1:7420` |
 | `bun run build` | Production UI build |
-| `bun run build:sidecar` | `scripts/build-sidecar.sh` → `tauri/src-tauri/binaries/` |
+| `bun run build:sidecar` | `scripts/build-sidecar.sh` → `src-tauri/binaries/` |
 | `bun run icons` | `scripts/generate-icons.sh` from `brand/mark.svg` |
 | `bun run tauri:build` | Sidecar + Tauri package |
 
@@ -66,7 +66,7 @@ bun run tauri:build
 
 | Platform | Artifacts |
 |----------|-----------|
-| macOS | `.app`, `.dmg` under `tauri/src-tauri/target/release/bundle/` |
+| macOS | `.app`, `.dmg` under `src-tauri/target/release/bundle/` |
 | Linux | `.deb`, AppImage |
 | Windows | Deferred |
 
@@ -112,8 +112,8 @@ Regular CI (`.github/workflows/ci.yml`) still only builds the sidecar + UI — n
 
 The React UI uses **shadcn/ui** with the **Maia** preset (`bbVJxYW`) and **Tailwind CSS v4**.
 
-- Primitives live under `app/src/components/ui/`
-- Style with Tailwind utilities and CSS variables in `app/src/index.css`
+- Primitives live under `src/components/ui/`
+- Style with Tailwind utilities and CSS variables in `src/index.css`
 - Do not add Adobe Spectrum or a second component kit — see `.cursor/rules/shadcn-ui.mdc`
 
 ## Related

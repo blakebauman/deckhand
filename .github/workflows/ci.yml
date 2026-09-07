@@ -23,7 +23,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: deckhand-sidecar-${{ matrix.os }}
-          path: tauri/src-tauri/binaries/deckhand-sidecar*
+          path: src-tauri/binaries/deckhand-sidecar*
 
   ui:
     runs-on: ubuntu-latest
@@ -34,8 +34,7 @@ jobs:
           bun-version: latest
       - run: bun install
       - run: bun run version:check
-      - run: bun run --filter @deckhand/app build
-      - run: bun run --filter @deckhand/tauri build
+      - run: bun run build
 
   # Installer packaging: .github/workflows/release.yml (on v* tags).
   # Local: bun run tauri:build → .dmg/.app (macOS) or .deb/AppImage (Linux).

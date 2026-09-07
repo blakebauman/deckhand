@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="$ROOT/tauri/src-tauri/binaries"
+OUT="$ROOT/src-tauri/binaries"
 mkdir -p "$OUT"
 
 cd "$ROOT/sidecar"

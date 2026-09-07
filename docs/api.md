@@ -136,4 +136,4 @@ Env: `DECKHAND_URL` (default `http://127.0.0.1:7420`).
 - [Architecture](./architecture.md)
 - [Embed runtime](./embed-runtime.md)
 - [Supply chain](./supply-chain.md)
-- UI client: `app/src/lib/api.ts`
+- UI client: `src/lib/api.ts`

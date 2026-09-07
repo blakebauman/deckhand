@@ -68,7 +68,7 @@ export function ExecTerminal({
       fontSize: 13,
       lineHeight: 1.4,
       fontFamily:
-        '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+        '"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
       theme: TERM_THEME,
       scrollback: 8000,
       allowProposedApi: true,

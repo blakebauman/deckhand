@@ -18,15 +18,19 @@ Partial connectivity is supported: Docker, Kubernetes, and Firecracker report st
 
 ## Packages
 
+The repo is a single Bun package at the root — no workspaces.
+
 | Path | Role |
 |------|------|
-| `app/` | Shared React UI (`@deckhand/app`) |
-| `tauri/` | Tauri 2 shell (`@deckhand/tauri`); Vite host aliases into `app/src` |
+| `src/` | React UI; `@/*` resolves here |
+| `index.html`, `vite.config.ts`, `tsconfig.json` | The one Vite app, at the root |
+| `public/` | Static assets served at `/` |
+| `src-tauri/` | Tauri 2 shell (Rust crate, icons, bundled binaries) |
 | `sidecar/` | Go HTTP API (`deckhand-sidecar`) |
 | `brand/` | SVG mark and wordmark |
-| `scripts/` | Sidecar build and icon generation |
+| `scripts/` | Sidecar build, icon generation, version sync |
 
-`sidecar/` is not a Bun workspace member. It is built with Go and copied into `tauri/src-tauri/binaries/` for bundling.
+`sidecar/` is a separate Go module, not part of the JS package. It is built with Go and copied into `src-tauri/binaries/` for bundling.
 
 ## Runtime flow
 
@@ -39,7 +43,7 @@ Partial connectivity is supported: Docker, Kubernetes, and Firecracker report st
 
 | Service | Port | Notes |
 |---------|------|--------|
-| Vite (Tauri dev) | `1420` | `tauri/vite.config.ts` |
+| Vite (Tauri dev) | `1420` | `vite.config.ts` |
 | Sidecar (manual) | `7420` | `bun run dev:sidecar` |
 | Sidecar (Tauri) | ephemeral | `--addr 127.0.0.1:0` |
 
