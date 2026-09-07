@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -64,20 +65,31 @@ func (c *Client) ListSecrets(ctx context.Context, ns string) ([]SecretSummary, e
 	}
 	out := make([]SecretSummary, 0, len(list.Items))
 	for _, s := range list.Items {
-		keys := make([]string, 0, len(s.Data))
-		for k := range s.Data {
-			keys = append(keys, k)
-		}
-		created := ""
-		if !s.CreationTimestamp.IsZero() {
-			created = s.CreationTimestamp.Time.Format(time.RFC3339)
-		}
-		out = append(out, SecretSummary{
-			Name: s.Name, Namespace: s.Namespace, Type: string(s.Type),
-			Keys: keys, Labels: s.Labels, Created: created,
-		})
+		out = append(out, summarizeSecret(s))
 	}
 	return out, nil
+}
+
+// summarizeSecret reduces a Secret to metadata only. SecretSummary has no field
+// capable of carrying a value, so redaction is structural rather than a filter
+// that could be forgotten — keep it that way.
+//
+// Keys are sorted because map iteration order is random in Go, and the UI polls
+// this endpoint; unsorted keys reshuffled the list on every refresh.
+func summarizeSecret(s corev1.Secret) SecretSummary {
+	keys := make([]string, 0, len(s.Data))
+	for k := range s.Data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	created := ""
+	if !s.CreationTimestamp.IsZero() {
+		created = s.CreationTimestamp.Time.Format(time.RFC3339)
+	}
+	return SecretSummary{
+		Name: s.Name, Namespace: s.Namespace, Type: string(s.Type),
+		Keys: keys, Labels: s.Labels, Created: created,
+	}
 }
 
 func (c *Client) ListNodes(ctx context.Context) ([]corev1.Node, error) {
