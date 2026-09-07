@@ -1,0 +1,5 @@
+# Mechanical reformats — skip in blame.
+# Enable with: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Apply Biome formatting across the TypeScript sources
+ea6d2d05947e562f45cf62c954035165d1f84ba1
