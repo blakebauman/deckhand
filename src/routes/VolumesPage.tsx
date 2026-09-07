@@ -352,9 +352,12 @@ export function VolumesPage() {
                         <span className="min-w-0 font-mono text-xs truncate">
                           {f.name}
                           {f.dir ? "/" : ""}
+                          {f.link ? (
+                            <span className="text-muted-foreground"> → {f.link}</span>
+                          ) : null}
                         </span>
                         <span className="shrink-0 text-muted-foreground text-xs">
-                          {f.dir ? "dir" : formatBytes(f.size)}
+                          {f.link ? "link" : f.dir ? "dir" : formatBytes(f.size)}
                         </span>
                       </button>
                     ))

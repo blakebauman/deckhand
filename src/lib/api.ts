@@ -473,6 +473,8 @@ export type VolumeFileEntry = {
   size: number;
   mode?: string;
   modTime?: string;
+  /** Symlink target; present only when mode marks the entry a symlink. */
+  link?: string;
 };
 
 export type ImageScanResult = {

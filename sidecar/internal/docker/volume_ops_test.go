@@ -106,34 +106,107 @@ func TestParseLSListingIgnoresNoise(t *testing.T) {
 	}
 }
 
-// Documents two known limitations of the field-splitting approach rather than
-// asserting they are correct: `ls -la` output is ambiguous once a name contains
-// a space or the entry is a symlink. Both currently produce a wrong Name.
-// If parseLSListing is ever hardened, these expectations should flip.
-func TestParseLSListingKnownLimitations(t *testing.T) {
-	t.Run("filename containing spaces is truncated", func(t *testing.T) {
+// `ls -la` output is ambiguous once a name contains a space or the entry is a
+// symlink; both used to be mis-parsed by splitting on whitespace and taking
+// the last field.
+func TestParseLSListingNamesWithSpacesAndSymlinks(t *testing.T) {
+	t.Run("filename containing spaces is kept whole", func(t *testing.T) {
 		out := "-rw-r--r--    1 root     root            13 Jan  1 00:00 my file.txt\n"
 		got := parseLSListing(out, "")
 		if len(got) != 1 {
 			t.Fatalf("got %d entries, want 1", len(got))
 		}
-		if got[0].Name != "file.txt" {
-			t.Errorf("Name = %q; expected the current (wrong) %q — if this now "+
-				"returns \"my file.txt\", parsing was fixed and this test should assert that",
-				got[0].Name, "file.txt")
+		if got[0].Name != "my file.txt" {
+			t.Errorf("Name = %q, want %q", got[0].Name, "my file.txt")
 		}
 	})
 
-	t.Run("symlink reports its target as the name", func(t *testing.T) {
+	t.Run("internal spacing is preserved exactly", func(t *testing.T) {
+		out := "-rw-r--r--    1 root     root            13 Jan  1 00:00 two  spaces.txt\n"
+		got := parseLSListing(out, "")
+		if got[0].Name != "two  spaces.txt" {
+			t.Errorf("Name = %q, want the original double space preserved", got[0].Name)
+		}
+	})
+
+	t.Run("spaced name joins the base path", func(t *testing.T) {
+		out := "-rw-r--r--    1 root     root            13 Jan  1 00:00 my file.txt\n"
+		got := parseLSListing(out, "data")
+		if got[0].Path != "data/my file.txt" {
+			t.Errorf("Path = %q, want data/my file.txt", got[0].Path)
+		}
+	})
+
+	t.Run("symlink reports its own name and target", func(t *testing.T) {
 		out := "lrwxrwxrwx    1 root     root             4 Jan  1 00:00 link -> /target\n"
 		got := parseLSListing(out, "")
 		if len(got) != 1 {
 			t.Fatalf("got %d entries, want 1", len(got))
 		}
-		if got[0].Name != "/target" {
-			t.Errorf("Name = %q; expected the current (wrong) %q — if this now "+
-				"returns \"link\", parsing was fixed and this test should assert that",
-				got[0].Name, "/target")
+		if got[0].Name != "link" {
+			t.Errorf("Name = %q, want link", got[0].Name)
+		}
+		if got[0].Link != "/target" {
+			t.Errorf("Link = %q, want /target", got[0].Link)
+		}
+		if got[0].Dir {
+			t.Error("Dir = true for a symlink, want false")
 		}
 	})
+
+	t.Run("symlink with spaces on both sides", func(t *testing.T) {
+		out := "lrwxrwxrwx    1 root     root             4 Jan  1 00:00 my link -> /some path/target\n"
+		got := parseLSListing(out, "")
+		if got[0].Name != "my link" || got[0].Link != "/some path/target" {
+			t.Errorf("got name=%q link=%q, want %q / %q",
+				got[0].Name, got[0].Link, "my link", "/some path/target")
+		}
+	})
+
+	t.Run("an arrow in a regular filename is not treated as a link", func(t *testing.T) {
+		// Only entries whose mode marks them a symlink are split on " -> ".
+		out := "-rw-r--r--    1 root     root            13 Jan  1 00:00 a -> b.txt\n"
+		got := parseLSListing(out, "")
+		if got[0].Name != "a -> b.txt" {
+			t.Errorf("Name = %q, want the arrow kept in a regular filename", got[0].Name)
+		}
+		if got[0].Link != "" {
+			t.Errorf("Link = %q, want empty for a non-symlink", got[0].Link)
+		}
+	})
+
+	t.Run("non-symlinks carry no link target", func(t *testing.T) {
+		out := "-rw-r--r--    1 root     root            13 Jan  1 00:00 plain.txt\n"
+		if got := parseLSListing(out, ""); got[0].Link != "" {
+			t.Errorf("Link = %q, want empty", got[0].Link)
+		}
+	})
+}
+
+func TestSplitLSColumns(t *testing.T) {
+	tests := []struct {
+		name     string
+		line     string
+		n        int
+		wantCols int
+		wantRest string
+	}{
+		{name: "standard listing", line: "-rw-r--r-- 1 root root 13 Jan 1 00:00 f.txt", n: 8, wantCols: 8, wantRest: "f.txt"},
+		{name: "rest keeps inner spacing", line: "-rw-r--r-- 1 root root 13 Jan 1 00:00 a  b", n: 8, wantCols: 8, wantRest: "a  b"},
+		{name: "padded columns", line: "-rw-r--r--    1 root     root   13 Jan  1 00:00 f", n: 8, wantCols: 8, wantRest: "f"},
+		{name: "too few columns", line: "-rw-r--r-- 1 root", n: 8, wantCols: 3, wantRest: ""},
+		{name: "exactly n columns leaves no rest", line: "a b c d e f g h", n: 8, wantCols: 8, wantRest: ""},
+		{name: "empty line", line: "", n: 8, wantCols: 0, wantRest: ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cols, rest := splitLSColumns(tc.line, tc.n)
+			if len(cols) != tc.wantCols {
+				t.Errorf("columns = %d (%q), want %d", len(cols), cols, tc.wantCols)
+			}
+			if rest != tc.wantRest {
+				t.Errorf("rest = %q, want %q", rest, tc.wantRest)
+			}
+		})
+	}
 }
