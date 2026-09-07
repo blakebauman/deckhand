@@ -13,9 +13,9 @@ import (
 
 // MountSpec is a bind or named-volume mount for create/run.
 type MountSpec struct {
-	Type     string `json:"type"`     // bind | volume (default volume if Source has no path sep)
-	Source   string `json:"source"`   // host path or volume name
-	Target   string `json:"target"`   // container path
+	Type     string `json:"type"`   // bind | volume (default volume if Source has no path sep)
+	Source   string `json:"source"` // host path or volume name
+	Target   string `json:"target"` // container path
 	ReadOnly bool   `json:"readOnly"`
 }
 

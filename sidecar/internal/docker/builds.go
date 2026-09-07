@@ -11,11 +11,11 @@ import (
 
 // BuilderInfo describes a buildx builder.
 type BuilderInfo struct {
-	Name       string `json:"name"`
-	Driver     string `json:"driver,omitempty"`
+	Name         string `json:"name"`
+	Driver       string `json:"driver,omitempty"`
 	LastActivity string `json:"lastActivity,omitempty"`
-	Status     string `json:"status,omitempty"`
-	Nodes      int    `json:"nodes,omitempty"`
+	Status       string `json:"status,omitempty"`
+	Nodes        int    `json:"nodes,omitempty"`
 }
 
 // BuildHistoryItem is a recent buildx history entry when available.

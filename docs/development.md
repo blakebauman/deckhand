@@ -103,7 +103,7 @@ xattr -cr /Applications/Deckhand.app
 
 Then open normally (or right-click → Open). That symptom is fixed in builds that include ad-hoc bundle signing (`v0.1.0-alpha.2`+).
 
-Regular CI (`.github/workflows/ci.yml`) builds and vets both Go binaries, runs `go test ./...`, and builds the UI — but not full installers.
+Regular CI (`.github/workflows/ci.yml`) checks `gofmt`, builds and vets both Go binaries, runs `go test ./...`, and builds the UI — but not full installers.
 
 ## Environment
 

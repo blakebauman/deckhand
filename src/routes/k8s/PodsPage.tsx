@@ -5,7 +5,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ConsolePanel } from "@/components/ConsolePanel";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
-import { ExecTerminal } from "@/components/ExecTerminal";
+import { ExecTerminalLazy } from "@/components/ExecTerminalLazy";
 import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
 import { RowMenu } from "@/components/RowMenu";
@@ -122,7 +122,7 @@ export function PodsPage() {
               />
             </TabsContent>
             <TabsContent value="exec" className="mt-3">
-              <ExecTerminal
+              <ExecTerminalLazy
                 key={`${namespace}-${selected}`}
                 wsUrl={api.podExecWsUrl(namespace, selected!)}
                 title="Pod shell"

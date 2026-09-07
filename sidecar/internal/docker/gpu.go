@@ -22,12 +22,12 @@ type GPUInfo struct {
 }
 
 type GPUStatus struct {
-	Available      bool      `json:"available"`
-	Runtime        string    `json:"runtime,omitempty"`
-	NvidiaSmi      bool      `json:"nvidiaSmi"`
-	ToolkitHint    string    `json:"toolkitHint,omitempty"`
-	Devices        []GPUInfo `json:"devices"`
-	Error          string    `json:"error,omitempty"`
+	Available   bool      `json:"available"`
+	Runtime     string    `json:"runtime,omitempty"`
+	NvidiaSmi   bool      `json:"nvidiaSmi"`
+	ToolkitHint string    `json:"toolkitHint,omitempty"`
+	Devices     []GPUInfo `json:"devices"`
+	Error       string    `json:"error,omitempty"`
 }
 
 func (c *Client) GPUStatus(ctx context.Context) GPUStatus {

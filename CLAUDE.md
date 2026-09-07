@@ -21,8 +21,12 @@ cd sidecar && go build ./... && go vet ./...   # sidecar checks
 There are **no tests yet** — 32 Go files, zero `*_test.go`, and no JS test runner. Verification
 is the build: `bun run build` for the UI, `go build ./... && go vet ./...` for the sidecar. CI
 (`.github/workflows/ci.yml`) runs exactly those plus `go test ./...` and `bun run version:check`.
-`go test ./...` is already wired and currently reports "no test files" for every package, so a new
-`_test.go` runs in CI the moment it lands — no workflow change needed.
+CI also gates `gofmt` on `sidecar/` — fix a failure with `gofmt -w sidecar/`. There is no
+formatter or linter configured for the TypeScript side; `tsc --noEmit` is the only gate there.
+
+xterm.js is code-split behind `ExecTerminalLazy` (~85 KB gzipped, the largest single dependency).
+Import that wrapper rather than `ExecTerminal` directly, or the terminal lands back in the initial
+bundle.
 
 The repo is a **single Bun package at the root** — no workspaces, one `package.json`, one
 `vite.config.ts`, one `tsconfig.json`, one `index.html`. `sidecar/` is a separate Go module.

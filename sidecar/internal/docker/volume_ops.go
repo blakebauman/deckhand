@@ -18,11 +18,11 @@ import (
 
 // VolumeFileEntry is a file listing entry inside a named volume.
 type VolumeFileEntry struct {
-	Name  string `json:"name"`
-	Path  string `json:"path"`
-	Dir   bool   `json:"dir"`
-	Size  int64  `json:"size"`
-	Mode  string `json:"mode,omitempty"`
+	Name    string `json:"name"`
+	Path    string `json:"path"`
+	Dir     bool   `json:"dir"`
+	Size    int64  `json:"size"`
+	Mode    string `json:"mode,omitempty"`
 	ModTime string `json:"modTime,omitempty"`
 }
 
@@ -321,11 +321,11 @@ func (c *Client) ListImageFiles(ctx context.Context, imageRef, rel string) ([]Vo
 		seen[top] = true
 		dir := hdr.FileInfo().IsDir() || len(parts) > 1
 		entries = append(entries, VolumeFileEntry{
-			Name: top,
-			Path: path.Join(rel, top),
-			Dir:  dir,
-			Size: hdr.Size,
-			Mode: hdr.FileInfo().Mode().String(),
+			Name:    top,
+			Path:    path.Join(rel, top),
+			Dir:     dir,
+			Size:    hdr.Size,
+			Mode:    hdr.FileInfo().Mode().String(),
 			ModTime: hdr.ModTime.Format(time.RFC3339),
 		})
 		if len(entries) > 500 {

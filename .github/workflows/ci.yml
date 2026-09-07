@@ -17,6 +17,17 @@ jobs:
         with:
           go-version-file: sidecar/go.mod
           cache-dependency-path: sidecar/go.sum
+      - name: Format check
+        working-directory: sidecar
+        run: |
+          # gofmt -l exits 0 even when it lists files, so check explicitly.
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "Not gofmt-formatted:"
+            echo "$unformatted"
+            echo "Fix with: gofmt -w sidecar/"
+            exit 1
+          fi
       - name: Build all packages
         working-directory: sidecar
         run: go build ./...

@@ -7,7 +7,7 @@ import { ConsolePanel } from "@/components/ConsolePanel";
 import { ContainerMonitor } from "@/components/ContainerMonitor";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
-import { ExecTerminal } from "@/components/ExecTerminal";
+import { ExecTerminalLazy } from "@/components/ExecTerminalLazy";
 import { InspectFields, LabelChips } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
@@ -481,7 +481,7 @@ export function ContainersPage() {
                 />
               </TabsContent>
               <TabsContent value="exec" className="mt-3 min-h-0">
-                <ExecTerminal
+                <ExecTerminalLazy
                   key={selected}
                   wsUrl={api.containerExecWsUrl(selected)}
                   title="Container shell"

@@ -25,12 +25,12 @@ type ReleaseSummary struct {
 }
 
 type InstallRequest struct {
-	Name         string `json:"name"`
-	Namespace    string `json:"namespace"`
-	Chart        string `json:"chart"`
-	Version      string `json:"version"`
-	ValuesYAML   string `json:"valuesYaml"`
-	CreateNS     bool   `json:"createNamespace"`
+	Name       string `json:"name"`
+	Namespace  string `json:"namespace"`
+	Chart      string `json:"chart"`
+	Version    string `json:"version"`
+	ValuesYAML string `json:"valuesYaml"`
+	CreateNS   bool   `json:"createNamespace"`
 }
 
 func (s *Service) List(ctx context.Context, ns string, allNamespaces bool) ([]ReleaseSummary, error) {
