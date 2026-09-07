@@ -164,7 +164,9 @@ export function ExecTerminal({
                     ? "bg-amber-500"
                     : "bg-red-500",
               )}
-              aria-label={statusLabel}
+              // The state is announced by the adjacent "{statusLabel} · {shell}" line;
+              // labelling the dot as well would read it out twice.
+              aria-hidden="true"
             />
             <div className="flex flex-col gap-1 min-w-0">
               <span className={["dh-terminal__title", "text-sm font-medium"].join(" ")}>
@@ -200,6 +202,10 @@ export function ExecTerminal({
         </>
       }
     >
+      {/* xterm renders its own focusable textarea, which is how keyboard users reach the
+          terminal; this only forwards stray clicks on the surrounding padding. */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: focus shim, not a control */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard path is xterm's own textarea, already tabbable */}
       <div
         ref={hostRef}
         className={["dh-xterm-host", "flex-1 min-h-0"].join(" ")}

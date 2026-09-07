@@ -67,7 +67,13 @@ export function AreaChart({
 
   return (
     <div className="w-full text-foreground">
-      <svg viewBox="0 0 240 72" className="w-full h-16 overflow-visible" preserveAspectRatio="none">
+      {/* Decorative: MetricCard renders the value as text beside this. */}
+      <svg
+        viewBox="0 0 240 72"
+        className="w-full h-16 overflow-visible"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
         <defs>
           <linearGradient id={`areaFill-${gid}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="currentColor" stopOpacity="0.28" />
@@ -111,7 +117,14 @@ export function RingGauge({
 
   return (
     <div className="flex items-center gap-3 text-foreground">
-      <svg width="84" height="84" viewBox="0 0 84 84" style={{ transform: "rotate(-90deg)" }}>
+      {/* Decorative: the label and percentage are rendered as text alongside. */}
+      <svg
+        width="84"
+        height="84"
+        viewBox="0 0 84 84"
+        style={{ transform: "rotate(-90deg)" }}
+        aria-hidden="true"
+      >
         <circle
           cx="42"
           cy="42"

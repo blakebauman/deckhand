@@ -145,6 +145,13 @@ export function LiveSparkline({
 
   const n = hoverPts.length;
 
+  // Hover reveals individual samples, but a screen reader gets nothing from the
+  // path data — so state the series, its latest value, and its peak.
+  const fmt = (v: number) => (formatValue ? formatValue(v) : `${Math.round(v)}${unit}`);
+  const srSummary = values.length
+    ? `${label} sparkline. Latest ${fmt(values[values.length - 1])}, peak ${fmt(rawPeak)}, ${values.length} samples.`
+    : `${label} sparkline. No samples yet.`;
+
   return (
     <div
       className={
@@ -160,9 +167,12 @@ export function LiveSparkline({
         height="100%"
         preserveAspectRatio="none"
         className="block overflow-visible"
+        role="img"
+        aria-label={srSummary}
         onPointerMove={onMove}
         onPointerLeave={() => setHover(null)}
       >
+        <title>{srSummary}</title>
         <defs>
           <linearGradient id={`spark-${gid}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="currentColor" stopOpacity="0.32" />

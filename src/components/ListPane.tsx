@@ -1,5 +1,5 @@
 import { List } from "lucide-react";
-import { type CSSProperties, forwardRef, type ReactNode } from "react";
+import { type CSSProperties, forwardRef, type ReactNode, type Ref } from "react";
 import { lucideProps } from "@/components/Icon";
 import { useWindowDragProps } from "@/components/TitleBarDragRegion";
 import { Input } from "@/components/ui/input";
@@ -231,7 +231,7 @@ export function ListPane({
 }
 
 export const ListItem = forwardRef<
-  HTMLDivElement,
+  HTMLButtonElement | HTMLDivElement,
   {
     active?: boolean;
     onClick?: () => void;
@@ -239,29 +239,44 @@ export const ListItem = forwardRef<
     className?: string;
   }
 >(function ListItem({ active, onClick, children, className }, ref) {
+  const classes = cn(
+    "dh-list-item mb-0 flex w-full min-w-0 flex-col gap-0.5 rounded-lg border-0 px-2 py-1.5 text-start text-foreground",
+    onClick ? "cursor-pointer" : "",
+    active ? "dh-list-item-selected bg-muted" : "bg-transparent hover:bg-muted/60",
+    className,
+  );
+  const style = { WebkitAppRegion: "no-drag" } as CSSProperties;
+
+  // Rows without an onClick are display-only (K8sResourcesPage renders them
+  // that way). They previously still carried role="button" and tabIndex={0},
+  // so they sat in the tab order announcing themselves as controls that did
+  // nothing. Render a plain div for those and a real button otherwise, which
+  // also gets Enter/Space handling for free instead of hand-rolling it.
+  if (!onClick) {
+    return (
+      <div
+        ref={ref as Ref<HTMLDivElement>}
+        className={classes}
+        aria-current={active ? "true" : undefined}
+        style={style}
+        data-no-drag
+      >
+        {children}
+      </div>
+    );
+  }
+
   return (
-    <div
-      ref={ref}
-      role="button"
-      tabIndex={0}
+    <button
+      ref={ref as Ref<HTMLButtonElement>}
+      type="button"
       onClick={onClick}
-      onKeyDown={(e) => {
-        if (!onClick) return;
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-      className={cn(
-        "dh-list-item mb-0 flex w-full min-w-0 cursor-pointer flex-col gap-0.5 rounded-lg border-0 px-2 py-1.5 text-start text-foreground",
-        active ? "dh-list-item-selected bg-muted" : "bg-transparent hover:bg-muted/60",
-        className,
-      )}
+      className={classes}
       aria-current={active ? "true" : undefined}
-      style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
+      style={style}
       data-no-drag
     >
       {children}
-    </div>
+    </button>
   );
 });

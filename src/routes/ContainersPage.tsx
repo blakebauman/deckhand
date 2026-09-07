@@ -237,7 +237,8 @@ export function ContainersPage() {
               />
               <PopoverContent align="start" className="w-56 gap-2 p-3">
                 <div className="text-xs font-medium text-muted-foreground">States</div>
-                <div className="flex flex-col gap-2" role="group" aria-label="Filter by state">
+                <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+                  <legend className="sr-only">Filter by state</legend>
                   {stateOptions.map((opt) => {
                     const id = `state-${opt.value}`;
                     const checked = stateFilter.includes(opt.value);
@@ -263,7 +264,7 @@ export function ContainersPage() {
                       </div>
                     );
                   })}
-                </div>
+                </fieldset>
                 {stateFilter.length > 0 ? (
                   <Button
                     size="sm"

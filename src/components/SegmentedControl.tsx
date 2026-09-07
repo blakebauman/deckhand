@@ -1,3 +1,7 @@
+// biome-ignore-all lint/a11y/useSemanticElements: a set of related buttons is
+// ARIA role="group"; the rule suggests <fieldset>, which is for grouping form
+// controls and would be wrong here.
+
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

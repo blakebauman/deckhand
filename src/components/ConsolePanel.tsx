@@ -118,7 +118,8 @@ export function ConsolePanel({
                 "size-2 rounded-full",
                 error ? "bg-red-500" : live ? "bg-emerald-500" : "bg-muted-foreground/60",
               )}
-              aria-label={error ? "Error" : live ? "Live" : "Paused"}
+              // The adjacent meta line already states Live / Paused / Disconnected.
+              aria-hidden="true"
             />
             <div className="flex flex-col gap-1 min-w-0">
               <span className={["dh-terminal__title", "text-sm font-medium"].join(" ")}>
