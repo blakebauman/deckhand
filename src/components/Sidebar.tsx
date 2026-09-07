@@ -69,8 +69,10 @@ const modes: {
   title: string;
   hint: string;
   icon: (props: { size?: number }) => ReactNode;
+  /** Per-mark override; the Docker whale is wide and short so it needs more height. */
+  iconSize?: number;
 }[] = [
-  { id: "docker", title: "Docker", hint: "Local Docker engine", icon: DockerMark },
+  { id: "docker", title: "Docker", hint: "Local Docker engine", icon: DockerMark, iconSize: 22 },
   { id: "kubernetes", title: "Kubernetes", hint: "Cluster via kubeconfig", icon: KubernetesMark },
   { id: "microvms", title: "MicroVMs", hint: "Firecracker (Linux + KVM)", icon: MicroVMMark },
 ];
@@ -196,7 +198,7 @@ export function Sidebar() {
                 aria-pressed={selected}
                 onClick={() => switchMode(m.id)}
               >
-                <Icon size={18} />
+                <Icon size={m.iconSize ?? 18} />
               </button>
             </TipRight>
           );
