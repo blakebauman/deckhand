@@ -17,7 +17,16 @@ jobs:
         with:
           go-version-file: sidecar/go.mod
           cache-dependency-path: sidecar/go.sum
-      - name: Build sidecar
+      - name: Build all packages
+        working-directory: sidecar
+        run: go build ./...
+      - name: Vet
+        working-directory: sidecar
+        run: go vet ./...
+      - name: Test
+        working-directory: sidecar
+        run: go test ./...
+      - name: Build sidecar binary
         run: bash scripts/build-sidecar.sh
       - name: Upload sidecar artifact
         uses: actions/upload-artifact@v7

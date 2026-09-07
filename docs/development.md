@@ -53,6 +53,7 @@ bun run dev:sidecar
 | `bun run dev:sidecar` | Go sidecar on `127.0.0.1:7420` |
 | `bun run build` | Production UI build |
 | `bun run build:sidecar` | `scripts/build-sidecar.sh` → `src-tauri/binaries/` |
+| `bun run build:cli` | `deckhand` CLI → `bin/deckhand` (gitignored) |
 | `bun run icons` | `scripts/generate-icons.sh` from `brand/mark.svg` |
 | `bun run tauri:build` | Sidecar + Tauri package |
 
@@ -98,7 +99,7 @@ xattr -cr /Applications/Deckhand.app
 
 Then open normally (or right-click → Open). That symptom is fixed in builds that include ad-hoc bundle signing (`v0.1.0-alpha.2`+).
 
-Regular CI (`.github/workflows/ci.yml`) still only builds the sidecar + UI — not full installers.
+Regular CI (`.github/workflows/ci.yml`) builds and vets both Go binaries, runs `go test ./...`, and builds the UI — but not full installers.
 
 ## Environment
 

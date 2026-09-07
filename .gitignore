@@ -6,6 +6,7 @@ target/
 .env
 .env.*
 sidecar/deckhand-sidecar
+bin/
 src-tauri/binaries/
 src-tauri/target/
 *.dmg

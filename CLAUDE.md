@@ -18,9 +18,11 @@ bun run tauri:build      # sidecar + installers (.dmg/.app, .deb/AppImage)
 cd sidecar && go build ./... && go vet ./...   # sidecar checks
 ```
 
-There is **no test suite** (no `*_test.go`, no JS test runner). Verification is the build:
-`bun run build` for the UI, `go build ./... && go vet ./...` for the sidecar. CI
-(`.github/workflows/ci.yml`) runs exactly those plus `bun run version:check`.
+There are **no tests yet** — 32 Go files, zero `*_test.go`, and no JS test runner. Verification
+is the build: `bun run build` for the UI, `go build ./... && go vet ./...` for the sidecar. CI
+(`.github/workflows/ci.yml`) runs exactly those plus `go test ./...` and `bun run version:check`.
+`go test ./...` is already wired and currently reports "no test files" for every package, so a new
+`_test.go` runs in CI the moment it lands — no workflow change needed.
 
 The repo is a **single Bun package at the root** — no workspaces, one `package.json`, one
 `vite.config.ts`, one `tsconfig.json`, one `index.html`. `sidecar/` is a separate Go module.
