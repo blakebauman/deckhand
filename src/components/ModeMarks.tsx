@@ -21,7 +21,15 @@ export function DockerMark({ size = 22 }: { size?: number }) {
   );
 }
 
-export function KubernetesMark({ size = 18 }: { size?: number }) {
+/**
+ * Kubernetes' helm mark: a point-up heptagon around a seven-spoked ship's
+ * wheel. The geometry is computed rather than eyeballed — vertices and spokes
+ * sit at exact 360/7 intervals — so the seven-fold symmetry is true.
+ *
+ * Runs larger than the old glyph to sit alongside the Docker whale; both are
+ * sized from the mode list rather than the shared default.
+ */
+export function KubernetesMark({ size = 21 }: { size?: number }) {
   return (
     <svg
       width={size}
@@ -29,15 +37,21 @@ export function KubernetesMark({ size = 18 }: { size?: number }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.6"
+      strokeWidth="1.5"
       strokeLinejoin="round"
+      strokeLinecap="round"
       aria-hidden
     >
-      <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="12" r="8" />
-      <line x1="12" y1="4" x2="12" y2="20" />
-      <line x1="5.1" y1="8" x2="18.9" y2="16" />
-      <line x1="5.1" y1="16" x2="18.9" y2="8" />
+      <path d="M12.0,1.8L19.97,5.64L21.94,14.27L16.43,21.19L7.57,21.19L2.06,14.27L4.03,5.64Z" />
+      <path
+        d="M12.0,9.3L14.11,10.32L14.63,12.6L13.17,14.43L10.83,14.43L9.37,12.6L9.89,10.32Z"
+        fill="currentColor"
+        stroke="none"
+      />
+      <path
+        d="M12.0,9.0L12.0,4.5 M14.35,10.13L17.86,7.32 M14.92,12.67L19.31,13.67 M13.3,14.7L15.25,18.76 M10.7,14.7L8.75,18.76 M9.08,12.67L4.69,13.67 M9.65,10.13L6.14,7.32"
+        strokeWidth="1.3"
+      />
     </svg>
   );
 }

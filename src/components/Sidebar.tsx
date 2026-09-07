@@ -73,7 +73,7 @@ const modes: {
   iconSize?: number;
 }[] = [
   { id: "docker", title: "Docker", hint: "Local Docker engine", icon: DockerMark, iconSize: 22 },
-  { id: "kubernetes", title: "Kubernetes", hint: "Cluster via kubeconfig", icon: KubernetesMark },
+  { id: "kubernetes", title: "Kubernetes", hint: "Cluster via kubeconfig", icon: KubernetesMark, iconSize: 21 },
   { id: "microvms", title: "MicroVMs", hint: "Firecracker (Linux + KVM)", icon: MicroVMMark },
 ];
 
