@@ -2,7 +2,16 @@
 
 Localhost HTTP API served by `deckhand-sidecar`. Routes are defined in `sidecar/internal/server/server.go`.
 
-- CORS: all origins
+- **Auth: required.** Every request must present the sidecar's per-launch token, either as
+  `Authorization: Bearer <token>` or as a `?token=<token>` query parameter. The query form exists
+  because `EventSource`, `WebSocket`, and `window.open` cannot set headers, and the log, event,
+  exec, stats, and export endpoints are driven through those. Missing or wrong token → `401`.
+- The token is printed on startup as `DECKHAND_SIDECAR_TOKEN=<token>` (stdout, next to the addr
+  line). Set it explicitly with `--token`, or via `DECKHAND_SIDECAR_TOKEN`. `--no-auth` disables
+  authentication for local development and logs a warning.
+- CORS: the request's `Origin` is echoed back only once the token has been accepted, so a page
+  that cannot authenticate also cannot read the response. Preflight (`OPTIONS`) is answered before
+  the token check, since a preflight never carries the header.
 - JSON errors: `{ "error": "..." }`
 - Base URL: Tauri-provided ephemeral port, or `http://127.0.0.1:7420` in manual/split dev
 
@@ -136,4 +145,4 @@ Env: `DECKHAND_URL` (default `http://127.0.0.1:7420`).
 - [Architecture](./architecture.md)
 - [Embed runtime](./embed-runtime.md)
 - [Supply chain](./supply-chain.md)
-- UI client: `app/src/lib/api.ts`
+- UI client: `src/lib/api.ts` (bearer header via `request()`, `?token=` via `tokenized()`)

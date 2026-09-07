@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const pkgPath = join(root, "package.json");
-const cargoPath = join(root, "tauri/src-tauri/Cargo.toml");
+const cargoPath = join(root, "src-tauri/Cargo.toml");
 
 const SEMVER =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
@@ -28,7 +28,7 @@ const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 pkg.version = version;
 writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 
-let cargo = readFileSync(cargoPath, "utf8");
+const cargo = readFileSync(cargoPath, "utf8");
 const next = cargo.replace(/^version\s*=\s*"[^"]*"/m, `version = "${version}"`);
 if (next === cargo) {
   console.error("Failed to patch version in Cargo.toml");

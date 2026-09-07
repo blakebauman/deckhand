@@ -66,7 +66,8 @@ Usage:
   deckhand domains [on|off]
 
 Env:
-  DECKHAND_URL  sidecar base URL (default http://127.0.0.1:7420)
+  DECKHAND_URL    sidecar base URL (default http://127.0.0.1:7420)
+  DECKHAND_TOKEN  token printed by the sidecar on startup
 `)
 }
 
@@ -77,9 +78,26 @@ func env(k, def string) string {
 	return def
 }
 
+// authed builds a request carrying DECKHAND_TOKEN, which the sidecar requires
+// unless it was started with --no-auth.
+func authed(method, url string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	if tok := os.Getenv("DECKHAND_TOKEN"); tok != "" {
+		req.Header.Set("Authorization", "Bearer "+tok)
+	}
+	return req, nil
+}
+
 func get(base, path string) {
 	client := &http.Client{Timeout: 15 * time.Second}
-	res, err := client.Get(strings.TrimRight(base, "/") + path)
+	req, err := authed(http.MethodGet, strings.TrimRight(base, "/")+path, nil)
+	if err != nil {
+		fatal(err.Error())
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		fatal(err.Error())
 	}
@@ -101,7 +119,12 @@ func get(base, path string) {
 func postJSON(base, path string, v any) {
 	b, _ := json.Marshal(v)
 	client := &http.Client{Timeout: 30 * time.Second}
-	res, err := client.Post(strings.TrimRight(base, "/")+path, "application/json", strings.NewReader(string(b)))
+	req, err := authed(http.MethodPost, strings.TrimRight(base, "/")+path, strings.NewReader(string(b)))
+	if err != nil {
+		fatal(err.Error())
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
 	if err != nil {
 		fatal(err.Error())
 	}

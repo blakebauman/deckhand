@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-const cargo = readFileSync(join(root, "tauri/src-tauri/Cargo.toml"), "utf8");
+const cargo = readFileSync(join(root, "src-tauri/Cargo.toml"), "utf8");
 const match = /^version\s*=\s*"([^"]*)"/m.exec(cargo);
 if (!match) {
   console.error("No version in Cargo.toml");

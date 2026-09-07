@@ -2,9 +2,9 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MARK="$ROOT/brand/mark.svg"
-ICONS="$ROOT/tauri/src-tauri/icons"
-PUB="$ROOT/app/public"
-ASSETS="$ROOT/app/src/assets/brand"
+ICONS="$ROOT/src-tauri/icons"
+PUB="$ROOT/public"
+ASSETS="$ROOT/src/assets/brand"
 
 command -v rsvg-convert >/dev/null || { echo "rsvg-convert required (brew install librsvg)"; exit 1; }
 

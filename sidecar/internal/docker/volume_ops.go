@@ -18,12 +18,14 @@ import (
 
 // VolumeFileEntry is a file listing entry inside a named volume.
 type VolumeFileEntry struct {
-	Name  string `json:"name"`
-	Path  string `json:"path"`
-	Dir   bool   `json:"dir"`
-	Size  int64  `json:"size"`
-	Mode  string `json:"mode,omitempty"`
+	Name    string `json:"name"`
+	Path    string `json:"path"`
+	Dir     bool   `json:"dir"`
+	Size    int64  `json:"size"`
+	Mode    string `json:"mode,omitempty"`
 	ModTime string `json:"modTime,omitempty"`
+	// Link is the symlink target, set only for entries whose mode starts with l.
+	Link string `json:"link,omitempty"`
 }
 
 // ListVolumeFiles lists files in a volume via a short-lived helper container.
@@ -107,6 +109,33 @@ func cleanVolPath(rel string) string {
 	return rel
 }
 
+// splitLSColumns returns the first n whitespace-separated columns of line plus
+// the untouched remainder. `ls -la` puts the filename last and filenames may
+// contain spaces, so the remainder cannot be recovered by splitting on
+// whitespace and taking the final field.
+func splitLSColumns(line string, n int) (cols []string, rest string) {
+	cols = make([]string, 0, n)
+	i := 0
+	isSpace := func(b byte) bool { return b == ' ' || b == '\t' }
+	for len(cols) < n {
+		for i < len(line) && isSpace(line[i]) {
+			i++
+		}
+		if i >= len(line) {
+			return cols, ""
+		}
+		start := i
+		for i < len(line) && !isSpace(line[i]) {
+			i++
+		}
+		cols = append(cols, line[start:i])
+	}
+	for i < len(line) && isSpace(line[i]) {
+		i++
+	}
+	return cols, line[i:]
+}
+
 func parseLSListing(out, base string) []VolumeFileEntry {
 	lines := strings.Split(out, "\n")
 	var entries []VolumeFileEntry
@@ -115,23 +144,33 @@ func parseLSListing(out, base string) []VolumeFileEntry {
 		if line == "" || strings.HasPrefix(line, "total ") {
 			continue
 		}
-		fields := strings.Fields(line)
-		if len(fields) < 8 {
+		// mode, links, owner, group, size, month, day, time — then the name.
+		cols, name := splitLSColumns(line, 8)
+		if len(cols) < 8 || name == "" {
 			continue
 		}
-		name := fields[len(fields)-1]
 		if name == "." || name == ".." {
 			continue
 		}
-		dir := strings.HasPrefix(fields[0], "d")
+		link := ""
+		if strings.HasPrefix(cols[0], "l") {
+			if i := strings.Index(name, " -> "); i >= 0 {
+				link = name[i+len(" -> "):]
+				name = name[:i]
+			}
+		}
+		if name == "" {
+			continue
+		}
+		dir := strings.HasPrefix(cols[0], "d")
 		var size int64
-		fmt.Sscanf(fields[4], "%d", &size)
+		fmt.Sscanf(cols[4], "%d", &size)
 		p := name
 		if base != "" {
 			p = path.Join(base, name)
 		}
 		entries = append(entries, VolumeFileEntry{
-			Name: name, Path: p, Dir: dir, Size: size, Mode: fields[0],
+			Name: name, Path: p, Dir: dir, Size: size, Mode: cols[0], Link: link,
 		})
 	}
 	return entries
@@ -321,11 +360,11 @@ func (c *Client) ListImageFiles(ctx context.Context, imageRef, rel string) ([]Vo
 		seen[top] = true
 		dir := hdr.FileInfo().IsDir() || len(parts) > 1
 		entries = append(entries, VolumeFileEntry{
-			Name: top,
-			Path: path.Join(rel, top),
-			Dir:  dir,
-			Size: hdr.Size,
-			Mode: hdr.FileInfo().Mode().String(),
+			Name:    top,
+			Path:    path.Join(rel, top),
+			Dir:     dir,
+			Size:    hdr.Size,
+			Mode:    hdr.FileInfo().Mode().String(),
 			ModTime: hdr.ModTime.Format(time.RFC3339),
 		})
 		if len(entries) > 500 {

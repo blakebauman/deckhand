@@ -22,6 +22,7 @@ import (
 
 type Server struct {
 	mux      *http.ServeMux
+	token    string
 	docker   *docker.Client
 	compose  *compose.Service
 	k8s      *k8s.Client
@@ -32,10 +33,13 @@ type Server struct {
 	domains  *domains.Manager
 }
 
-func New() *Server {
+// New builds the sidecar API. An empty token disables authentication and is
+// only reachable via the sidecar's explicit --no-auth flag.
+func New(token string) *Server {
 	d := docker.New()
 	s := &Server{
 		mux:      http.NewServeMux(),
+		token:    token,
 		docker:   d,
 		compose:  compose.New(),
 		k8s:      k8s.New(),
@@ -50,20 +54,7 @@ func New() *Server {
 }
 
 func (s *Server) Serve(ln net.Listener) error {
-	return http.Serve(ln, cors(s.mux))
-}
-
-func cors(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+	return http.Serve(ln, s.guard(s.mux))
 }
 
 func (s *Server) routes() {

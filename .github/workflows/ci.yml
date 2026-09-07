@@ -17,13 +17,33 @@ jobs:
         with:
           go-version-file: sidecar/go.mod
           cache-dependency-path: sidecar/go.sum
-      - name: Build sidecar
+      - name: Format check
+        working-directory: sidecar
+        run: |
+          # gofmt -l exits 0 even when it lists files, so check explicitly.
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "Not gofmt-formatted:"
+            echo "$unformatted"
+            echo "Fix with: gofmt -w sidecar/"
+            exit 1
+          fi
+      - name: Build all packages
+        working-directory: sidecar
+        run: go build ./...
+      - name: Vet
+        working-directory: sidecar
+        run: go vet ./...
+      - name: Test
+        working-directory: sidecar
+        run: go test ./...
+      - name: Build sidecar binary
         run: bash scripts/build-sidecar.sh
       - name: Upload sidecar artifact
         uses: actions/upload-artifact@v7
         with:
           name: deckhand-sidecar-${{ matrix.os }}
-          path: tauri/src-tauri/binaries/deckhand-sidecar*
+          path: src-tauri/binaries/deckhand-sidecar*
 
   ui:
     runs-on: ubuntu-latest
@@ -34,8 +54,9 @@ jobs:
           bun-version: latest
       - run: bun install
       - run: bun run version:check
-      - run: bun run --filter @deckhand/app build
-      - run: bun run --filter @deckhand/tauri build
+      - name: Lint and format check
+        run: bunx biome ci .
+      - run: bun run build
 
   # Installer packaging: .github/workflows/release.yml (on v* tags).
   # Local: bun run tauri:build → .dmg/.app (macOS) or .deb/AppImage (Linux).

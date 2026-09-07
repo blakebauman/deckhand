@@ -6,12 +6,14 @@ target/
 .env
 .env.*
 sidecar/deckhand-sidecar
-tauri/src-tauri/binaries/
-tauri/src-tauri/target/
+bin/
+src-tauri/binaries/
+src-tauri/target/
 *.dmg
 *.deb
 *.AppImage
 .idea/
 .vscode/
 coverage/
+releases/
 *.exe

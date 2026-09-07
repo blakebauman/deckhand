@@ -2,7 +2,7 @@
 
 Local-first Docker and Kubernetes desktop app for **macOS** and **Linux**.
 
-Tauri 2 shell · Adobe Spectrum UI · Go sidecar for Docker, Compose, Kubernetes, Helm, and Linux Firecracker microVMs.
+Tauri 2 shell · shadcn/ui (Maia) · Go sidecar for Docker, Compose, Kubernetes, Helm, and Linux Firecracker microVMs.
 
 ## Features
 
@@ -47,7 +47,7 @@ xattr -cr /Applications/Deckhand.app
 ## Architecture (sketch)
 
 ```
-UI (Spectrum / React) → HTTP localhost → Go sidecar → Docker / kubeconfig / Helm / Firecracker
+UI (shadcn / React) → HTTP localhost → Go sidecar → Docker / kubeconfig / Helm / Firecracker
                               ↑
                          Tauri 2 (spawn + tray)
 ```
