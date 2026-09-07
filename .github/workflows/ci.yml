@@ -54,6 +54,8 @@ jobs:
           bun-version: latest
       - run: bun install
       - run: bun run version:check
+      - name: Lint and format check
+        run: bunx biome ci .
       - run: bun run build
 
   # Installer packaging: .github/workflows/release.yml (on v* tags).

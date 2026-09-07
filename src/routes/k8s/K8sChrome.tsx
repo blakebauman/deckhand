@@ -1,9 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { HelpHint } from "@/components/HelpHint";
 import { toast } from "@/components/Toaster";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { api } from "@/lib/api";
 import { useUIStore } from "@/stores/uiStore";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function K8sChrome({ children }: { children: React.ReactNode }) {
   const namespace = useUIStore((s) => s.namespace);
@@ -19,7 +25,7 @@ export function K8sChrome({ children }: { children: React.ReactNode }) {
           onValueChange={(v) => {
             if (!v) return;
             void api
-              .useContext(v)
+              .switchKubeContext(v)
               .then(() => {
                 contexts.refetch();
                 toast.success("Context switched", { description: v });

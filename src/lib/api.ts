@@ -55,10 +55,13 @@ export const api = {
   status: () => request<StatusResponse>("/api/status"),
   /** Rebuild the Docker SDK client (attach recovery without context switch). */
   reconnectDocker: () =>
-    request<{ ok: boolean; connected: boolean; error?: string; activeContext?: string; host?: string }>(
-      "/api/docker/reconnect",
-      { method: "POST" },
-    ),
+    request<{
+      ok: boolean;
+      connected: boolean;
+      error?: string;
+      activeContext?: string;
+      host?: string;
+    }>("/api/docker/reconnect", { method: "POST" }),
 
   dockerDashboard: () => request<Record<string, number>>("/api/docker/dashboard"),
   dockerInfo: () => request<any>("/api/docker/info"),
@@ -74,7 +77,8 @@ export const api = {
     }),
   startContainer: (id: string) => request(`/api/docker/containers/${id}/start`, { method: "POST" }),
   stopContainer: (id: string) => request(`/api/docker/containers/${id}/stop`, { method: "POST" }),
-  restartContainer: (id: string) => request(`/api/docker/containers/${id}/restart`, { method: "POST" }),
+  restartContainer: (id: string) =>
+    request(`/api/docker/containers/${id}/restart`, { method: "POST" }),
   removeContainer: (id: string, force = true) =>
     request(`/api/docker/containers/${id}?force=${force}`, { method: "DELETE" }),
   containerLogsUrl: (id: string, follow = false) =>
@@ -85,7 +89,9 @@ export const api = {
       body: JSON.stringify({ cmd }),
     }),
   containerExecWsUrl: (id: string) =>
-    tokenized(`${baseUrl.replace(/^http/, "ws")}/api/docker/containers/${encodeURIComponent(id)}/exec/ws`),
+    tokenized(
+      `${baseUrl.replace(/^http/, "ws")}/api/docker/containers/${encodeURIComponent(id)}/exec/ws`,
+    ),
   containerStats: (id: string) => request<ContainerStats>(`/api/docker/containers/${id}/stats`),
   containerStatsStreamUrl: (id: string) =>
     tokenized(`${baseUrl}/api/docker/containers/${id}/stats?stream=true`),
@@ -184,7 +190,7 @@ export const api = {
     }),
   dockerContexts: () =>
     request<{ contexts: DockerContextInfo[]; current: string }>("/api/docker/contexts"),
-  useDockerContext: (name: string) =>
+  switchDockerContext: (name: string) =>
     request("/api/docker/contexts", { method: "POST", body: JSON.stringify({ name }) }),
   diagnose: () => request<DiagnoseReport>("/api/docker/diagnose"),
   builders: () => request<BuilderInfo[]>("/api/docker/builders"),
@@ -247,8 +253,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  auditLog: (n = 100) =>
-    request<{ path: string; events: AuditEvent[] }>(`/api/audit?n=${n}`),
+  auditLog: (n = 100) => request<{ path: string; events: AuditEvent[] }>(`/api/audit?n=${n}`),
   engineConfig: () => request<EngineConfig>("/api/engine"),
   saveEngineConfig: (body: Partial<EngineConfig>) =>
     request<EngineConfig>("/api/engine", { method: "PUT", body: JSON.stringify(body) }),
@@ -279,7 +284,10 @@ export const api = {
   networks: () => request<any[]>("/api/docker/networks"),
   network: (id: string) => request<any>(`/api/docker/networks/${encodeURIComponent(id)}`),
   createNetwork: (name: string, driver = "bridge") =>
-    request<{ Id: string }>("/api/docker/networks", { method: "POST", body: JSON.stringify({ name, driver }) }),
+    request<{ Id: string }>("/api/docker/networks", {
+      method: "POST",
+      body: JSON.stringify({ name, driver }),
+    }),
   removeNetwork: (id: string) => request(`/api/docker/networks/${id}`, { method: "DELETE" }),
 
   composeProjects: () => request<ComposeProject[]>("/api/compose/projects"),
@@ -291,20 +299,28 @@ export const api = {
   composeUp: (body: ComposeBody) =>
     request<{ output: string }>("/api/compose/up", { method: "POST", body: JSON.stringify(body) }),
   composeDown: (body: ComposeBody) =>
-    request<{ output: string }>("/api/compose/down", { method: "POST", body: JSON.stringify(body) }),
+    request<{ output: string }>("/api/compose/down", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   composeRestart: (body: ComposeBody) =>
-    request<{ output: string }>("/api/compose/restart", { method: "POST", body: JSON.stringify(body) }),
+    request<{ output: string }>("/api/compose/restart", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   composePs: (body: ComposeBody) =>
     request<{ output: string }>("/api/compose/ps", { method: "POST", body: JSON.stringify(body) }),
 
   k8sStatus: () => request<any>("/api/k8s/status"),
   k8sContexts: () => request<{ contexts: any[]; current: string }>("/api/k8s/contexts"),
-  useContext: (name: string) =>
+  switchKubeContext: (name: string) =>
     request("/api/k8s/contexts", { method: "POST", body: JSON.stringify({ name }) }),
   namespaces: () => request<string[]>("/api/k8s/namespaces"),
-  pods: (namespace: string) => request<any[]>(`/api/k8s/pods?namespace=${encodeURIComponent(namespace)}`),
+  pods: (namespace: string) =>
+    request<any[]>(`/api/k8s/pods?namespace=${encodeURIComponent(namespace)}`),
   pod: (ns: string, name: string) => request<any>(`/api/k8s/pods/${ns}/${name}`),
-  deletePod: (ns: string, name: string) => request(`/api/k8s/pods/${ns}/${name}`, { method: "DELETE" }),
+  deletePod: (ns: string, name: string) =>
+    request(`/api/k8s/pods/${ns}/${name}`, { method: "DELETE" }),
   podLogsUrl: (ns: string, name: string, follow = false) =>
     tokenized(`${baseUrl}/api/k8s/pods/${ns}/${name}/logs?follow=${follow}&tail=200`),
   execPod: (ns: string, name: string, cmd?: string[], container?: string) =>
@@ -350,7 +366,10 @@ export const api = {
   runtimes: () => request<{ name: string; available: boolean }[]>("/api/runtimes"),
   listVMs: () => request<MicroVM[]>("/api/runtimes/firecracker/vms"),
   createVM: (body: MicroVMCreate) =>
-    request<MicroVM>("/api/runtimes/firecracker/vms", { method: "POST", body: JSON.stringify(body) }),
+    request<MicroVM>("/api/runtimes/firecracker/vms", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   startVM: (id: string) => request(`/api/runtimes/firecracker/vms/${id}/start`, { method: "POST" }),
   stopVM: (id: string) => request(`/api/runtimes/firecracker/vms/${id}/stop`, { method: "POST" }),
   destroyVM: (id: string) => request(`/api/runtimes/firecracker/vms/${id}`, { method: "DELETE" }),
@@ -428,7 +447,10 @@ export type K8sEventItem = {
 };
 
 /** Subscribe to Docker engine SSE events. Returns an unsubscribe fn. */
-export function subscribeDockerEvents(onEvent: (event: any) => void, onError?: (err: Event) => void) {
+export function subscribeDockerEvents(
+  onEvent: (event: any) => void,
+  onError?: (err: Event) => void,
+) {
   const es = new EventSource(api.dockerEventsUrl());
   es.onmessage = (msg) => {
     try {

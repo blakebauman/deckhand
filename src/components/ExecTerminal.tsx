@@ -4,14 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import "@xterm/xterm/css/xterm.css";
 import { RefreshCw } from "lucide-react";
 import { lucideProps } from "@/components/Icon";
-import { Tip } from "@/components/Tip";
 import { SegmentedControl } from "@/components/SegmentedControl";
-import { Button } from "@/components/ui/button";
 import {
   TerminalFrame,
   TerminalToolbarEnd,
   TerminalToolbarStart,
 } from "@/components/TerminalChrome";
+import { Tip } from "@/components/Tip";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type Shell = "sh" | "bash" | "ash";
@@ -146,8 +146,6 @@ export function ExecTerminal({
     };
   }, [wsUrl, shell, nonce]);
 
-  const statusVariant =
-    status === "open" ? "secondary" : status === "connecting" ? "notice" : "secondary";
   const statusLabel =
     status === "open" ? "Connected" : status === "connecting" ? "Connecting…" : "Disconnected";
 
@@ -160,7 +158,11 @@ export function ExecTerminal({
             <span
               className={cn(
                 "size-2 rounded-full",
-                status === "open" ? "bg-emerald-500" : status === "connecting" ? "bg-amber-500" : "bg-red-500",
+                status === "open"
+                  ? "bg-emerald-500"
+                  : status === "connecting"
+                    ? "bg-amber-500"
+                    : "bg-red-500",
               )}
               aria-label={statusLabel}
             />

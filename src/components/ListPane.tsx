@@ -1,5 +1,5 @@
-import { forwardRef, type CSSProperties, type ReactNode } from "react";
 import { List } from "lucide-react";
+import { type CSSProperties, forwardRef, type ReactNode } from "react";
 import { lucideProps } from "@/components/Icon";
 import { useWindowDragProps } from "@/components/TitleBarDragRegion";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,13 @@ export function ListPaneRoot({ className, children }: { className?: string; chil
   );
 }
 
-export function ListPaneHeader({ className, children }: { className?: string; children: ReactNode }) {
+export function ListPaneHeader({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
   const drag = useWindowDragProps();
   return (
     <div className={cn("z-20 shrink-0 bg-background py-2.5 ps-2.5 pe-4", className)} {...drag}>
@@ -30,21 +36,46 @@ export function ListPaneHeader({ className, children }: { className?: string; ch
   );
 }
 
-export function ListPaneTitleRow({ className, children }: { className?: string; children: ReactNode }) {
+export function ListPaneTitleRow({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <div className={cn("mb-2 flex min-w-0 flex-nowrap items-center gap-2", className)}>{children}</div>
+    <div className={cn("mb-2 flex min-w-0 flex-nowrap items-center gap-2", className)}>
+      {children}
+    </div>
   );
 }
 
-export function ListPaneTitle({ className, children }: { className?: string; children: ReactNode }) {
+export function ListPaneTitle({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <h2 className={cn("m-0 min-w-0 flex-1 truncate px-1 text-lg font-semibold tracking-tight", className)}>
+    <h2
+      className={cn(
+        "m-0 min-w-0 flex-1 truncate px-1 text-lg font-semibold tracking-tight",
+        className,
+      )}
+    >
       {children}
     </h2>
   );
 }
 
-export function ListPaneActions({ className, children }: { className?: string; children: ReactNode }) {
+export function ListPaneActions({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
   return (
     <div
       className={cn("ms-auto flex shrink-0 items-center gap-2", className)}
@@ -84,6 +115,7 @@ export function ListSkeleton({ rows = 6 }: { rows?: number }) {
     <div className="flex flex-col gap-2" aria-hidden>
       {Array.from({ length: rows }, (_, i) => (
         <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length skeleton placeholders, never reordered
           key={i}
           className="flex flex-col gap-1.5 rounded-lg bg-muted/50 px-2.5 py-2"
           style={{ opacity: 1 - i * 0.1 }}

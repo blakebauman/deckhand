@@ -1,16 +1,16 @@
-import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { api } from "@/lib/api";
+import { useEffect, useMemo } from "react";
+import { ChartPanel, RunningAreaChart } from "@/components/charts/ChartsPanel";
 import { DiskUsagePanel } from "@/components/DiskUsagePanel";
 import { GpuPanel } from "@/components/GpuPanel";
 import { HelpHint } from "@/components/HelpHint";
 import { EmptyState, PageShell } from "@/components/PageShell";
-import { ChartPanel, RunningAreaChart } from "@/components/charts/ChartsPanel";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useDockerReconnect } from "@/hooks/useDockerReconnect";
-import { useMetricsStore } from "@/stores/metricsStore";
 import { Button } from "@/components/ui/button";
+import { useDockerReconnect } from "@/hooks/useDockerReconnect";
+import { api } from "@/lib/api";
+import { useMetricsStore } from "@/stores/metricsStore";
 
 const jumpLinks = [
   { label: "Containers", to: "/containers" as const },
@@ -30,7 +30,11 @@ export function DashboardPage() {
   });
   const status = useQuery({ queryKey: ["status"], queryFn: api.status });
   const info = useQuery({ queryKey: ["docker-info"], queryFn: api.dockerInfo, retry: false });
-  const contexts = useQuery({ queryKey: ["docker-contexts"], queryFn: api.dockerContexts, retry: false });
+  const contexts = useQuery({
+    queryKey: ["docker-contexts"],
+    queryFn: api.dockerContexts,
+    retry: false,
+  });
   const pushRunning = useMetricsStore((s) => s.pushRunning);
   const clearRunning = useMetricsStore((s) => s.clearRunning);
   const runningHistory = useMetricsStore((s) => s.runningHistory);
@@ -52,9 +56,7 @@ export function DashboardPage() {
   const paused = dash.data?.containersPaused ?? 0;
   const stopped = Math.max(totalContainers - running - paused, 0);
   const engineName =
-    engineContext ||
-    (info.data as { Name?: string } | undefined)?.Name ||
-    "local engine";
+    engineContext || (info.data as { Name?: string } | undefined)?.Name || "local engine";
 
   const runningSeries = useMemo(() => {
     if (runningHistory.length > 0) {
@@ -79,7 +81,12 @@ export function DashboardPage() {
           }
           action={
             <div className="flex flex-wrap justify-center gap-2">
-              <Button size="sm" variant="default" onClick={() => void reconnect()}>
+              <Button
+                size="sm"
+                variant="default"
+                disabled={reconnecting}
+                onClick={() => void reconnect()}
+              >
                 Retry connection
               </Button>
               <Button size="sm" variant="secondary" onClick={() => navigate({ to: "/settings" })}>
@@ -124,11 +131,7 @@ export function DashboardPage() {
             </div>
           </section>
 
-          <ChartPanel
-            title="Running containers"
-            hint="Hover for time · ~5s samples"
-            height={200}
-          >
+          <ChartPanel title="Running containers" hint="Hover for time · ~5s samples" height={200}>
             <RunningAreaChart data={runningSeries} />
           </ChartPanel>
 

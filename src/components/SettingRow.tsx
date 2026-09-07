@@ -13,7 +13,9 @@ export function SettingSection({
 }) {
   return (
     <section className="mb-5">
-      <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{title}</span>
+      <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+        {title}
+      </span>
       {description ? (
         <p className="mt-1 mb-2 text-xs text-muted-foreground">{description}</p>
       ) : (
@@ -27,6 +29,7 @@ export function SettingSection({
 function ChildrenWithDividers(children: ReactNode) {
   const items = Children.toArray(children);
   return items.map((child, i) => (
+    // biome-ignore lint/suspicious/noArrayIndexKey: dividers are positional by definition
     <div key={i}>
       {i > 0 ? <Separator /> : null}
       {child}
@@ -70,7 +73,9 @@ export function SettingRow({
           <label htmlFor={htmlFor}>
             <span className="text-sm font-medium">{heading}</span>
           </label>
-          {description ? <p className="mt-0.5 mb-0 text-xs text-muted-foreground">{description}</p> : null}
+          {description ? (
+            <p className="mt-0.5 mb-0 text-xs text-muted-foreground">{description}</p>
+          ) : null}
         </div>
         {right != null ? <div className="max-w-full shrink-0">{right}</div> : null}
       </div>

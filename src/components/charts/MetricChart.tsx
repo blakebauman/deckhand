@@ -4,24 +4,17 @@ import { useId, useMemo } from "react";
 const ease = [0.16, 1, 0.3, 1] as const;
 
 /** Animated bar waveform for live metrics. */
-export function WaveBars({
-  values,
-  max,
-}: {
-  values: number[];
-  max?: number;
-}) {
+export function WaveBars({ values, max }: { values: number[]; max?: number }) {
   const reduceMotion = useReducedMotion();
   const peak = Math.max(max ?? 0, ...values, 1);
   const pads = values.length ? values : Array.from({ length: 24 }, () => 0);
   const duration = reduceMotion ? 0 : 0.35;
 
   return (
-    <div
-      className="flex h-14 w-full max-w-xs items-center justify-center gap-1"
-    >
+    <div className="flex h-14 w-full max-w-xs items-center justify-center gap-1">
       {pads.map((v, i) => (
         <motion.div
+          // biome-ignore lint/suspicious/noArrayIndexKey: bars are a fixed-length positional series
           key={i}
           className="min-w-1 w-[3px] flex-1 rounded-full bg-foreground/35"
           animate={{
@@ -65,18 +58,16 @@ export function AreaChart({
       const y = pad + (1 - v / peak) * (h - pad * 2);
       return [x, y] as const;
     });
-    const lineD = pts.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+    const lineD = pts
+      .map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`)
+      .join(" ");
     const areaD = `${lineD} L${pts[pts.length - 1][0].toFixed(1)} ${(h - pad).toFixed(1)} L${pts[0][0].toFixed(1)} ${(h - pad).toFixed(1)} Z`;
     return { line: lineD, area: areaD };
   }, [values, max]);
 
   return (
     <div className="w-full text-foreground">
-      <svg
-        viewBox="0 0 240 72"
-        className="w-full h-16 overflow-visible"
-        preserveAspectRatio="none"
-      >
+      <svg viewBox="0 0 240 72" className="w-full h-16 overflow-visible" preserveAspectRatio="none">
         <defs>
           <linearGradient id={`areaFill-${gid}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="currentColor" stopOpacity="0.28" />
@@ -121,7 +112,15 @@ export function RingGauge({
   return (
     <div className="flex items-center gap-3 text-foreground">
       <svg width="84" height="84" viewBox="0 0 84 84" style={{ transform: "rotate(-90deg)" }}>
-        <circle cx="42" cy="42" r={r} fill="none" stroke="currentColor" strokeWidth="7" opacity={0.22} />
+        <circle
+          cx="42"
+          cy="42"
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="7"
+          opacity={0.22}
+        />
         <motion.circle
           cx="42"
           cy="42"
@@ -136,17 +135,11 @@ export function RingGauge({
         />
       </svg>
       <div>
-        <span
-          className="text-muted-foreground text-xs font-medium"
-        >
-          {label}
-        </span>
+        <span className="text-muted-foreground text-xs font-medium">{label}</span>
         <div>
           <span className="text-xl font-semibold tracking-tight font-bold">{pct.toFixed(0)}%</span>
         </div>
-        {sub ? (
-          <span className="text-muted-foreground text-xs">{sub}</span>
-        ) : null}
+        {sub ? <span className="text-muted-foreground text-xs">{sub}</span> : null}
       </div>
     </div>
   );

@@ -1,38 +1,40 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Filter } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { api } from "@/lib/api";
-import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CodeBlock } from "@/components/CodeBlock";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ConsolePanel } from "@/components/ConsolePanel";
 import { ContainerMonitor } from "@/components/ContainerMonitor";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { ExecTerminalLazy } from "@/components/ExecTerminalLazy";
+import { lucideProps } from "@/components/Icon";
 import { InspectFields, LabelChips } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
-import { toast } from "@/components/Toaster";
+import { MoreActionsMenu } from "@/components/MoreActionsMenu";
 import { RowMenu } from "@/components/RowMenu";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tip } from "@/components/Tip";
-import { containerBrowseUrl, openExternalUrl } from "@/lib/openUrl";
-import { containerName, formatPublishedPorts, shortId } from "@/lib/utils";
-import { useUIStore } from "@/stores/uiStore";
-import { Filter } from "lucide-react";
-import { lucideProps } from "@/components/Icon";
-
-import { copyText } from "@/routes/shared";
-import { MoreActionsMenu } from "@/components/MoreActionsMenu";
+import { toast } from "@/components/Toaster";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { api } from "@/lib/api";
+import { containerBrowseUrl, openExternalUrl } from "@/lib/openUrl";
+import { containerName, formatPublishedPorts, shortId } from "@/lib/utils";
+import { copyText } from "@/routes/shared";
+import { useUIStore } from "@/stores/uiStore";
 
 type ContainerTab = "monitor" | "logs" | "exec" | "inspect";
 
@@ -70,13 +72,21 @@ export function ContainersPage() {
   const [showAllLabels, setShowAllLabels] = useState(false);
   const [confirmBulk, setConfirmBulk] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
-  const list = useQuery({ queryKey: ["containers"], queryFn: () => api.containers(true), refetchInterval: 4000 });
+  const list = useQuery({
+    queryKey: ["containers"],
+    queryFn: () => api.containers(true),
+    refetchInterval: 4000,
+  });
   const detail = useQuery({
     queryKey: ["container", selected],
     queryFn: () => api.container(selected!),
     enabled: !!selected,
   });
-  const domains = useQuery({ queryKey: ["domains"], queryFn: api.domainsStatus, staleTime: 30_000 });
+  const domains = useQuery({
+    queryKey: ["domains"],
+    queryFn: api.domainsStatus,
+    staleTime: 30_000,
+  });
 
   useEffect(() => {
     if (!pendingContainerId) return;
@@ -114,14 +124,17 @@ export function ContainersPage() {
     });
   }, [list.data, q, stateFilter, showStoppedContainers]);
 
-  const selectedRow = filtered.find((c) => c.id === selected) || (list.data || []).find((c) => c.id === selected);
+  const selectedRow =
+    filtered.find((c) => c.id === selected) || (list.data || []).find((c) => c.id === selected);
   const running = selectedRow?.state === "running" || detail.data?.State?.Running === true;
   const displayName = containerName(detail.data?.Name ? [detail.data.Name] : selectedRow?.names);
   const portSummary = formatPublishedPorts(selectedRow?.ports);
   const image = selectedRow?.image || detail.data?.Config?.Image || "—";
-  const hasGpu =
-    !!selectedRow?.gpu || (detail.data?.HostConfig?.DeviceRequests?.length ?? 0) > 0;
-  const allLabels = (detail.data?.Config?.Labels || selectedRow?.labels || {}) as Record<string, string>;
+  const hasGpu = !!selectedRow?.gpu || (detail.data?.HostConfig?.DeviceRequests?.length ?? 0) > 0;
+  const allLabels = (detail.data?.Config?.Labels || selectedRow?.labels || {}) as Record<
+    string,
+    string
+  >;
   const composeProject = allLabels["com.docker.compose.project"];
   const composeService = allLabels["com.docker.compose.service"];
 
@@ -175,12 +188,18 @@ export function ContainersPage() {
     { id: "inspect", label: "Inspect" },
   ];
 
-  const emptyTitle = q || stateFilter.length ? "No matches" : stoppedHidden ? "Stopped containers hidden" : "No containers";
-  const emptyDescription = q || stateFilter.length
-    ? "Try another name, image, ID, or clear state filters."
-    : stoppedHidden
-      ? "Turn on “Show stopped containers” in Settings, or clear filters to see exited ones."
-      : "Nothing on this engine yet. Pull an image or deploy a Compose project.";
+  const emptyTitle =
+    q || stateFilter.length
+      ? "No matches"
+      : stoppedHidden
+        ? "Stopped containers hidden"
+        : "No containers";
+  const emptyDescription =
+    q || stateFilter.length
+      ? "Try another name, image, ID, or clear state filters."
+      : stoppedHidden
+        ? "Turn on “Show stopped containers” in Settings, or clear filters to see exited ones."
+        : "Nothing on this engine yet. Pull an image or deploy a Compose project.";
 
   return (
     <div className="flex h-full min-h-0 w-full min-w-0 gap-5">
@@ -229,12 +248,16 @@ export function ContainersPage() {
                           checked={checked}
                           onCheckedChange={(next) => {
                             setStateFilter((prev) => {
-                              if (next) return prev.includes(opt.value) ? prev : [...prev, opt.value];
+                              if (next)
+                                return prev.includes(opt.value) ? prev : [...prev, opt.value];
                               return prev.filter((s) => s !== opt.value);
                             });
                           }}
                         />
-                        <Label htmlFor={id} className="cursor-pointer text-sm font-normal capitalize">
+                        <Label
+                          htmlFor={id}
+                          className="cursor-pointer text-sm font-normal capitalize"
+                        >
                           {opt.label}
                         </Label>
                       </div>
@@ -260,8 +283,8 @@ export function ContainersPage() {
                     size="sm"
                     variant="secondary"
                     onClick={() =>
-                      act(() => api.bulkContainers(selectedIds, "stop"), "Containers stopped").then(() =>
-                        setChecked({}),
+                      act(() => api.bulkContainers(selectedIds, "stop"), "Containers stopped").then(
+                        () => setChecked({}),
                       )
                     }
                   >
@@ -318,7 +341,11 @@ export function ContainersPage() {
                 },
                 { id: "sep-1", label: "", onAction: () => {} },
                 { id: "copy-id", label: "Copy ID", onAction: () => void copyText(c.id) },
-                { id: "copy-name", label: "Copy name", onAction: () => void copyText(containerName(c.names)) },
+                {
+                  id: "copy-name",
+                  label: "Copy name",
+                  onAction: () => void copyText(containerName(c.names)),
+                },
                 { id: "sep-2", label: "", onAction: () => {} },
                 {
                   id: "remove",
@@ -333,7 +360,9 @@ export function ContainersPage() {
               suffix={
                 <>
                   {c.gpu ? <StatusBadge tone="accent">GPU</StatusBadge> : null}
-                  <StatusBadge tone={c.state === "running" ? "success" : "muted"}>{c.state}</StatusBadge>
+                  <StatusBadge tone={c.state === "running" ? "success" : "muted"}>
+                    {c.state}
+                  </StatusBadge>
                 </>
               }
             >
@@ -491,7 +520,12 @@ export function ContainersPage() {
                 <div className="flex flex-col gap-4">
                   <InspectFields
                     rows={[
-                      { label: "Image", value: image, mono: true, copy: image !== "—" ? image : undefined },
+                      {
+                        label: "Image",
+                        value: image,
+                        mono: true,
+                        copy: image !== "—" ? image : undefined,
+                      },
                       { label: "Ports", value: portSummary || undefined, mono: true },
                       { label: "Network", value: primaryNetwork(detail.data), mono: true },
                       {
@@ -520,6 +554,7 @@ export function ContainersPage() {
                       <div className="flex flex-col gap-1">
                         {(detail.data.Mounts as any[]).map((m, i) => (
                           <div
+                            // biome-ignore lint/suspicious/noArrayIndexKey: index only disambiguates an otherwise-composite key
                             key={`${m.Source || m.Name || ""}-${m.Destination || m.Target || ""}-${i}`}
                             className="flex min-w-0 flex-col gap-1 rounded-lg bg-muted px-3 py-2"
                           >
@@ -548,7 +583,9 @@ export function ContainersPage() {
                         variant="secondary"
                         onClick={() => setShowAllLabels((v) => !v)}
                       >
-                        {showAllLabels ? "Hide labels" : `Labels (${Object.keys(allLabels).length})`}
+                        {showAllLabels
+                          ? "Hide labels"
+                          : `Labels (${Object.keys(allLabels).length})`}
                       </Button>
                     ) : null}
                     <Button size="sm" variant="secondary" onClick={() => setShowRaw((v) => !v)}>
