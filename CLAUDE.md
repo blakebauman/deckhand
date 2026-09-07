@@ -70,13 +70,32 @@ Keep `docs/api.md` in step when routes change; it is the hand-maintained mirror 
 - Firecracker uses build-tag providers: `runtime/firecracker_linux.go` vs `runtime/nop.go`.
   Anything platform-specific belongs behind `runtime.Provider`, not in a handler.
 
+### Auth (do not regress this)
+
+Every sidecar request must carry a per-launch token — `Authorization: Bearer <t>` or `?token=<t>`.
+The query form is not laziness: `EventSource`, `WebSocket`, and `window.open` cannot set headers,
+and the events, logs, exec, stats, and volume-export endpoints are driven through exactly those.
+In `src/lib/api.ts`, `request()` uses the header and every `*Url()` helper goes through
+`tokenized()`; a new streaming endpoint must use one or the other or it will 401.
+
+CORS mirrors auth rather than an origin allowlist — the request's `Origin` is echoed only after the
+token is accepted. That is deliberate: the Tauri webview's origin differs per platform
+(`tauri://localhost` on macOS, `http://tauri.localhost` elsewhere), so an allowlist risks breaking
+a platform that cannot be tested locally, while a caller holding the token is authorized anyway.
+Preflight is answered before the token check because a preflight never carries the header.
+
+This replaced `Access-Control-Allow-Origin: *` with no auth at all, under which any page the user
+visited could `POST /api/docker/containers` with a bind mount of `/` and take the host.
+
 ### Sidecar-URL resolution (the fragile part)
 
 Tauri spawns the sidecar, prefers `127.0.0.1:7420`, and falls back to an ephemeral port; the child
 prints `DECKHAND_SIDECAR_ADDR=host:port` on stdout, which Tauri exposes via the `sidecar_url`
-command. `src/App.tsx` polls `invoke("sidecar_url")` (up to 40×250ms), calls `setApiBaseUrl`,
-then polls `/health` before rendering — and **re-invokes** `sidecar_url` periodically while failing,
-so a restarted sidecar on a new port recovers. In a plain browser it uses `VITE_SIDECAR_URL` or
+command, alongside `sidecar_token`. `src/App.tsx` polls `invoke("sidecar_url")` (up to 40×250ms),
+calls `setApiBaseUrl` + `setApiToken`, then polls `/health` before rendering — and **re-invokes**
+both periodically while failing, so a restarted sidecar on a new port recovers. The token must be
+refreshed with the URL: a restarted sidecar mints a new one, so refreshing only the URL reconnects
+to an endpoint that then 401s everything. In a plain browser it uses `VITE_SIDECAR_URL` or
 `:7420`. Never hardcode a base URL outside `src/lib/api.ts`.
 
 ### UI shell

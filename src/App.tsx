@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { AppRouter } from "@/router";
 import { BootSplash } from "@/components/BootSplash";
-import { api, setApiBaseUrl } from "@/lib/api";
+import { api, setApiBaseUrl, setApiToken } from "@/lib/api";
 import { isTauriShell } from "@/lib/platform";
 
 const queryClient = new QueryClient({
@@ -11,6 +11,22 @@ const queryClient = new QueryClient({
 
 const BROWSER_SIDECAR =
   (import.meta as any).env?.VITE_SIDECAR_URL || "http://127.0.0.1:7420";
+
+/** The sidecar rejects unauthenticated requests; fetch its per-launch token. */
+async function invokeSidecarToken(): Promise<string> {
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const token = await Promise.race([
+      invoke<string>("sidecar_token"),
+      new Promise<string>((_, reject) =>
+        setTimeout(() => reject(new Error("sidecar_token timeout")), 2500),
+      ),
+    ]);
+    return token?.trim() || "";
+  } catch {
+    return "";
+  }
+}
 
 async function invokeSidecarUrl(): Promise<string | null> {
   try {
@@ -50,6 +66,7 @@ export default function App() {
     (async () => {
       url = await resolveSidecarUrl();
       setApiBaseUrl(url);
+      if (isTauriShell()) setApiToken(await invokeSidecarToken());
       for (let i = 0; i < 60 && !cancelled; i++) {
         try {
           await api.health();
@@ -62,6 +79,9 @@ export default function App() {
               url = next;
               setApiBaseUrl(url);
             }
+            // A restarted sidecar mints a fresh token, so refresh it alongside
+            // the URL — otherwise recovery reconnects but every call 401s.
+            setApiToken(await invokeSidecarToken());
           }
           setMessage(`Waiting for sidecar (${url})…`);
           await new Promise((r) => setTimeout(r, 500));
@@ -104,6 +124,7 @@ export default function App() {
     void (async () => {
       url = await resolveSidecarUrl();
       setApiBaseUrl(url);
+      if (isTauriShell()) setApiToken(await invokeSidecarToken());
     })();
 
     const id = window.setInterval(() => void tick(), 8000);

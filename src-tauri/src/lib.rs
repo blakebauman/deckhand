@@ -16,6 +16,7 @@ use tauri_plugin_autostart::MacosLauncher;
 const PREFERRED_SIDECAR_ADDR: &str = "127.0.0.1:7420";
 
 static SIDECAR_URL: OnceCell<Mutex<String>> = OnceCell::new();
+static SIDECAR_TOKEN: OnceCell<Mutex<String>> = OnceCell::new();
 static SIDECAR_CHILD: OnceCell<Mutex<Option<Child>>> = OnceCell::new();
 
 #[tauri::command]
@@ -28,10 +29,28 @@ fn sidecar_url() -> String {
         .unwrap_or_else(|| format!("http://{PREFERRED_SIDECAR_ADDR}"))
 }
 
+/// The sidecar requires this on every request. Empty only when the sidecar was
+/// started with --no-auth, or when we reused one whose token we never saw.
+#[tauri::command]
+fn sidecar_token() -> String {
+    SIDECAR_TOKEN
+        .get()
+        .and_then(|m| m.lock().ok())
+        .map(|g| g.clone())
+        .unwrap_or_default()
+}
+
 fn set_url(url: String) {
     let cell = SIDECAR_URL.get_or_init(|| Mutex::new(String::new()));
     if let Ok(mut g) = cell.lock() {
         *g = url;
+    }
+}
+
+fn set_token(token: String) {
+    let cell = SIDECAR_TOKEN.get_or_init(|| Mutex::new(String::new()));
+    if let Ok(mut g) = cell.lock() {
+        *g = token;
     }
 }
 
@@ -74,7 +93,7 @@ fn sidecar_port_open(addr: &str) -> bool {
     TcpStream::connect_timeout(&sock, Duration::from_millis(200)).is_ok()
 }
 
-fn spawn_sidecar_at(bin: &std::path::Path, addr: &str) -> Result<(Child, String), String> {
+fn spawn_sidecar_at(bin: &std::path::Path, addr: &str) -> Result<(Child, String, String), String> {
     let mut child = Command::new(bin)
         .args(["--addr", addr])
         .stdout(Stdio::piped())
@@ -85,14 +104,23 @@ fn spawn_sidecar_at(bin: &std::path::Path, addr: &str) -> Result<(Child, String)
     let stdout = child.stdout.take().ok_or("no sidecar stdout")?;
     let mut reader = BufReader::new(stdout);
     let mut url = format!("http://{addr}");
+    let mut token = String::new();
+    let mut have_addr = false;
     let mut line = String::new();
+    // The sidecar prints ADDR then TOKEN; read until both land.
     for _ in 0..40 {
         line.clear();
         match reader.read_line(&mut line) {
             Ok(0) => break,
             Ok(_) => {
-                if let Some(bound) = line.trim().strip_prefix("DECKHAND_SIDECAR_ADDR=") {
+                let trimmed = line.trim();
+                if let Some(bound) = trimmed.strip_prefix("DECKHAND_SIDECAR_ADDR=") {
                     url = format!("http://{bound}");
+                    have_addr = true;
+                } else if let Some(tok) = trimmed.strip_prefix("DECKHAND_SIDECAR_TOKEN=") {
+                    token = tok.to_string();
+                }
+                if have_addr && !token.is_empty() {
                     break;
                 }
             }
@@ -114,7 +142,7 @@ fn spawn_sidecar_at(bin: &std::path::Path, addr: &str) -> Result<(Child, String)
         return Err(format!("sidecar exited early: {status}"));
     }
 
-    Ok((child, url))
+    Ok((child, url, token))
 }
 
 fn spawn_sidecar() -> Result<(), String> {
@@ -122,13 +150,16 @@ fn spawn_sidecar() -> Result<(), String> {
     // Reuse an already-running local sidecar (browser split-dev, prior launch).
     if sidecar_port_open(PREFERRED_SIDECAR_ADDR) {
         set_url(preferred);
+        // We never saw this one's stdout, so fall back to the token the
+        // operator exported when starting it by hand (bun run dev:sidecar).
+        set_token(std::env::var("DECKHAND_SIDECAR_TOKEN").unwrap_or_default());
         return Ok(());
     }
 
     let bin =
         find_sidecar_binary().ok_or("sidecar binary not found — run: bun run build:sidecar")?;
 
-    let (child, url) = match spawn_sidecar_at(&bin, PREFERRED_SIDECAR_ADDR) {
+    let (child, url, token) = match spawn_sidecar_at(&bin, PREFERRED_SIDECAR_ADDR) {
         Ok(v) => v,
         Err(err) => {
             eprintln!("sidecar bind {PREFERRED_SIDECAR_ADDR} failed ({err}); trying ephemeral port");
@@ -137,6 +168,7 @@ fn spawn_sidecar() -> Result<(), String> {
     };
 
     set_url(url);
+    set_token(token);
     SIDECAR_CHILD
         .get_or_init(|| Mutex::new(None))
         .lock()
@@ -169,7 +201,7 @@ pub fn run() {
             MacosLauncher::LaunchAgent,
             None,
         ))
-        .invoke_handler(tauri::generate_handler![sidecar_url])
+        .invoke_handler(tauri::generate_handler![sidecar_url, sidecar_token])
         .setup(|app| {
             let show = MenuItem::with_id(app, "show", "Open Deckhand", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;

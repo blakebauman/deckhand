@@ -1,4 +1,5 @@
 let baseUrl = (import.meta as any).env?.VITE_SIDECAR_URL || "http://127.0.0.1:7420";
+let apiToken = (import.meta as any).env?.VITE_SIDECAR_TOKEN || "";
 
 export function setApiBaseUrl(url: string) {
   baseUrl = url.replace(/\/$/, "");
@@ -8,11 +9,28 @@ export function getApiBaseUrl() {
   return baseUrl;
 }
 
+export function setApiToken(token: string) {
+  apiToken = token || "";
+}
+
+/**
+ * Append the token to a URL that will be handed to EventSource, WebSocket, or
+ * window.open — none of which can set an Authorization header. Everything that
+ * goes through request() uses the header instead.
+ */
+function tokenized(url: string) {
+  if (!apiToken) return url;
+  const u = new URL(url);
+  u.searchParams.set("token", apiToken);
+  return u.toString();
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${baseUrl}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      ...(apiToken ? { Authorization: `Bearer ${apiToken}` } : {}),
       ...(init?.headers || {}),
     },
   });
@@ -45,8 +63,8 @@ export const api = {
   dockerDashboard: () => request<Record<string, number>>("/api/docker/dashboard"),
   dockerInfo: () => request<any>("/api/docker/info"),
   gpus: () => request<GPUStatus>("/api/docker/gpus"),
-  dockerEventsUrl: () => `${baseUrl}/api/docker/events`,
-  imagePullUrl: () => `${baseUrl}/api/docker/images/pull`,
+  dockerEventsUrl: () => tokenized(`${baseUrl}/api/docker/events`),
+  imagePullUrl: () => tokenized(`${baseUrl}/api/docker/images/pull`),
   containers: (all = true) => request<any[]>(`/api/docker/containers?all=${all}`),
   container: (id: string) => request<any>(`/api/docker/containers/${id}`),
   createContainer: (body: RunContainerBody) =>
@@ -60,16 +78,17 @@ export const api = {
   removeContainer: (id: string, force = true) =>
     request(`/api/docker/containers/${id}?force=${force}`, { method: "DELETE" }),
   containerLogsUrl: (id: string, follow = false) =>
-    `${baseUrl}/api/docker/containers/${id}/logs?follow=${follow}&tail=200`,
+    tokenized(`${baseUrl}/api/docker/containers/${id}/logs?follow=${follow}&tail=200`),
   execContainer: (id: string, cmd?: string[]) =>
     request<{ output: string }>(`/api/docker/containers/${id}/exec`, {
       method: "POST",
       body: JSON.stringify({ cmd }),
     }),
   containerExecWsUrl: (id: string) =>
-    `${baseUrl.replace(/^http/, "ws")}/api/docker/containers/${encodeURIComponent(id)}/exec/ws`,
+    tokenized(`${baseUrl.replace(/^http/, "ws")}/api/docker/containers/${encodeURIComponent(id)}/exec/ws`),
   containerStats: (id: string) => request<ContainerStats>(`/api/docker/containers/${id}/stats`),
-  containerStatsStreamUrl: (id: string) => `${baseUrl}/api/docker/containers/${id}/stats?stream=true`,
+  containerStatsStreamUrl: (id: string) =>
+    tokenized(`${baseUrl}/api/docker/containers/${id}/stats?stream=true`),
   bulkContainers: (ids: string[], action: "start" | "stop" | "restart" | "remove") =>
     request<{ ok: boolean; errors: string[] }>("/api/docker/containers/bulk", {
       method: "POST",
@@ -83,7 +102,10 @@ export const api = {
   pullImageStream: async (ref: string, onChunk: (text: string) => void, signal?: AbortSignal) => {
     const res = await fetch(`${baseUrl}/api/docker/images/pull`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(apiToken ? { Authorization: `Bearer ${apiToken}` } : {}),
+      },
       body: JSON.stringify({ ref }),
       signal,
     });
@@ -132,10 +154,11 @@ export const api = {
       body: JSON.stringify({ source, dest }),
     }),
   volumeExportUrl: (name: string) =>
-    `${baseUrl}/api/docker/volumes/${encodeURIComponent(name)}/export`,
+    tokenized(`${baseUrl}/api/docker/volumes/${encodeURIComponent(name)}/export`),
   importVolume: async (name: string, file: Blob) => {
     const res = await fetch(`${baseUrl}/api/docker/volumes/${encodeURIComponent(name)}/import`, {
       method: "POST",
+      headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : {},
       body: file,
     });
     if (!res.ok) {
@@ -172,7 +195,10 @@ export const api = {
   ) => {
     const res = await fetch(`${baseUrl}/api/docker/build`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(apiToken ? { Authorization: `Bearer ${apiToken}` } : {}),
+      },
       body: JSON.stringify(body),
       signal,
     });
@@ -280,7 +306,7 @@ export const api = {
   pod: (ns: string, name: string) => request<any>(`/api/k8s/pods/${ns}/${name}`),
   deletePod: (ns: string, name: string) => request(`/api/k8s/pods/${ns}/${name}`, { method: "DELETE" }),
   podLogsUrl: (ns: string, name: string, follow = false) =>
-    `${baseUrl}/api/k8s/pods/${ns}/${name}/logs?follow=${follow}&tail=200`,
+    tokenized(`${baseUrl}/api/k8s/pods/${ns}/${name}/logs?follow=${follow}&tail=200`),
   execPod: (ns: string, name: string, cmd?: string[], container?: string) =>
     request<{ output: string }>(`/api/k8s/pods/${ns}/${name}/exec`, {
       method: "POST",
@@ -291,7 +317,7 @@ export const api = {
       `${baseUrl.replace(/^http/, "ws")}/api/k8s/pods/${encodeURIComponent(ns)}/${encodeURIComponent(name)}/exec/ws`,
     );
     if (container) url.searchParams.set("container", container);
-    return url.toString();
+    return tokenized(url.toString());
   },
   deployments: (namespace: string) =>
     request<any[]>(`/api/k8s/deployments?namespace=${encodeURIComponent(namespace)}`),

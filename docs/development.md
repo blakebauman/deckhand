@@ -32,11 +32,15 @@ Useful when iterating on the UI or sidecar alone:
 
 ```bash
 bun run build:sidecar
-./src-tauri/binaries/deckhand-sidecar --addr 127.0.0.1:7420
+./src-tauri/binaries/deckhand-sidecar --addr 127.0.0.1:7420 --token deckhand-dev
 
 # separate terminal (stop any Tauri-started Vite on :1420 first)
-VITE_SIDECAR_URL=http://127.0.0.1:7420 bun run dev:ui
+VITE_SIDECAR_URL=http://127.0.0.1:7420 VITE_SIDECAR_TOKEN=deckhand-dev bun run dev:ui
 ```
+
+The sidecar authenticates every request, so browser split-dev needs a token both sides agree on.
+`bun run dev:sidecar` defaults to `deckhand-dev` for this reason; pass `--no-auth` instead if you
+want it off entirely (it logs a warning — the API can bind-mount any host path into a container).
 
 Or run the sidecar with Go directly:
 
@@ -106,6 +110,9 @@ Regular CI (`.github/workflows/ci.yml`) builds and vets both Go binaries, runs `
 | Variable | Purpose |
 |----------|---------|
 | `VITE_SIDECAR_URL` | Override sidecar base URL for browser / split dev |
+| `VITE_SIDECAR_TOKEN` | Sidecar token for browser / split dev |
+| `DECKHAND_SIDECAR_TOKEN` | Token the sidecar should use instead of generating one |
+| `DECKHAND_TOKEN` | Token the `deckhand` CLI presents |
 | `DOCKER_HOST` | Standard Docker client env (read by sidecar) |
 | `KUBECONFIG` | kubeconfig path (default `~/.kube/config`) |
 
