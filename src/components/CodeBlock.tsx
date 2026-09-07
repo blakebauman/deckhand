@@ -24,14 +24,10 @@ export function CodeBlock({
         "flex flex-col min-w-0 overflow-hidden bg-card rounded-2xl min-w-0",
       ].join(" ")}
     >
-      <div
-        className="flex items-center justify-between shrink-0 gap-2 px-3 py-2 bg-muted"
-      >
+      <div className="flex items-center justify-between shrink-0 gap-2 px-3 py-2 bg-muted">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-medium">{title}</span>
-          {meta ? (
-            <span className="text-muted-foreground text-xs">{meta}</span>
-          ) : null}
+          {meta ? <span className="text-muted-foreground text-xs">{meta}</span> : null}
         </div>
         <CopyButton value={hasContent ? value : ""} label="Copy" iconOnly />
       </div>

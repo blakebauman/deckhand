@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { api } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ConsolePanel } from "@/components/ConsolePanel";
 import { CopyButton } from "@/components/CopyButton";
@@ -8,15 +7,15 @@ import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane"
 import { ExecTerminalLazy } from "@/components/ExecTerminalLazy";
 import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
+import { MoreActionsMenu } from "@/components/MoreActionsMenu";
 import { RowMenu } from "@/components/RowMenu";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useUIStore } from "@/stores/uiStore";
-import { copyText } from "@/routes/shared";
-import { K8sChrome } from "@/routes/k8s/K8sChrome";
-import { MoreActionsMenu } from "@/components/MoreActionsMenu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { api } from "@/lib/api";
+import { K8sChrome } from "@/routes/k8s/K8sChrome";
+import { copyText } from "@/routes/shared";
+import { useUIStore } from "@/stores/uiStore";
 
 function phaseTone(phase?: string): "success" | "muted" | "destructive" {
   if (phase === "Running") return "success";
@@ -31,7 +30,11 @@ export function PodsPage() {
   const [podTab, setPodTab] = useState<"logs" | "exec" | "inspect">("logs");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [q, setQ] = useState("");
-  const list = useQuery({ queryKey: ["pods", namespace], queryFn: () => api.pods(namespace), refetchInterval: 5000 });
+  const list = useQuery({
+    queryKey: ["pods", namespace],
+    queryFn: () => api.pods(namespace),
+    refetchInterval: 5000,
+  });
 
   const filtered = useMemo(() => {
     const items = list.data || [];
@@ -77,18 +80,23 @@ export function PodsPage() {
                 },
               ]}
               suffix={
-                <StatusBadge tone={phaseTone(p.status?.phase)}>{p.status?.phase || "Unknown"}</StatusBadge>
+                <StatusBadge tone={phaseTone(p.status?.phase)}>
+                  {p.status?.phase || "Unknown"}
+                </StatusBadge>
               }
             >
-              <div className="min-w-0 text-sm font-medium truncate">
-                {p.metadata.name}
-              </div>
+              <div className="min-w-0 text-sm font-medium truncate">{p.metadata.name}</div>
             </RowMenu>
           ))}
         </ListPane>
         <DetailPane
           selectionKey={selected}
-          empty={<DetailEmpty title="Select a pod" description="Stream logs or exec into a pod in this namespace." />}
+          empty={
+            <DetailEmpty
+              title="Select a pod"
+              description="Stream logs or exec into a pod in this namespace."
+            />
+          }
           header={
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
@@ -134,7 +142,12 @@ export function PodsPage() {
                   rows={[
                     { label: "Namespace", value: namespace, mono: true },
                     { label: "Node", value: selectedPod.spec?.nodeName, mono: true },
-                    { label: "Pod IP", value: selectedPod.status?.podIP, mono: true, copy: selectedPod.status?.podIP },
+                    {
+                      label: "Pod IP",
+                      value: selectedPod.status?.podIP,
+                      mono: true,
+                      copy: selectedPod.status?.podIP,
+                    },
                     {
                       label: "Containers",
                       value: (selectedPod.spec?.containers || [])
@@ -150,7 +163,12 @@ export function PodsPage() {
                     },
                     { label: "Restart policy", value: selectedPod.spec?.restartPolicy },
                     { label: "Created", value: selectedPod.metadata.creationTimestamp },
-                    { label: "UID", value: selectedPod.metadata.uid, mono: true, copy: selectedPod.metadata.uid },
+                    {
+                      label: "UID",
+                      value: selectedPod.metadata.uid,
+                      mono: true,
+                      copy: selectedPod.metadata.uid,
+                    },
                   ]}
                 />
               ) : null}

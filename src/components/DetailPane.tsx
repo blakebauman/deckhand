@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { MousePointerClick } from "lucide-react";
+import type { ReactNode } from "react";
 import { lucideProps } from "@/components/Icon";
 import { cn } from "@/lib/utils";
 
@@ -65,7 +65,9 @@ export function DetailPane({
       ) : (
         <div key={selectionKey} className="flex min-h-0 flex-1 flex-col">
           {header ? <div className="min-w-0 shrink-0 pb-3">{header}</div> : null}
-          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-10 pe-1">{children}</div>
+          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-10 pe-1">
+            {children}
+          </div>
         </div>
       )}
     </div>

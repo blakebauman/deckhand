@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState, type ReactNode } from "react";
-import { api } from "@/lib/api";
+import { type ReactNode, useMemo, useState } from "react";
 import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useUIStore } from "@/stores/uiStore";
-import { K8sChrome } from "@/routes/k8s/K8sChrome";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { api } from "@/lib/api";
+import { K8sChrome } from "@/routes/k8s/K8sChrome";
+import { useUIStore } from "@/stores/uiStore";
 
 type ResourceTab =
   | "services"
@@ -209,7 +208,9 @@ export function K8sResourcesPage() {
                 return (
                   <span className="text-xs text-muted-foreground truncate">
                     {keys.length} key{keys.length === 1 ? "" : "s"}
-                    {keys.length ? `: ${keys.slice(0, 4).join(", ")}${keys.length > 4 ? "…" : ""}` : ""}
+                    {keys.length
+                      ? `: ${keys.slice(0, 4).join(", ")}${keys.length > 4 ? "…" : ""}`
+                      : ""}
                   </span>
                 );
               }}
@@ -250,7 +251,9 @@ export function K8sResourcesPage() {
                 const ok = ready?.status === "True";
                 return (
                   <div className="flex flex-wrap items-center gap-2">
-                    <StatusBadge tone={ok ? "success" : "destructive"}>{ok ? "Ready" : "NotReady"}</StatusBadge>
+                    <StatusBadge tone={ok ? "success" : "destructive"}>
+                      {ok ? "Ready" : "NotReady"}
+                    </StatusBadge>
                     <span className="text-xs text-muted-foreground">
                       {n.status?.nodeInfo?.kubeletVersion || ""}
                     </span>

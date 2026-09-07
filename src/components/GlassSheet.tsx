@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { CopyButton } from "@/components/CopyButton";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +9,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { CopyButton } from "@/components/CopyButton";
 
 const sizeClass = {
   md: "sm:max-w-lg",
@@ -38,12 +38,17 @@ export function GlassSheet({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(sizeClass[size], "max-h-[85vh] overflow-hidden flex flex-col")} showCloseButton={!footer}>
+      <DialogContent
+        className={cn(sizeClass[size], "max-h-[85vh] overflow-hidden flex flex-col")}
+        showCloseButton={!footer}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
-        <div className={cn("min-h-0 flex-1 overflow-y-auto", mono && "font-mono text-xs")}>{children}</div>
+        <div className={cn("min-h-0 flex-1 overflow-y-auto", mono && "font-mono text-xs")}>
+          {children}
+        </div>
         {footer ? <DialogFooter>{footer}</DialogFooter> : null}
       </DialogContent>
     </Dialog>

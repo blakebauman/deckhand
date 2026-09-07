@@ -1,27 +1,29 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { api, type ImageScanResult, type VolumeFileEntry } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
+import { Field } from "@/components/Field";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
-import { toast } from "@/components/Toaster";
-import { Field } from "@/components/Field";
+import { MoreActionsMenu } from "@/components/MoreActionsMenu";
 import { RowMenu } from "@/components/RowMenu";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tip } from "@/components/Tip";
-import { formatBytes, shortId } from "@/lib/utils";
-import { useUIStore } from "@/stores/uiStore";
-
-import { copyText } from "@/routes/shared";
-import { MoreActionsMenu } from "@/components/MoreActionsMenu";
+import { toast } from "@/components/Toaster";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { api, type ImageScanResult, type VolumeFileEntry } from "@/lib/api";
+import { formatBytes, shortId } from "@/lib/utils";
+import { copyText } from "@/routes/shared";
+import { useUIStore } from "@/stores/uiStore";
 
-
-function imageTitle(img: { Id?: string; RepoTags?: string[] | null; RepoDigests?: string[] | null }) {
+function imageTitle(img: {
+  Id?: string;
+  RepoTags?: string[] | null;
+  RepoDigests?: string[] | null;
+}) {
   if (img.RepoTags?.[0]) return img.RepoTags[0];
   const digestRepo = img.RepoDigests?.[0]?.split("@")[0];
   if (digestRepo) return digestRepo;
@@ -91,7 +93,9 @@ export function ImagesPage() {
     );
   }, [list.data, q]);
 
-  const selectedImg = filtered.find((img) => img.Id === selected) || (list.data || []).find((img) => img.Id === selected);
+  const selectedImg =
+    filtered.find((img) => img.Id === selected) ||
+    (list.data || []).find((img) => img.Id === selected);
   const title = selectedImg ? imageTitle(selectedImg) : "";
   const dangling = !!selectedImg && !(selectedImg.RepoTags || []).length;
   const extraTags = (selectedImg?.RepoTags || []).slice(1);
@@ -110,7 +114,8 @@ export function ImagesPage() {
           .map((line) => {
             try {
               const j = JSON.parse(line);
-              if (j.status && j.progress) return `${j.id ? j.id + ": " : ""}${j.status} ${j.progress}`;
+              if (j.status && j.progress)
+                return `${j.id ? j.id + ": " : ""}${j.status} ${j.progress}`;
               if (j.status) return `${j.id ? j.id + ": " : ""}${j.status}`;
               if (j.error) return `error: ${j.error}`;
               return line;
@@ -201,7 +206,13 @@ export function ImagesPage() {
                   : []),
                 { id: "copy-id", label: "Copy ID", onAction: () => void copyText(img.Id) },
                 ...(img.RepoTags?.[0]
-                  ? [{ id: "copy-tag", label: "Copy tag", onAction: () => void copyText(img.RepoTags![0]) }]
+                  ? [
+                      {
+                        id: "copy-tag",
+                        label: "Copy tag",
+                        onAction: () => void copyText(img.RepoTags![0]),
+                      },
+                    ]
                   : []),
                 { id: "sep-1", label: "", onAction: () => {} },
                 {
@@ -259,13 +270,19 @@ export function ImagesPage() {
                   </div>
                   <span className="min-w-0 truncate font-mono text-xs text-muted-foreground">
                     {formatBytes(selectedImg.Size)}
-                    {extraTags.length ? ` · +${extraTags.length} tag${extraTags.length === 1 ? "" : "s"}` : ""}
+                    {extraTags.length
+                      ? ` · +${extraTags.length} tag${extraTags.length === 1 ? "" : "s"}`
+                      : ""}
                   </span>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {selectedImg.RepoTags?.[0] ? (
-                  <Button size="sm" variant="default" onClick={() => openRunSheet(selectedImg.RepoTags![0])}>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={() => openRunSheet(selectedImg.RepoTags![0])}
+                  >
                     Run
                   </Button>
                 ) : null}
@@ -314,7 +331,8 @@ export function ImagesPage() {
                 <div className="flex justify-between gap-2">
                   <div className="text-sm font-semibold">Vulnerability scan</div>
                   <div className="text-muted-foreground text-xs">
-                    {scan.tool || "scanner"} · C{scan.critical} H{scan.high} M{scan.medium} L{scan.low}
+                    {scan.tool || "scanner"} · C{scan.critical} H{scan.high} M{scan.medium} L
+                    {scan.low}
                   </div>
                 </div>
                 {scan.error ? (
@@ -330,7 +348,11 @@ export function ImagesPage() {
                         className="flex items-center gap-2 px-3 py-2 min-w-0 bg-muted rounded-lg"
                       >
                         <StatusBadge
-                          tone={f.severity === "CRITICAL" || f.severity === "HIGH" ? "destructive" : "muted"}
+                          tone={
+                            f.severity === "CRITICAL" || f.severity === "HIGH"
+                              ? "destructive"
+                              : "muted"
+                          }
                         >
                           {f.severity}
                         </StatusBadge>
@@ -366,21 +388,15 @@ export function ImagesPage() {
                     Close
                   </Button>
                 </div>
-                <div
-                  className="flex flex-col gap-1 p-2 bg-card rounded-2xl"
-                >
+                <div className="flex flex-col gap-1 p-2 bg-card rounded-2xl">
                   {files.isLoading ? (
-                    <p className="p-2 m-0 text-muted-foreground text-xs">
-                      Loading…
-                    </p>
+                    <p className="p-2 m-0 text-muted-foreground text-xs">Loading…</p>
                   ) : files.isError ? (
                     <p className="p-2 m-0 text-destructive text-xs">
                       {(files.error as Error)?.message || "Failed to list files"}
                     </p>
                   ) : (files.data || []).length === 0 ? (
-                    <p className="p-2 m-0 text-muted-foreground text-xs">
-                      Empty directory
-                    </p>
+                    <p className="p-2 m-0 text-muted-foreground text-xs">Empty directory</p>
                   ) : (
                     (files.data || []).map((f: VolumeFileEntry) => (
                       <button
@@ -430,7 +446,12 @@ export function ImagesPage() {
           </>
         }
       >
-        <Field value={ref} onChange={setRef} placeholder="nginx:alpine" aria-label="Image reference" />
+        <Field
+          value={ref}
+          onChange={setRef}
+          placeholder="nginx:alpine"
+          aria-label="Image reference"
+        />
       </GlassSheet>
 
       <GlassSheet

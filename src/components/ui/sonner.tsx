@@ -1,11 +1,17 @@
-"use client"
+"use client";
 
-import { Toaster as Sonner, type ToasterProps } from "sonner"
-import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
-import { useUIStore } from "@/stores/uiStore"
+import {
+  CircleCheckIcon,
+  InfoIcon,
+  Loader2Icon,
+  OctagonXIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
+import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { useUIStore } from "@/stores/uiStore";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const theme = useUIStore((s) => s.theme)
+  const theme = useUIStore((s) => s.theme);
 
   return (
     <Sonner
@@ -33,7 +39,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       {...props}
     />
-  )
-}
+  );
+};
 
-export { Toaster }
+export { Toaster };

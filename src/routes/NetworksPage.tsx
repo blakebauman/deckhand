@@ -1,26 +1,30 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { api } from "@/lib/api";
+import { useMemo, useState } from "react";
 import { CodeBlock } from "@/components/CodeBlock";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
+import { Field } from "@/components/Field";
 import { GlassSheet } from "@/components/GlassSheet";
 import { InspectFields, LabelChips } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
-import { toast } from "@/components/Toaster";
-import { Field } from "@/components/Field";
 import { RowMenu } from "@/components/RowMenu";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tip } from "@/components/Tip";
-import { shortId } from "@/lib/utils";
-import { useUIStore } from "@/stores/uiStore";
-
-import { copyText } from "@/routes/shared";
+import { toast } from "@/components/Toaster";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { api } from "@/lib/api";
+import { shortId } from "@/lib/utils";
+import { copyText } from "@/routes/shared";
+import { useUIStore } from "@/stores/uiStore";
 
 function driverTone(driver?: string): "info" | "muted" | "accent" | "default" {
   switch ((driver || "").toLowerCase()) {
@@ -106,7 +110,11 @@ export function NetworksPage() {
         empty={
           <ListEmpty
             title={q ? "No matches" : "No networks"}
-            description={q ? "Try another name or driver." : "Create a bridge network to isolate Compose stacks."}
+            description={
+              q
+                ? "Try another name or driver."
+                : "Create a bridge network to isolate Compose stacks."
+            }
           />
         }
         search={{ value: q, onChange: setQ, placeholder: "Search networks" }}
@@ -140,9 +148,7 @@ export function NetworksPage() {
             ]}
             suffix={<StatusBadge tone={driverTone(n.Driver)}>{n.Driver || "—"}</StatusBadge>}
           >
-            <div className="min-w-0 text-sm font-medium truncate">
-              {n.Name}
-            </div>
+            <div className="min-w-0 text-sm font-medium truncate">{n.Name}</div>
             <div className="min-w-0 text-muted-foreground text-xs truncate">
               {n.Scope || "local"}
               {n.Id ? ` · ${shortId(n.Id)}` : ""}
@@ -212,7 +218,8 @@ export function NetworksPage() {
               </div>
               {attached.length === 0 && !detail.isLoading ? (
                 <div className="text-muted-foreground text-sm">
-                  Nothing attached. Point a container or Compose service at this network to see it here.
+                  Nothing attached. Point a container or Compose service at this network to see it
+                  here.
                 </div>
               ) : (
                 <div className="flex flex-col gap-1">
@@ -269,14 +276,23 @@ export function NetworksPage() {
             <Button variant="secondary" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
-            <Button variant="default" disabled={!name.trim() || creating} onClick={() => void createNetwork()}>
+            <Button
+              variant="default"
+              disabled={!name.trim() || creating}
+              onClick={() => void createNetwork()}
+            >
               Create
             </Button>
           </>
         }
       >
         <div className="flex flex-col gap-4">
-          <Field value={name} onChange={setName} placeholder="my-network" aria-label="Network name" />
+          <Field
+            value={name}
+            onChange={setName}
+            placeholder="my-network"
+            aria-label="Network name"
+          />
           <Select value={driver} onValueChange={(k) => k && setDriver(k)}>
             <SelectTrigger aria-label="Driver" className="w-full">
               <SelectValue placeholder="Driver" />

@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from "react";
 import { MoreHorizontal } from "lucide-react";
+import type { CSSProperties, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -79,7 +79,8 @@ export function RowMenu({
         "flex w-full min-w-0 items-center gap-2",
         selectable &&
           "dh-list-item mb-0 cursor-pointer rounded-lg border-0 px-2 py-1.5 text-start text-foreground",
-        selectable && (active ? "dh-list-item-selected bg-muted" : "bg-transparent hover:bg-muted/60"),
+        selectable &&
+          (active ? "dh-list-item-selected bg-muted" : "bg-transparent hover:bg-muted/60"),
       )}
       aria-current={active ? "true" : undefined}
       style={{ WebkitAppRegion: "no-drag" } as CSSProperties}

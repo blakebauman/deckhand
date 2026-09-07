@@ -1,26 +1,24 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { FolderPlus, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { api, type ComposeProject } from "@/lib/api";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
+import { Area, Field } from "@/components/Field";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { HelpHint } from "@/components/HelpHint";
+import { lucideProps } from "@/components/Icon";
 import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
-import { toast } from "@/components/Toaster";
-import { Area, Field } from "@/components/Field";
+import { MoreActionsMenu } from "@/components/MoreActionsMenu";
 import { RowMenu } from "@/components/RowMenu";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tip } from "@/components/Tip";
-import { useUIStore } from "@/stores/uiStore";
-import { FolderPlus, RefreshCw } from "lucide-react";
-import { lucideProps } from "@/components/Icon";
-
-import { copyText, composeProjectKey, composeStatusLabel } from "@/routes/shared";
-import { MoreActionsMenu } from "@/components/MoreActionsMenu";
+import { toast } from "@/components/Toaster";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-
+import { api, type ComposeProject } from "@/lib/api";
+import { composeProjectKey, composeStatusLabel, copyText } from "@/routes/shared";
+import { useUIStore } from "@/stores/uiStore";
 
 function basename(path?: string) {
   if (!path) return "";
@@ -38,7 +36,9 @@ export function ProjectsPage() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [newRoot, setNewRoot] = useState("");
   const [path, setPath] = useState("");
-  const [yaml, setYaml] = useState(`services:\n  web:\n    image: nginx:alpine\n    ports:\n      - "8080:80"\n`);
+  const [yaml, setYaml] = useState(
+    `services:\n  web:\n    image: nginx:alpine\n    ports:\n      - "8080:80"\n`,
+  );
   const [projectName, setProjectName] = useState("deckhand-demo");
   const [output, setOutput] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -118,7 +118,9 @@ export function ProjectsPage() {
       };
     }
     if (p) {
-      const files = (p.configFiles?.length ? p.configFiles : p.path ? [p.path] : []).filter(Boolean);
+      const files = (p.configFiles?.length ? p.configFiles : p.path ? [p.path] : []).filter(
+        Boolean,
+      );
       return {
         path: files[0] || undefined,
         configFiles: files.length ? files : undefined,
@@ -220,7 +222,8 @@ export function ProjectsPage() {
           <div className="flex items-center gap-2" data-no-drag>
             <Tip label="Refresh engine projects">
               <Button
-                variant="ghost" aria-label="Refresh projects"
+                variant="ghost"
+                aria-label="Refresh projects"
                 onClick={() => {
                   void engine.refetch();
                   void scanned.refetch();
@@ -274,14 +277,18 @@ export function ProjectsPage() {
                 { id: "sep-1", label: "", onAction: () => {} },
                 { id: "copy-name", label: "Copy name", onAction: () => void copyText(p.name) },
                 ...(p.path
-                  ? [{ id: "copy-path", label: "Copy path", onAction: () => void copyText(p.path!) }]
+                  ? [
+                      {
+                        id: "copy-path",
+                        label: "Copy path",
+                        onAction: () => void copyText(p.path!),
+                      },
+                    ]
                   : []),
               ]}
               suffix={<StatusBadge tone={p.running ? "success" : "muted"}>{label}</StatusBadge>}
             >
-              <div className="min-w-0 text-sm font-medium truncate">
-                {p.name}
-              </div>
+              <div className="min-w-0 text-sm font-medium truncate">{p.name}</div>
               <div
                 className="text-muted-foreground text-xs truncate"
                 title={p.path || "no compose file"}
@@ -329,7 +336,8 @@ export function ProjectsPage() {
                   className="min-w-0 truncate font-mono text-xs text-muted-foreground"
                   title={selected.path || undefined}
                 >
-                  {selected.path || "No compose file path — Down / Restart still work by project name"}
+                  {selected.path ||
+                    "No compose file path — Down / Restart still work by project name"}
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -337,7 +345,9 @@ export function ProjectsPage() {
                   <Button
                     size="sm"
                     variant="secondary"
-                    onClick={() => void run("Down", () => api.composeDown(bodyFor(selected)), selected.name)}
+                    onClick={() =>
+                      void run("Down", () => api.composeDown(bodyFor(selected)), selected.name)
+                    }
                   >
                     Down
                   </Button>
@@ -345,8 +355,10 @@ export function ProjectsPage() {
                   <Button
                     size="sm"
                     variant="default"
-                    disabled={!selected.path && !(selected.configFiles?.length)}
-                    onClick={() => void run("Deploy", () => api.composeUp(bodyFor(selected)), selected.name)}
+                    disabled={!selected.path && !selected.configFiles?.length}
+                    onClick={() =>
+                      void run("Deploy", () => api.composeUp(bodyFor(selected)), selected.name)
+                    }
                   >
                     Deploy
                   </Button>
@@ -372,13 +384,19 @@ export function ProjectsPage() {
                   ) : null}
                   <DropdownMenuItem
                     onClick={() =>
-                      void run("Restart", () => api.composeRestart(bodyFor(selected)), selected.name)
+                      void run(
+                        "Restart",
+                        () => api.composeRestart(bodyFor(selected)),
+                        selected.name,
+                      )
                     }
                   >
                     Restart
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => void run("PS", () => api.composePs(bodyFor(selected)), selected.name)}
+                    onClick={() =>
+                      void run("PS", () => api.composePs(bodyFor(selected)), selected.name)
+                    }
                   >
                     PS
                   </DropdownMenuItem>
@@ -422,9 +440,7 @@ export function ProjectsPage() {
             />
 
             <div className="flex flex-col gap-2">
-              <div
-                className="flex justify-between gap-2"
-              >
+              <div className="flex justify-between gap-2">
                 <div className="text-sm font-semibold">Services</div>
                 <div className="text-muted-foreground text-xs">
                   {services.isLoading ? "Loading…" : `${(services.data || []).length}`}
@@ -448,9 +464,7 @@ export function ProjectsPage() {
                         className="flex items-center gap-3 px-3 py-2 min-w-0 bg-muted rounded-lg"
                       >
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">
-                            {svc.name}
-                          </div>
+                          <div className="text-sm font-medium truncate">{svc.name}</div>
                           <div className="text-muted-foreground text-xs truncate">
                             {svc.image || "—"}
                           </div>
@@ -528,7 +542,8 @@ export function ProjectsPage() {
                     {root}
                   </span>
                   <Button
-                    variant="ghost" size="xs"
+                    variant="ghost"
+                    size="xs"
                     aria-label={`Remove ${root}`}
                     onClick={() => removeComposeRoot(root)}
                   >
@@ -552,11 +567,7 @@ export function ProjectsPage() {
         description="From a file path or pasted YAML"
         footer={
           <>
-            <Button
-              variant="secondary"
-              onClick={() => setDeployOpen(false)}
-              disabled={deployBusy}
-            >
+            <Button variant="secondary" onClick={() => setDeployOpen(false)} disabled={deployBusy}>
               Cancel
             </Button>
             <Button
@@ -582,12 +593,7 @@ export function ProjectsPage() {
             onChange={setPath}
             placeholder="compose file or directory path (optional)"
           />
-          <Area
-            value={yaml}
-            onChange={setYaml}
-            isDisabled={!!path}
-            placeholder="compose YAML"
-          />
+          <Area value={yaml} onChange={setYaml} isDisabled={!!path} placeholder="compose YAML" />
         </div>
       </GlassSheet>
 

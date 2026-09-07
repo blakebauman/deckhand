@@ -1,12 +1,12 @@
-import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { api } from "@/lib/api";
-import { MetricTile, PageShell } from "@/components/PageShell";
+import { useEffect, useMemo } from "react";
 import { BreakdownPie, ChartPanel, RunningAreaChart } from "@/components/charts/ChartsPanel";
+import { MetricTile, PageShell } from "@/components/PageShell";
+import { api } from "@/lib/api";
+import { K8sChrome } from "@/routes/k8s/K8sChrome";
 import { useMetricsStore } from "@/stores/metricsStore";
 import { useUIStore } from "@/stores/uiStore";
-import { K8sChrome } from "@/routes/k8s/K8sChrome";
 
 export function K8sOverviewPage() {
   const navigate = useNavigate();
@@ -16,7 +16,10 @@ export function K8sOverviewPage() {
     queryFn: () => api.pods(namespace),
     refetchInterval: 5000,
   });
-  const deps = useQuery({ queryKey: ["deployments", namespace], queryFn: () => api.deployments(namespace) });
+  const deps = useQuery({
+    queryKey: ["deployments", namespace],
+    queryFn: () => api.deployments(namespace),
+  });
   const pushK8sRunning = useMetricsStore((s) => s.pushK8sRunning);
   const k8sRunningHistory = useMetricsStore((s) => s.k8sRunningHistory);
 
@@ -24,7 +27,9 @@ export function K8sOverviewPage() {
   const depList = deps.data || [];
   const runningPods = podList.filter((p) => p.status?.phase === "Running").length;
   const readyDeps = depList.filter(
-    (d) => (d.status?.readyReplicas ?? 0) > 0 && (d.status?.readyReplicas ?? 0) === (d.spec?.replicas ?? 0),
+    (d) =>
+      (d.status?.readyReplicas ?? 0) > 0 &&
+      (d.status?.readyReplicas ?? 0) === (d.spec?.replicas ?? 0),
   ).length;
 
   useEffect(() => {
@@ -50,7 +55,10 @@ export function K8sOverviewPage() {
 
   return (
     <K8sChrome>
-      <PageShell title="Kubernetes" description="Namespace-scoped workload overview for the active context.">
+      <PageShell
+        title="Kubernetes"
+        description="Namespace-scoped workload overview for the active context."
+      >
         <div className="flex flex-col gap-5">
           <div className="grid gap-3 sm:grid-cols-3">
             <MetricTile

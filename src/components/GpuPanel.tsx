@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { CloudOff, Loader2 } from "lucide-react";
-import { api, type GPUStatus } from "@/lib/api";
-import { HelpHint } from "@/components/HelpHint";
 import { RingGauge } from "@/components/charts/MetricChart";
+import { HelpHint } from "@/components/HelpHint";
+import { lucideProps } from "@/components/Icon";
 import { Tip } from "@/components/Tip";
 import { Badge } from "@/components/ui/badge";
-import { lucideProps } from "@/components/Icon";
+import { api, type GPUStatus } from "@/lib/api";
 
 export function GpuPanel() {
   const gpus = useQuery({ queryKey: ["gpus"], queryFn: api.gpus, refetchInterval: 4000 });
@@ -75,7 +75,11 @@ export function GpuPanel() {
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <RingGauge value={d.utilization} label="GPU util" sub={`${d.utilization}% compute`} />
+                <RingGauge
+                  value={d.utilization}
+                  label="GPU util"
+                  sub={`${d.utilization}% compute`}
+                />
                 <RingGauge
                   value={memPct}
                   label="VRAM"
@@ -88,8 +92,8 @@ export function GpuPanel() {
       </div>
       {!data.devices.length && data.available ? (
         <span className="text-xs text-muted-foreground">
-          NVIDIA runtime is registered, but nvidia-smi reported no devices. On macOS / remote Docker this is
-          common — GPU passthrough needs a Linux host with the toolkit.
+          NVIDIA runtime is registered, but nvidia-smi reported no devices. On macOS / remote Docker
+          this is common — GPU passthrough needs a Linux host with the toolkit.
         </span>
       ) : null}
     </div>

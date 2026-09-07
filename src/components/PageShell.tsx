@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from "react";
 import { CloudOff } from "lucide-react";
+import type { CSSProperties, ReactNode } from "react";
 import { lucideProps } from "@/components/Icon";
 import { useWindowDragProps } from "@/components/TitleBarDragRegion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

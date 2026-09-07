@@ -1,20 +1,20 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { api } from "@/lib/api";
-import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { ListEmpty } from "@/components/ListPane";
 import { PageShell } from "@/components/PageShell";
 import { RowMenu } from "@/components/RowMenu";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tip } from "@/components/Tip";
 import { toast } from "@/components/Toaster";
-import { useUIStore } from "@/stores/uiStore";
-import { copyText } from "@/routes/shared";
-import { K8sChrome } from "@/routes/k8s/K8sChrome";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/lib/api";
+import { K8sChrome } from "@/routes/k8s/K8sChrome";
+import { copyText } from "@/routes/shared";
+import { useUIStore } from "@/stores/uiStore";
 
 export function HelmPage() {
   const namespace = useUIStore((s) => s.namespace);
@@ -79,7 +79,9 @@ export function HelmPage() {
                     onAction: () =>
                       void api
                         .helmRollback(r.namespace, r.name)
-                        .then((res: any) => showOut(`Rollback · ${r.name}`, res.output || "rolled back"))
+                        .then((res: any) =>
+                          showOut(`Rollback · ${r.name}`, res.output || "rolled back"),
+                        )
                         .catch((e: any) => showOut(`Rollback · ${r.name}`, e?.message || "failed")),
                   },
                   { id: "copy", label: "Copy name", onAction: () => void copyText(r.name) },
@@ -149,7 +151,12 @@ export function HelmPage() {
         }
       >
         <div className="flex flex-col gap-4">
-          <Input aria-label="Release name" value={name} onChange={(e) => setName(e.target.value)} placeholder="demo" />
+          <Input
+            aria-label="Release name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="demo"
+          />
           <Input
             aria-label="Chart"
             value={chart}

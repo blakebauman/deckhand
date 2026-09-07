@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, Pause, Play, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CopyButton } from "@/components/CopyButton";
 import { lucideProps } from "@/components/Icon";
-import { Tip } from "@/components/Tip";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   TerminalFrame,
   TerminalToolbarEnd,
   TerminalToolbarStart,
 } from "@/components/TerminalChrome";
+import { Tip } from "@/components/Tip";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 /** Streaming console for container/pod logs. */
@@ -177,9 +177,7 @@ export function ConsolePanel({
     >
       {error ? (
         <div className="dh-terminal__banner">
-          <span className={["dh-terminal__banner-text", "text-xs"].join(" ")}>
-            {error}
-          </span>
+          <span className={["dh-terminal__banner-text", "text-xs"].join(" ")}>{error}</span>
         </div>
       ) : null}
       <pre

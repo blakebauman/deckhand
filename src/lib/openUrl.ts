@@ -39,10 +39,7 @@ export function containerBrowseUrl(opts: {
 
 export function parseDomainLabels(labels?: Record<string, string>): string[] {
   if (!labels) return [];
-  const raw =
-    labels["dev.deckhand.domains"] ||
-    labels["dev.orbstack.domains"] ||
-    "";
+  const raw = labels["dev.deckhand.domains"] || labels["dev.orbstack.domains"] || "";
   return raw
     .split(",")
     .map((s) => s.trim().toLowerCase())

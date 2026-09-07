@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useUIStore, type ThemeMode } from "@/stores/uiStore";
+import { type ThemeMode, useUIStore } from "@/stores/uiStore";
 
 function resolveDark(theme: ThemeMode): boolean {
   if (theme === "dark") return true;

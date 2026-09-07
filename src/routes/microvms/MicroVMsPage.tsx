@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { api, type MicroVM } from "@/lib/api";
 import { CodeBlock } from "@/components/CodeBlock";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
@@ -8,17 +7,17 @@ import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane"
 import { GlassSheet } from "@/components/GlassSheet";
 import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
-import { toast } from "@/components/Toaster";
 import { RowMenu } from "@/components/RowMenu";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tip } from "@/components/Tip";
-import { shortId } from "@/lib/utils";
-import { copyText } from "@/routes/shared";
+import { toast } from "@/components/Toaster";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { api, type MicroVM } from "@/lib/api";
+import { shortId } from "@/lib/utils";
+import { copyText } from "@/routes/shared";
 
 function stateTone(state?: string): "success" | "muted" | "warn" | "destructive" | "accent" {
   switch ((state || "").toLowerCase()) {
@@ -73,7 +72,8 @@ export function MicroVMsPage() {
     );
   }, [list.data, q]);
 
-  const row = filtered.find((vm) => vm.id === selected) || (list.data || []).find((vm) => vm.id === selected);
+  const row =
+    filtered.find((vm) => vm.id === selected) || (list.data || []).find((vm) => vm.id === selected);
 
   useEffect(() => {
     if (selected && list.data && !list.data.some((vm) => vm.id === selected)) {
@@ -304,7 +304,9 @@ export function MicroVMsPage() {
                     <CodeBlock
                       title="Console"
                       meta="firecracker"
-                      value={logs.data?.output || (logs.isLoading ? "Loading…" : "No log output yet.")}
+                      value={
+                        logs.data?.output || (logs.isLoading ? "Loading…" : "No log output yet.")
+                      }
                       maxHeight="420px"
                     />
                   )}
@@ -382,7 +384,9 @@ export function MicroVMsPage() {
                 type="number"
                 min={128}
                 value={form.memoryMb}
-                onChange={(e) => setForm((f) => ({ ...f, memoryMb: Number(e.target.value) || 512 }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, memoryMb: Number(e.target.value) || 512 }))
+                }
               />
             </div>
           </div>

@@ -1,15 +1,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { api } from "@/lib/api";
+import { Field } from "@/components/Field";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { PageShell } from "@/components/PageShell";
-import { Field } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tip } from "@/components/Tip";
 import { toast } from "@/components/Toaster";
-import { useDockerReconnect } from "@/hooks/useDockerReconnect";
-import { useUIStore } from "@/stores/uiStore";
 import { Button } from "@/components/ui/button";
+import { useDockerReconnect } from "@/hooks/useDockerReconnect";
+import { api } from "@/lib/api";
+import { useUIStore } from "@/stores/uiStore";
 
 export function BuildsPage() {
   const qc = useQueryClient();
@@ -119,7 +119,9 @@ export function BuildsPage() {
         <section className="flex min-w-0 flex-col gap-2.5">
           <span className="text-sm font-semibold">Builders</span>
           {!dockerOk ? (
-            <span className="text-sm text-muted-foreground">Connect Docker to list buildx builders.</span>
+            <span className="text-sm text-muted-foreground">
+              Connect Docker to list buildx builders.
+            </span>
           ) : builders.isLoading ? (
             <span className="text-sm text-muted-foreground">Loading builders…</span>
           ) : builderList.length === 0 ? (
@@ -162,7 +164,12 @@ export function BuildsPage() {
                 placeholder="Dockerfile"
                 aria-label="Dockerfile"
               />
-              <Field value={tag} onChange={setTag} placeholder="tag (optional)" aria-label="Image tag" />
+              <Field
+                value={tag}
+                onChange={setTag}
+                placeholder="tag (optional)"
+                aria-label="Image tag"
+              />
             </div>
             <div>
               <Button
@@ -214,7 +221,10 @@ export function BuildsPage() {
                         <span className="text-xs text-muted-foreground">★ {r.starCount}</span>
                       </div>
                       {r.description ? (
-                        <div className="mt-0.5 truncate text-xs text-muted-foreground" title={r.description}>
+                        <div
+                          className="mt-0.5 truncate text-xs text-muted-foreground"
+                          title={r.description}
+                        >
                           {r.description}
                         </div>
                       ) : null}

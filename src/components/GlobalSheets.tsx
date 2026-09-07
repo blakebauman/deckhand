@@ -1,12 +1,12 @@
-import { useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { CommandPaletteHost } from "@/components/CommandPalette";
 import { DiskUsagePanel } from "@/components/DiskUsagePanel";
 import { GlassSheet } from "@/components/GlassSheet";
 import { RunContainerSheet } from "@/components/RunContainerSheet";
-import { useUIStore } from "@/stores/uiStore";
 import { Button } from "@/components/ui/button";
+import { useUIStore } from "@/stores/uiStore";
 
 /** App-wide run/prune sheets + ⌘K palette. */
 export function GlobalSheets() {

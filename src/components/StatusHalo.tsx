@@ -37,9 +37,7 @@ export function StatusHalo({
       className={cn("relative inline-flex shrink-0 items-center justify-center", wrap, className)}
       aria-hidden
     >
-      {pulse ? (
-        <span className={cn("absolute rounded-full opacity-35", halo, toneBg[t])} />
-      ) : null}
+      {pulse ? <span className={cn("absolute rounded-full opacity-35", halo, toneBg[t])} /> : null}
       <span className={cn("relative inline-flex rounded-full", core, toneBg[t])} />
     </span>
   );

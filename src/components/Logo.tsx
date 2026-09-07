@@ -26,13 +26,7 @@ export function LogoMark({
 }
 
 /** Monochrome mark for currentColor contexts. */
-export function LogoMarkMono({
-  size = 36,
-  className,
-}: {
-  size?: number;
-  className?: string;
-}) {
+export function LogoMarkMono({ size = 36, className }: { size?: number; className?: string }) {
   return (
     <img
       src={markMonoUrl}

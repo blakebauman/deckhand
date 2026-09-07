@@ -1,26 +1,24 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, type VolumeFileEntry } from "@/lib/api";
 import { CodeBlock } from "@/components/CodeBlock";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
+import { Field } from "@/components/Field";
 import { GlassSheet } from "@/components/GlassSheet";
 import { InspectFields, LabelChips } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
-import { toast } from "@/components/Toaster";
-import { Field } from "@/components/Field";
+import { MoreActionsMenu } from "@/components/MoreActionsMenu";
 import { RowMenu } from "@/components/RowMenu";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tip } from "@/components/Tip";
-import { formatBytes } from "@/lib/utils";
-import { useUIStore } from "@/stores/uiStore";
-
-import { copyText } from "@/routes/shared";
-import { MoreActionsMenu } from "@/components/MoreActionsMenu";
+import { toast } from "@/components/Toaster";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-
+import { api, type VolumeFileEntry } from "@/lib/api";
+import { formatBytes } from "@/lib/utils";
+import { copyText } from "@/routes/shared";
+import { useUIStore } from "@/stores/uiStore";
 
 function driverTone(driver?: string): "info" | "muted" | "default" {
   switch ((driver || "").toLowerCase()) {
@@ -91,15 +89,15 @@ export function VolumesPage() {
     );
   }, [list.data, q]);
 
-  const row = filtered.find((v) => v.Name === selected) || (list.data || []).find((v) => v.Name === selected);
+  const row =
+    filtered.find((v) => v.Name === selected) || (list.data || []).find((v) => v.Name === selected);
   const insp = detail.data || row;
   const displayName = insp?.Name || selected || "";
   const size =
     insp?.UsageData?.Size != null && insp.UsageData.Size >= 0
       ? formatBytes(insp.UsageData.Size)
       : undefined;
-  const refCount =
-    insp?.UsageData?.RefCount != null ? String(insp.UsageData.RefCount) : undefined;
+  const refCount = insp?.UsageData?.RefCount != null ? String(insp.UsageData.RefCount) : undefined;
   const labelCount = Object.keys(insp?.Labels || {}).length;
   const optionCount = Object.keys(insp?.Options || {}).length;
 
@@ -159,7 +157,9 @@ export function VolumesPage() {
         empty={
           <ListEmpty
             title={q ? "No matches" : "No named volumes"}
-            description={q ? "Try another name or driver." : "Create a volume to persist container data."}
+            description={
+              q ? "Try another name or driver." : "Create a volume to persist container data."
+            }
             action={
               q ? undefined : (
                 <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -199,9 +199,7 @@ export function VolumesPage() {
             ]}
             suffix={<StatusBadge tone={driverTone(v.Driver)}>{v.Driver || "—"}</StatusBadge>}
           >
-            <div className="min-w-0 text-sm font-medium truncate">
-              {v.Name}
-            </div>
+            <div className="min-w-0 text-sm font-medium truncate">{v.Name}</div>
             <div className="min-w-0 text-muted-foreground text-xs truncate">
               {v.UsageData?.Size != null && v.UsageData.Size >= 0
                 ? formatBytes(v.UsageData.Size)
@@ -238,11 +236,7 @@ export function VolumesPage() {
                   className="min-w-0 truncate font-mono text-xs text-muted-foreground"
                   title={insp.Mountpoint}
                 >
-                  {[
-                    size,
-                    refCount != null ? `${refCount} refs` : null,
-                    insp.Scope,
-                  ]
+                  {[size, refCount != null ? `${refCount} refs` : null, insp.Scope]
                     .filter(Boolean)
                     .join(" · ") || "—"}
                 </div>
@@ -266,7 +260,9 @@ export function VolumesPage() {
                   >
                     Export
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => importRef.current?.click()}>Import…</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => importRef.current?.click()}>
+                    Import…
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
                       setCloneDest(selected ? `${selected}-copy` : "");
@@ -325,21 +321,15 @@ export function VolumesPage() {
                     Close
                   </Button>
                 </div>
-                <div
-                  className="flex flex-col gap-1 p-2 bg-card rounded-2xl"
-                >
+                <div className="flex flex-col gap-1 p-2 bg-card rounded-2xl">
                   {files.isLoading ? (
-                    <p className="p-2 m-0 text-muted-foreground text-xs">
-                      Loading…
-                    </p>
+                    <p className="p-2 m-0 text-muted-foreground text-xs">Loading…</p>
                   ) : files.isError ? (
                     <p className="p-2 m-0 text-destructive text-xs">
                       {(files.error as Error)?.message || "Failed to list files"}
                     </p>
                   ) : (files.data || []).length === 0 ? (
-                    <p className="p-2 m-0 text-muted-foreground text-xs">
-                      Empty directory
-                    </p>
+                    <p className="p-2 m-0 text-muted-foreground text-xs">Empty directory</p>
                   ) : (
                     (files.data || []).map((f) => (
                       <button
@@ -368,11 +358,7 @@ export function VolumesPage() {
 
             <div className="flex flex-wrap items-center gap-2">
               {labelCount + optionCount > 0 ? (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setShowLabels((v) => !v)}
-                >
+                <Button size="sm" variant="secondary" onClick={() => setShowLabels((v) => !v)}>
                   {showLabels ? "Hide labels" : `Labels (${labelCount + optionCount})`}
                 </Button>
               ) : null}
@@ -397,7 +383,11 @@ export function VolumesPage() {
               </div>
             ) : null}
             {showRaw ? (
-              <CodeBlock title="Inspect" meta="volume" value={JSON.stringify(detail.data || insp, null, 2)} />
+              <CodeBlock
+                title="Inspect"
+                meta="volume"
+                value={JSON.stringify(detail.data || insp, null, 2)}
+              />
             ) : null}
           </div>
         ) : null}

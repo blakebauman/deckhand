@@ -1,23 +1,22 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { api } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
 import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
-import { SettingRow } from "@/components/SettingRow";
-import { toast } from "@/components/Toaster";
-import { RowMenu } from "@/components/RowMenu";
-import { StatusBadge } from "@/components/StatusBadge";
-import { useUIStore } from "@/stores/uiStore";
-import { copyText } from "@/routes/shared";
-import { K8sChrome } from "@/routes/k8s/K8sChrome";
 import { MoreActionsMenu } from "@/components/MoreActionsMenu";
+import { RowMenu } from "@/components/RowMenu";
+import { SettingRow } from "@/components/SettingRow";
+import { StatusBadge } from "@/components/StatusBadge";
+import { toast } from "@/components/Toaster";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
-
+import { api } from "@/lib/api";
+import { K8sChrome } from "@/routes/k8s/K8sChrome";
+import { copyText } from "@/routes/shared";
+import { useUIStore } from "@/stores/uiStore";
 
 function readyTone(ready: number, desired: number) {
   return ready > 0 && ready === desired ? "success" : "muted";
@@ -75,7 +74,11 @@ export function DeploymentsPage() {
                 onSelect={() => setSelected(d.metadata.name)}
                 items={[
                   { id: "open", label: "Open", onAction: () => setSelected(d.metadata.name) },
-                  { id: "copy", label: "Copy name", onAction: () => void copyText(d.metadata.name) },
+                  {
+                    id: "copy",
+                    label: "Copy name",
+                    onAction: () => void copyText(d.metadata.name),
+                  },
                   {
                     id: "scale-up",
                     label: "Scale +",
@@ -109,16 +112,19 @@ export function DeploymentsPage() {
                   </StatusBadge>
                 }
               >
-                <div className="min-w-0 text-sm font-medium truncate">
-                  {d.metadata.name}
-                </div>
+                <div className="min-w-0 text-sm font-medium truncate">{d.metadata.name}</div>
               </RowMenu>
             );
           })}
         </ListPane>
         <DetailPane
           selectionKey={selected}
-          empty={<DetailEmpty title="Select a deployment" description="Scale replicas or restart a deployment." />}
+          empty={
+            <DetailEmpty
+              title="Select a deployment"
+              description="Scale replicas or restart a deployment."
+            />
+          }
           header={
             row ? (
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -140,7 +146,9 @@ export function DeploymentsPage() {
                           toast.success("Restarted");
                           qc.invalidateQueries({ queryKey: ["deployments"] });
                         })
-                        .catch((e: any) => toast.error("Restart failed", { description: e?.message }))
+                        .catch((e: any) =>
+                          toast.error("Restart failed", { description: e?.message }),
+                        )
                     }
                   >
                     Restart
@@ -199,7 +207,9 @@ export function DeploymentsPage() {
                           toast.success("Scaled", { description: `${row.metadata.name} → ${n}` });
                           qc.invalidateQueries({ queryKey: ["deployments"] });
                         })
-                        .catch((e: any) => toast.error("Scale failed", { description: e?.message }));
+                        .catch((e: any) =>
+                          toast.error("Scale failed", { description: e?.message }),
+                        );
                     }}
                   />
                 </SettingRow>

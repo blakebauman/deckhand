@@ -1,16 +1,22 @@
-import { useEffect, useState } from "react";
 import { Loader2, Pause } from "lucide-react";
-import { lucideProps } from "@/components/Icon";
-import { api, type ContainerStats } from "@/lib/api";
+import { useEffect, useState } from "react";
 import { LiveSparkline } from "@/components/charts/LiveSparkline";
 import { MetricCard, WaveBars } from "@/components/charts/MetricChart";
+import { lucideProps } from "@/components/Icon";
+import { Badge } from "@/components/ui/badge";
 import { useEasedNumber } from "@/hooks/useEasedSeries";
 import { useLiveStats } from "@/hooks/useLiveStats";
+import { api, type ContainerStats } from "@/lib/api";
 import { formatBytes } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 
 /** Live runtime metrics (docker stats / cgroup) — SVG sparklines. */
-export function ContainerMonitor({ containerId, running }: { containerId: string; running?: boolean }) {
+export function ContainerMonitor({
+  containerId,
+  running,
+}: {
+  containerId: string;
+  running?: boolean;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const { sampleLabel, hist, pushSample } = useLiveStats(!!running);
@@ -106,7 +112,10 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
   if (!connected || !sampleLabel) {
     return (
       <div className="flex min-h-[220px] flex-col items-center justify-center gap-3.5 rounded-2xl bg-card px-6 py-8 text-center">
-        <WaveBars values={[0.2, 0.45, 0.3, 0.7, 0.4, 0.55, 0.85, 0.35, 0.5, 0.65, 0.4, 0.6]} max={1} />
+        <WaveBars
+          values={[0.2, 0.45, 0.3, 0.7, 0.4, 0.55, 0.85, 0.35, 0.5, 0.65, 0.4, 0.6]}
+          max={1}
+        />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-3.5 animate-spin" aria-hidden />
           Connecting to stats stream…

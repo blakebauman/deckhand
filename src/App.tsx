@@ -1,16 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { AppRouter } from "@/router";
 import { BootSplash } from "@/components/BootSplash";
 import { api, setApiBaseUrl, setApiToken } from "@/lib/api";
 import { isTauriShell } from "@/lib/platform";
+import { AppRouter } from "@/router";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
 
-const BROWSER_SIDECAR =
-  (import.meta as any).env?.VITE_SIDECAR_URL || "http://127.0.0.1:7420";
+const BROWSER_SIDECAR = (import.meta as any).env?.VITE_SIDECAR_URL || "http://127.0.0.1:7420";
 
 /** The sidecar rejects unauthenticated requests; fetch its per-launch token. */
 async function invokeSidecarToken(): Promise<string> {

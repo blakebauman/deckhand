@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { useState } from "react";
 import { lucideProps } from "@/components/Icon";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

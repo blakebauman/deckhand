@@ -4,7 +4,9 @@ import { useUIStore } from "@/stores/uiStore";
 export function useChartColorScheme(): "light" | "dark" {
   const theme = useUIStore((s) => s.theme);
   const [systemDark, setSystemDark] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)").matches : true,
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+      : true,
   );
 
   useEffect(() => {
@@ -45,11 +47,7 @@ export function ChartPanel({
 }
 
 /** Step-after area chart for running-container counts over time. */
-export function RunningAreaChart({
-  data,
-}: {
-  data: { i: number; t: string; running: number }[];
-}) {
+export function RunningAreaChart({ data }: { data: { i: number; t: string; running: number }[] }) {
   const gradId = useId().replace(/:/g, "");
   const scheme = useChartColorScheme();
   const chartData = data.length
@@ -102,7 +100,11 @@ export function RunningAreaChart({
 
   return (
     <div className="relative h-full w-full" title={`${last.t}: ${last.running} running`}>
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full overflow-visible">
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className="h-full w-full overflow-visible"
+      >
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={stroke} stopOpacity={0.28} />
@@ -152,7 +154,11 @@ export function DiskBarChart({ data }: { data: { name: string; gb: number }[] })
   return (
     <div className="flex h-full flex-col justify-end gap-2.5">
       {chartData.map((d) => (
-        <div key={d.name} className="flex items-center gap-2" title={`${d.name}: ${d.gb.toFixed(2)} GB`}>
+        <div
+          key={d.name}
+          className="flex items-center gap-2"
+          title={`${d.name}: ${d.gb.toFixed(2)} GB`}
+        >
           <span className="w-20 shrink-0 truncate text-xs text-muted-foreground">{d.name}</span>
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
             <div
@@ -160,7 +166,9 @@ export function DiskBarChart({ data }: { data: { name: string; gb: number }[] })
               style={{ width: `${(d.gb / max) * 100}%` }}
             />
           </div>
-          <span className="w-14 shrink-0 text-end font-mono text-xs tabular-nums">{d.gb.toFixed(1)}</span>
+          <span className="w-14 shrink-0 text-end font-mono text-xs tabular-nums">
+            {d.gb.toFixed(1)}
+          </span>
         </div>
       ))}
     </div>

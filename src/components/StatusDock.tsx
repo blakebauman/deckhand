@@ -1,20 +1,16 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { api, subscribeDockerEvents } from "@/lib/api";
-import {
-  parseDockerEvent,
-  relativeEventTime,
-  type DockEvent,
-} from "@/lib/dockerEvents";
+import { useEffect, useRef, useState } from "react";
 import { GlassSheet } from "@/components/GlassSheet";
 import { LogoMark } from "@/components/Logo";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Tip } from "@/components/Tip";
 import { StatusHalo } from "@/components/StatusHalo";
-import { useUIStore } from "@/stores/uiStore";
+import { Tip } from "@/components/Tip";
 import { Button } from "@/components/ui/button";
+import { api, subscribeDockerEvents } from "@/lib/api";
+import { type DockEvent, parseDockerEvent, relativeEventTime } from "@/lib/dockerEvents";
+import { useUIStore } from "@/stores/uiStore";
 
 const easeOutExpo = [0.16, 1, 0.3, 1] as const;
 const MAX_EVENTS = 40;
@@ -120,7 +116,8 @@ export function StatusDock() {
     ? "Sidecar status unavailable"
     : dockerOk
       ? "Open Docker dashboard"
-      : status.data?.docker.error || "Docker unreachable — start the engine, then retry from Settings";
+      : status.data?.docker.error ||
+        "Docker unreachable — start the engine, then retry from Settings";
 
   const k8sTip = k8sOk
     ? `Open Kubernetes · ${status.data?.kubernetes.version || "cluster"}`
@@ -182,11 +179,7 @@ export function StatusDock() {
         <div className="flex max-w-[480px] min-w-0 flex-1 items-center justify-end gap-2">
           {latest ? (
             <Tip label="Open activity — recent engine events with detail" placement="top">
-              <button
-                type="button"
-                className={eventChipBtn}
-                onClick={() => setSheetOpen(true)}
-              >
+              <button type="button" className={eventChipBtn} onClick={() => setSheetOpen(true)}>
                 <motion.span
                   key={latest.id}
                   initial={reduceMotion ? false : { scale: 0.7, opacity: 0.35 }}
@@ -208,15 +201,11 @@ export function StatusDock() {
                       <motion.span
                         key={latest.id}
                         initial={
-                          reduceMotion
-                            ? { opacity: 0 }
-                            : { opacity: 0, y: 8, filter: "blur(3px)" }
+                          reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, filter: "blur(3px)" }
                         }
                         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                         exit={
-                          reduceMotion
-                            ? { opacity: 0 }
-                            : { opacity: 0, y: -8, filter: "blur(3px)" }
+                          reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, filter: "blur(3px)" }
                         }
                         transition={{ duration: 0.32, ease: easeOutExpo }}
                         className="absolute inset-x-0 top-0 max-w-full min-w-0 truncate"

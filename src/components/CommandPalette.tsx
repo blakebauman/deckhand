@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import {
   Archive,
@@ -18,14 +17,20 @@ import {
   Trash2,
   Wrench,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { useEffect, useMemo, useState } from "react";
 import { lucideProps } from "@/components/Icon";
-import { isTauriShell } from "@/lib/platform";
-import { useUIStore } from "@/stores/uiStore";
-import { containerName, shortId } from "@/lib/utils";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-
+import { api } from "@/lib/api";
+import { isTauriShell } from "@/lib/platform";
+import { containerName, shortId } from "@/lib/utils";
+import { useUIStore } from "@/stores/uiStore";
 
 type Action = {
   id: string;
@@ -108,19 +113,101 @@ export function CommandPalette({
       onOpenChange(false);
     };
     return [
-      { id: "dash", label: "Dashboard", hint: "Docker", group: "Navigate", icon: LayoutGrid, run: go("/", "docker") },
-      { id: "projects", label: "Projects", hint: "Compose", group: "Navigate", icon: FolderOpen, run: go("/projects", "docker") },
-      { id: "containers", label: "Containers", group: "Navigate", icon: Container, run: go("/containers", "docker") },
-      { id: "images", label: "Images", group: "Navigate", icon: Layers, run: go("/images", "docker") },
-      { id: "builds", label: "Builds", hint: "Build & Hub search", group: "Navigate", icon: Wrench, run: go("/builds", "docker") },
-      { id: "networks", label: "Networks", group: "Navigate", icon: Globe, run: go("/networks", "docker") },
-      { id: "volumes", label: "Volumes", group: "Navigate", icon: Database, run: go("/volumes", "docker") },
-      { id: "k8s", label: "Kubernetes overview", group: "Navigate", icon: LayoutGrid, run: go("/k8s", "kubernetes") },
-      { id: "pods", label: "Pods", group: "Navigate", icon: Boxes, run: go("/k8s/pods", "kubernetes") },
-      { id: "deps", label: "Deployments", group: "Navigate", icon: Cloud, run: go("/k8s/deployments", "kubernetes") },
-      { id: "resources", label: "Resources", hint: "Services, secrets, jobs…", group: "Navigate", icon: List, run: go("/k8s/resources", "kubernetes") },
-      { id: "helm", label: "Helm", group: "Navigate", icon: Archive, run: go("/k8s/helm", "kubernetes") },
-      { id: "settings", label: "Settings", group: "Navigate", icon: Settings, run: go("/settings") },
+      {
+        id: "dash",
+        label: "Dashboard",
+        hint: "Docker",
+        group: "Navigate",
+        icon: LayoutGrid,
+        run: go("/", "docker"),
+      },
+      {
+        id: "projects",
+        label: "Projects",
+        hint: "Compose",
+        group: "Navigate",
+        icon: FolderOpen,
+        run: go("/projects", "docker"),
+      },
+      {
+        id: "containers",
+        label: "Containers",
+        group: "Navigate",
+        icon: Container,
+        run: go("/containers", "docker"),
+      },
+      {
+        id: "images",
+        label: "Images",
+        group: "Navigate",
+        icon: Layers,
+        run: go("/images", "docker"),
+      },
+      {
+        id: "builds",
+        label: "Builds",
+        hint: "Build & Hub search",
+        group: "Navigate",
+        icon: Wrench,
+        run: go("/builds", "docker"),
+      },
+      {
+        id: "networks",
+        label: "Networks",
+        group: "Navigate",
+        icon: Globe,
+        run: go("/networks", "docker"),
+      },
+      {
+        id: "volumes",
+        label: "Volumes",
+        group: "Navigate",
+        icon: Database,
+        run: go("/volumes", "docker"),
+      },
+      {
+        id: "k8s",
+        label: "Kubernetes overview",
+        group: "Navigate",
+        icon: LayoutGrid,
+        run: go("/k8s", "kubernetes"),
+      },
+      {
+        id: "pods",
+        label: "Pods",
+        group: "Navigate",
+        icon: Boxes,
+        run: go("/k8s/pods", "kubernetes"),
+      },
+      {
+        id: "deps",
+        label: "Deployments",
+        group: "Navigate",
+        icon: Cloud,
+        run: go("/k8s/deployments", "kubernetes"),
+      },
+      {
+        id: "resources",
+        label: "Resources",
+        hint: "Services, secrets, jobs…",
+        group: "Navigate",
+        icon: List,
+        run: go("/k8s/resources", "kubernetes"),
+      },
+      {
+        id: "helm",
+        label: "Helm",
+        group: "Navigate",
+        icon: Archive,
+        run: go("/k8s/helm", "kubernetes"),
+      },
+      {
+        id: "settings",
+        label: "Settings",
+        group: "Navigate",
+        icon: Settings,
+        run: go("/settings"),
+      },
       {
         id: "run",
         label: "Run container…",
@@ -321,7 +408,9 @@ export function CommandPalette({
                     <span className="text-sm font-medium">{a.label}</span>
                     <span className="block text-xs text-muted-foreground">{a.group}</span>
                   </span>
-                  {a.hint ? <span className="shrink-0 text-xs text-muted-foreground">{a.hint}</span> : null}
+                  {a.hint ? (
+                    <span className="shrink-0 text-xs text-muted-foreground">{a.hint}</span>
+                  ) : null}
                 </button>
               );
             })

@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
 import { Info } from "lucide-react";
+import type { ReactNode } from "react";
 import { lucideProps } from "@/components/Icon";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 /** Small info affordance next to labels. */
 export function HelpHint({

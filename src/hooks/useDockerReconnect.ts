@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { api } from "@/lib/api";
 import { toast } from "@/components/Toaster";
+import { api } from "@/lib/api";
 
 /** Rebuild attach client + invalidate docker-facing queries. */
 export function useDockerReconnect() {

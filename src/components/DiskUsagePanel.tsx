@@ -1,7 +1,6 @@
-import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { api, type SystemPruneBody } from "@/lib/api";
+import { useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { HelpHint } from "@/components/HelpHint";
 import { toast } from "@/components/Toaster";
@@ -9,10 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { api, type SystemPruneBody } from "@/lib/api";
 import { formatBytes } from "@/lib/utils";
 import { useUIStore } from "@/stores/uiStore";
 
-type PruneResourceKey = keyof Pick<SystemPruneBody, "images" | "containers" | "volumes" | "buildCache">;
+type PruneResourceKey = keyof Pick<
+  SystemPruneBody,
+  "images" | "containers" | "volumes" | "buildCache"
+>;
 
 const rows: {
   key: keyof Pick<
@@ -92,7 +95,8 @@ export function DiskUsagePanel({
     1,
   );
   const reclaimable = data?.reclaimable || 0;
-  const selectedCount = rows.filter((r) => selected[r.pruneKey]).length + (selected.networks ? 1 : 0);
+  const selectedCount =
+    rows.filter((r) => selected[r.pruneKey]).length + (selected.networks ? 1 : 0);
 
   const runPrune = async () => {
     setPruning(true);
@@ -141,9 +145,14 @@ export function DiskUsagePanel({
             : "flex min-h-[120px] flex-1 flex-col items-center justify-center gap-2 text-center"
         }
       >
-        <Loader2 aria-label="Measuring disk usage" className="size-4 animate-spin text-muted-foreground" />
+        <Loader2
+          aria-label="Measuring disk usage"
+          className="size-4 animate-spin text-muted-foreground"
+        />
         <span className="text-sm text-muted-foreground">Measuring disk usage…</span>
-        <span className="text-xs text-muted-foreground">docker system df can take a while on large engines</span>
+        <span className="text-xs text-muted-foreground">
+          docker system df can take a while on large engines
+        </span>
       </div>
     );
   }
@@ -164,7 +173,11 @@ export function DiskUsagePanel({
   }
 
   return (
-    <div className={compact ? "flex min-h-0 flex-1 flex-col gap-2.5" : "flex min-h-0 flex-1 flex-col gap-3.5"}>
+    <div
+      className={
+        compact ? "flex min-h-0 flex-1 flex-col gap-2.5" : "flex min-h-0 flex-1 flex-col gap-3.5"
+      }
+    >
       <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           {!hideTitle ? (
@@ -192,7 +205,11 @@ export function DiskUsagePanel({
         ) : null}
       </div>
 
-      <div className={compact ? "flex min-h-0 flex-1 flex-col gap-2" : "flex min-h-0 flex-1 flex-col gap-2.5"}>
+      <div
+        className={
+          compact ? "flex min-h-0 flex-1 flex-col gap-2" : "flex min-h-0 flex-1 flex-col gap-2.5"
+        }
+      >
         {rows.map((row) => {
           const size = data?.[row.key] || 0;
           const active = data?.[row.active] ?? 0;
@@ -222,7 +239,11 @@ export function DiskUsagePanel({
                   </span>
                 </div>
               </div>
-              <Progress value={pct} aria-label={`${row.label} size`} className="gap-0 [&>[data-slot=progress-track]]:h-1.5" />
+              <Progress
+                value={pct}
+                aria-label={`${row.label} size`}
+                className="gap-0 [&>[data-slot=progress-track]]:h-1.5"
+              />
             </div>
           );
         })}

@@ -28,7 +28,7 @@ const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 pkg.version = version;
 writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 
-let cargo = readFileSync(cargoPath, "utf8");
+const cargo = readFileSync(cargoPath, "utf8");
 const next = cargo.replace(/^version\s*=\s*"[^"]*"/m, `version = "${version}"`);
 if (next === cargo) {
   console.error("Failed to patch version in Cargo.toml");

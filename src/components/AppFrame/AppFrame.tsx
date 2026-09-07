@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { TitleBarDragRegion } from "@/components/TitleBarDragRegion";
-import { cn } from "@/lib/utils";
 import { isTauriShell } from "@/lib/platform";
+import { cn } from "@/lib/utils";
 
 /**
  * Reserved space under live content so scrollports end above the fixed dock
@@ -9,13 +9,7 @@ import { isTauriShell } from "@/lib/platform";
  */
 export const STATUS_DOCK_CLEARANCE = 96;
 
-export function AppFrame({
-  children,
-  dock: dockSlot,
-}: {
-  children: ReactNode;
-  dock?: ReactNode;
-}) {
+export function AppFrame({ children, dock: dockSlot }: { children: ReactNode; dock?: ReactNode }) {
   const desktop = isTauriShell();
 
   return (

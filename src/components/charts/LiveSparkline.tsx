@@ -1,4 +1,4 @@
-import { useId, useMemo, useState, type PointerEvent } from "react";
+import { type PointerEvent, useId, useMemo, useState } from "react";
 import { useEasedNumber, useEasedSeries } from "@/hooks/useEasedSeries";
 
 const W = 280;
@@ -106,7 +106,8 @@ export function LiveSparkline({
 
   /** Hit-test / tooltip use raw samples so peaks aren’t lost to tip easing. */
   const hoverPts = useMemo(() => {
-    const data = values.length > 1 ? values : values.length === 1 ? [values[0], values[0]] : [0, 0.01];
+    const data =
+      values.length > 1 ? values : values.length === 1 ? [values[0], values[0]] : [0, 0.01];
     const step = (W - PAD * 2) / Math.max(1, data.length - 1);
     return data.map((v, i) => ({
       x: PAD + i * step,
@@ -118,8 +119,7 @@ export function LiveSparkline({
   const onMove = (e: PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * W;
-    const spacing =
-      hoverPts.length > 1 ? Math.abs(hoverPts[1].x - hoverPts[0].x) : W;
+    const spacing = hoverPts.length > 1 ? Math.abs(hoverPts[1].x - hoverPts[0].x) : W;
     let best = 0;
     let bestDist = Infinity;
     for (let i = 0; i < hoverPts.length; i++) {
@@ -204,9 +204,7 @@ export function LiveSparkline({
             {label} · {hover.i === n - 1 ? "now" : `−${n - 1 - hover.i}`}
           </span>
           <span className="text-sm font-medium">
-            {formatValue
-              ? formatValue(hover.v)
-              : `${hover.v.toFixed(unit === "%" ? 1 : 2)}${unit}`}
+            {formatValue ? formatValue(hover.v) : `${hover.v.toFixed(unit === "%" ? 1 : 2)}${unit}`}
           </span>
         </div>
       ) : null}
