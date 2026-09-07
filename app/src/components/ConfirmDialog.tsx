@@ -1,6 +1,15 @@
-import { AlertDialog, DialogContainer } from "@react-spectrum/s2";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-/** Confirm dialog — Spectrum AlertDialog, no dismiss X. */
+/** Confirm dialog — no dismiss X; cancel / confirm only. */
 export function ConfirmDialog({
   open,
   onOpenChange,
@@ -23,26 +32,30 @@ export function ConfirmDialog({
   onConfirm: () => void | Promise<void>;
 }) {
   return (
-    <DialogContainer onDismiss={() => onOpenChange(false)}>
-      {open ? (
-        <AlertDialog
-          title={title}
-          variant={destructive ? "destructive" : "confirmation"}
-          primaryActionLabel={confirmLabel}
-          cancelLabel={cancelLabel}
-          isPrimaryActionDisabled={loading}
-          onCancel={() => onOpenChange(false)}
-          onPrimaryAction={() => {
-            void Promise.resolve(onConfirm())
-              .then(() => onOpenChange(false))
-              .catch(() => {
-                /* keep open — callers toast errors */
-              });
-          }}
-        >
-          {description}
-        </AlertDialog>
-      ) : null}
-    </DialogContainer>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={loading}
+            variant={destructive ? "destructive" : "default"}
+            onClick={(e) => {
+              e.preventDefault();
+              void Promise.resolve(onConfirm())
+                .then(() => onOpenChange(false))
+                .catch(() => {
+                  /* keep open — callers toast errors */
+                });
+            }}
+          >
+            {confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

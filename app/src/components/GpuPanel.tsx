@@ -1,40 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  ActionButton,
-  Badge,
-  Content,
-  Heading,
-  IllustratedMessage,
-  ProgressCircle,
-  Text,
-  Tooltip,
-  TooltipTrigger,
-} from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
-import CloudStateError from "@react-spectrum/s2/illustrations/linear/CloudStateError";
+import { CloudOff, Loader2 } from "lucide-react";
 import { api, type GPUStatus } from "@/lib/api";
 import { HelpHint } from "@/components/HelpHint";
 import { RingGauge } from "@/components/charts/MetricChart";
+import { Tip } from "@/components/Tip";
+import { Badge } from "@/components/ui/badge";
+import { lucideProps } from "@/components/Icon";
 
 export function GpuPanel() {
   const gpus = useQuery({ queryKey: ["gpus"], queryFn: api.gpus, refetchInterval: 4000 });
 
   if (gpus.isLoading) {
     return (
-      <div
-        className={style({
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 12,
-          flexGrow: 1,
-          minHeight: 200,
-          textAlign: "center",
-        })}
-      >
-        <ProgressCircle aria-label="Probing GPUs" isIndeterminate size="M" />
-        <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>Probing GPUs…</Text>
+      <div className="flex min-h-[140px] flex-1 flex-col items-center justify-center gap-2 text-center">
+        <Loader2 aria-label="Probing GPUs" className="size-4 animate-spin text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Probing GPUs…</span>
       </div>
     );
   }
@@ -42,25 +22,17 @@ export function GpuPanel() {
   const data = gpus.data as GPUStatus | undefined;
   if (!data?.available && !data?.devices?.length) {
     return (
-      <div
-        className={style({
-          flexGrow: 1,
-          width: "full",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-        })}
-        style={{ minHeight: "100%" }}
-      >
-        <IllustratedMessage>
-          <CloudStateError />
-          <Heading>No GPU runtime detected</Heading>
-          <Content>
+      <div className="flex min-h-[140px] flex-1 items-center justify-center py-2 text-center">
+        <div className="flex max-w-sm flex-col items-center gap-2">
+          <div className="mb-0.5 flex size-9 items-center justify-center rounded-full bg-muted">
+            <CloudOff {...lucideProps("M")} className="text-muted-foreground" />
+          </div>
+          <h2 className="m-0 text-sm font-semibold">No GPU runtime detected</h2>
+          <p className="m-0 text-sm text-muted-foreground">
             {data?.toolkitHint ||
               "Install NVIDIA drivers and the NVIDIA Container Toolkit, then expose GPUs with docker run --gpus."}
-          </Content>
-        </IllustratedMessage>
+          </p>
+        </div>
       </div>
     );
   }
@@ -72,107 +44,53 @@ export function GpuPanel() {
     : "GPU toolkit detected but devices are unavailable";
 
   return (
-    <div className={style({ display: "flex", flexDirection: "column", gap: 12 })}>
-      <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
-        <Badge variant={data.available ? "positive" : "notice"}>
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="secondary">
           {data.runtime ? `runtime: ${data.runtime}` : data.nvidiaSmi ? "nvidia-smi" : "GPU"}
         </Badge>
         <HelpHint label={runtimeTip} />
-        <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>
+        <span className="text-xs text-muted-foreground">
           {data.devices.length} device{data.devices.length === 1 ? "" : "s"} · Docker GPU access
-        </Text>
+        </span>
       </div>
-      <div
-        className={style({
-          display: "grid",
-          gridTemplateColumns: {
-            default: "1fr",
-            md: "1fr 1fr",
-          },
-          gap: 12,
-        })}
-      >
+      <div className="grid gap-3">
         {data.devices.map((d) => {
           const memPct = d.memoryTotalMiB > 0 ? (d.memoryUsedMiB / d.memoryTotalMiB) * 100 : 0;
           return (
-            <div
-              key={d.uuid || d.index}
-              className={style({
-                backgroundColor: "layer-2",
-                borderRadius: "xl",
-                borderWidth: 0,
-                paddingX: 20,
-                paddingY: 16,
-              })}
-            >
-              <div
-                className={style({
-                  marginBottom: 12,
-                  display: "flex",
-                  alignItems: "start",
-                  justifyContent: "space-between",
-                  gap: 12,
-                })}
-              >
-                <div>
-                  <Text styles={style({ font: "ui", fontWeight: "bold" })}>{d.name}</Text>
-                  <TooltipTrigger placement="bottom">
-                    <ActionButton
-                      isQuiet
-                      aria-label={d.uuid ? `Device UUID: ${d.uuid}` : `GPU index ${d.index}`}
-                    >
-                      <Text
-                        styles={style({
-                          font: "code-xs",
-                          color: "neutral-subdued",
-                        })}
-                      >
-                        GPU {d.index}
-                        {d.uuid ? ` · ${d.uuid.slice(0, 18)}…` : ""}
-                      </Text>
-                    </ActionButton>
-                    <Tooltip>
-                      {d.uuid ? `Device UUID: ${d.uuid}` : `GPU index ${d.index}`}
-                    </Tooltip>
-                  </TooltipTrigger>
+            <div key={d.uuid || d.index} className="rounded-2xl bg-muted/80 px-4 py-3.5">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-sm font-semibold">{d.name}</span>
+                  <Tip label={d.uuid ? `Device UUID: ${d.uuid}` : `GPU index ${d.index}`}>
+                    <span className="w-fit cursor-default font-mono text-xs text-muted-foreground">
+                      GPU {d.index}
+                      {d.uuid ? ` · ${d.uuid.slice(0, 18)}…` : ""}
+                    </span>
+                  </Tip>
                 </div>
-                <div className={style({ display: "flex", alignItems: "center", gap: 4 })}>
-                  <Badge variant="neutral" fillStyle="subtle">
-                    {d.temperature}°C
-                  </Badge>
+                <div className="flex items-center gap-1">
+                  <Badge variant="secondary">{d.temperature}°C</Badge>
                   <HelpHint label="GPU temperature from nvidia-smi" />
                 </div>
               </div>
-              <div
-                className={style({
-                  display: "grid",
-                  gridTemplateColumns: {
-                    default: "1fr",
-                    sm: "1fr 1fr",
-                  },
-                  gap: 12,
-                })}
-              >
-                <div>
-                  <RingGauge value={d.utilization} label="GPU util" sub={`${d.utilization}% compute`} />
-                </div>
-                <div>
-                  <RingGauge
-                    value={memPct}
-                    label="VRAM"
-                    sub={`${d.memoryUsedMiB} / ${d.memoryTotalMiB} MiB`}
-                  />
-                </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <RingGauge value={d.utilization} label="GPU util" sub={`${d.utilization}% compute`} />
+                <RingGauge
+                  value={memPct}
+                  label="VRAM"
+                  sub={`${d.memoryUsedMiB} / ${d.memoryTotalMiB} MiB`}
+                />
               </div>
             </div>
           );
         })}
       </div>
       {!data.devices.length && data.available ? (
-        <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>
+        <span className="text-xs text-muted-foreground">
           NVIDIA runtime is registered, but nvidia-smi reported no devices. On macOS / remote Docker this is
           common — GPU passthrough needs a Linux host with the toolkit.
-        </Text>
+        </span>
       ) : null}
     </div>
   );

@@ -6,12 +6,11 @@ import {
 } from "@tanstack/react-router";
 import { AppFrame } from "@/components/AppFrame/AppFrame";
 import { AnimatedOutlet } from "@/components/AnimatedOutlet";
+import { AppProvider } from "@/components/AppProvider";
 import { GlobalSheets } from "@/components/GlobalSheets";
 import { Sidebar } from "@/components/Sidebar";
-import { SpectrumProvider } from "@/components/SpectrumProvider";
 import { StatusDock } from "@/components/StatusDock";
 import { Toaster } from "@/components/Toaster";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import {
   BuildsPage,
   ContainersPage,
@@ -32,48 +31,23 @@ import {
 
 function RootLayout() {
   return (
-    <SpectrumProvider>
+    <AppProvider>
       <AppFrame dock={<StatusDock />}>
         <Sidebar />
         <main
-          className={style({
-            marginStart: 80,
-            height: "full",
-            minHeight: 0,
-            minWidth: 0,
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          })}
+          className="ml-20 flex h-full min-h-0 min-w-0 flex-col overflow-hidden"
           // Block width:auto + margin-inline-start can still overflow in the webview;
           // pin to the remaining viewport so the end padding stays visible.
           style={{ width: "calc(100% - 80px)", boxSizing: "border-box" }}
         >
-          <div
-            className={style({
-              maxWidth: 1800,
-              marginX: "auto",
-              width: "full",
-              height: "full",
-              minHeight: 0,
-              minWidth: 0,
-              display: "flex",
-              flexDirection: "column",
-              paddingTop: 16,
-              paddingBottom: 40,
-              paddingX: 40,
-              overflowX: "hidden",
-              overflowY: "auto",
-              boxSizing: "border-box",
-            })}
-          >
+          <div className="mx-auto box-border flex h-full min-h-0 min-w-0 w-full max-w-[1800px] flex-col overflow-x-hidden overflow-y-auto px-6 pt-3 pb-8 md:px-8">
             <AnimatedOutlet />
           </div>
         </main>
         <GlobalSheets />
       </AppFrame>
       <Toaster />
-    </SpectrumProvider>
+    </AppProvider>
   );
 }
 

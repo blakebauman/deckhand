@@ -17,8 +17,8 @@ if [[ ! -f "$TAURI_DIR/vite.config.ts" || ! -f "$TAURI_DIR/src/main.tsx" ]]; the
   exit 1
 fi
 
-if ! grep -q '@react-spectrum/s2' "$ROOT/app/src/App.tsx" 2>/dev/null; then
-  echo "error: $ROOT/app/src/App.tsx is not the Spectrum 2 app" >&2
+if ! grep -q 'BootSplash\|AppRouter' "$ROOT/app/src/App.tsx" 2>/dev/null; then
+  echo "error: $ROOT/app/src/App.tsx is not the Deckhand app" >&2
   exit 1
 fi
 

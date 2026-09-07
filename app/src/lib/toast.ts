@@ -1,24 +1,19 @@
-import { ToastQueue } from "@react-spectrum/s2";
+import { toast as sonnerToast } from "sonner";
 
 type ToastOpts = { description?: string };
 
-function format(message: string, opts?: ToastOpts) {
-  if (opts?.description) return `${message} — ${opts.description}`;
-  return message;
-}
-
-/** App toast API backed by Spectrum ToastQueue. */
+/** App toast API backed by Sonner. */
 export const toast = {
   success(message: string, opts?: ToastOpts) {
-    return ToastQueue.positive(format(message, opts));
+    return sonnerToast.success(message, opts);
   },
   error(message: string, opts?: ToastOpts) {
-    return ToastQueue.negative(format(message, opts));
+    return sonnerToast.error(message, opts);
   },
   info(message: string, opts?: ToastOpts) {
-    return ToastQueue.info(format(message, opts));
+    return sonnerToast.info(message, opts);
   },
   message(message: string, opts?: ToastOpts) {
-    return ToastQueue.neutral(format(message, opts));
+    return sonnerToast(message, opts);
   },
 };

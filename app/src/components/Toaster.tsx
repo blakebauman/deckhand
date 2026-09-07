@@ -1,11 +1,8 @@
-import { ToastContainer } from "@react-spectrum/s2";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 
-/**
- * Spectrum toast host.
- * Top-end clears the status dock (bottom) and the icon rail (start).
- */
+/** Toast host (Sonner). Top-right clears the status dock and icon rail. */
 export function Toaster() {
-  return <ToastContainer placement="top end" />;
+  return <SonnerToaster position="top-right" richColors closeButton />;
 }
 
 export { toast } from "@/lib/toast";

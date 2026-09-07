@@ -1,21 +1,20 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Button, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { PageShell } from "@/components/PageShell";
-import { Field } from "@/components/spectrum/Field";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
-import { Tip } from "@/components/spectrum/Tip";
+import { Field } from "@/components/Field";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Tip } from "@/components/Tip";
 import { toast } from "@/components/Toaster";
 import { useDockerReconnect } from "@/hooks/useDockerReconnect";
 import { useUIStore } from "@/stores/uiStore";
+import { Button } from "@/components/ui/button";
 
 export function BuildsPage() {
   const qc = useQueryClient();
   const openRunSheet = useUIStore((s) => s.openRunSheet);
-  const { reconnect, pending: reconnecting } = useDockerReconnect();
+  const { reconnect } = useDockerReconnect();
 
   const status = useQuery({ queryKey: ["status"], queryFn: api.status });
   const builders = useQuery({
@@ -103,64 +102,38 @@ export function BuildsPage() {
   return (
     <PageShell title="Builds" description="Build images, list builders, and search Docker Hub.">
       {!dockerOk && status.isSuccess ? (
-        <div
-          className={style({
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            marginBottom: 24,
-            paddingX: 16,
-            paddingY: 12,
-            borderRadius: "xl",
-            backgroundColor: "gray-100",
-          })}
-        >
-          <div className={style({ minWidth: 0 })}>
-            <Text styles={style({ font: "body", fontWeight: "medium" })}>Docker is offline</Text>
-            <Text styles={style({ font: "body-xs", color: "neutral-subdued", display: "block", marginTop: 2 })}>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-muted px-4 py-3">
+          <div className="min-w-0">
+            <span className="text-sm font-medium">Docker is offline</span>
+            <span className="mt-1 block text-xs text-muted-foreground">
               {status.data?.docker.error || "Attach an engine to build or search."}
-            </Text>
+            </span>
           </div>
-          <Button size="S" variant="accent" isPending={reconnecting} onPress={() => void reconnect()}>
+          <Button size="sm" onClick={() => void reconnect()}>
             Retry connection
           </Button>
         </div>
       ) : null}
 
-      <div className={style({ display: "flex", flexDirection: "column", gap: 32, minWidth: 0 })}>
-        <section className={style({ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 })}>
-          <Text styles={style({ font: "title-sm", margin: 0 })}>Builders</Text>
+      <div className="flex min-w-0 flex-col gap-5">
+        <section className="flex min-w-0 flex-col gap-2.5">
+          <span className="text-sm font-semibold">Builders</span>
           {!dockerOk ? (
-            <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
-              Connect Docker to list buildx builders.
-            </Text>
+            <span className="text-sm text-muted-foreground">Connect Docker to list buildx builders.</span>
           ) : builders.isLoading ? (
-            <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>Loading builders…</Text>
+            <span className="text-sm text-muted-foreground">Loading builders…</span>
           ) : builderList.length === 0 ? (
-            <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
+            <span className="text-sm text-muted-foreground">
               No builders — docker buildx ls returned nothing.
-            </Text>
+            </span>
           ) : (
-            <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
+            <div className="flex flex-wrap gap-2">
               {builderList.map((b) => (
                 <div
                   key={b.name}
-                  className={style({
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    paddingX: 12,
-                    paddingY: 8,
-                    borderRadius: "lg",
-                    backgroundColor: "gray-100",
-                    minWidth: 0,
-                  })}
+                  className="inline-flex min-w-0 items-center gap-2 rounded-lg bg-muted px-3 py-2"
                 >
-                  <span className={style({ font: "body", fontWeight: "medium", truncate: true })}>
-                    {b.name}
-                  </span>
+                  <span className="truncate text-sm font-medium">{b.name}</span>
                   {b.driver ? <StatusBadge tone="muted">{b.driver}</StatusBadge> : null}
                   {b.status ? (
                     <StatusBadge tone={b.status === "running" ? "success" : "muted"}>
@@ -173,31 +146,16 @@ export function BuildsPage() {
           )}
         </section>
 
-        <div
-          className={style({
-            display: "grid",
-            gridTemplateColumns: {
-              default: "1fr",
-              md: "1fr 1fr",
-            },
-            gap: 32,
-            alignItems: "start",
-            minWidth: 0,
-          })}
-        >
-          <section className={style({ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 })}>
-            <Text styles={style({ font: "title-sm", margin: 0 })}>Build image</Text>
-            <Field value={context} onChange={setContext} placeholder="context path" aria-label="Context path" />
-            <div
-              className={style({
-                display: "grid",
-                gridTemplateColumns: {
-                  default: "1fr",
-                  sm: "1fr 1fr",
-                },
-                gap: 12,
-              })}
-            >
+        <div className="grid min-w-0 items-start gap-5 lg:grid-cols-2">
+          <section className="flex min-w-0 flex-col gap-3">
+            <span className="text-sm font-semibold">Build image</span>
+            <Field
+              value={context}
+              onChange={setContext}
+              placeholder="context path"
+              aria-label="Context path"
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field
                 value={dockerfile}
                 onChange={setDockerfile}
@@ -208,106 +166,71 @@ export function BuildsPage() {
             </div>
             <div>
               <Button
-                variant="accent"
-                onPress={() => void runBuild()}
-                isDisabled={building || !context.trim() || !dockerOk}
-                isPending={building}
+                onClick={() => void runBuild()}
+                disabled={building || !context.trim() || !dockerOk}
               >
                 {building ? "Building…" : "Build"}
               </Button>
             </div>
           </section>
 
-          <section className={style({ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 })}>
-            <Text styles={style({ font: "title-sm", margin: 0 })}>Registry search</Text>
-            <div className={style({ display: "flex", gap: 8, alignItems: "end" })}>
-              <Field
-                value={searchQ}
-                onChange={setSearchQ}
-                placeholder="Search Docker Hub"
-                aria-label="Registry search"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") void runSearch();
-                }}
-              />
+          <section className="flex min-w-0 flex-col gap-3">
+            <span className="text-sm font-semibold">Registry search</span>
+            <div className="flex items-end gap-2">
+              <div className="min-w-0 flex-1">
+                <Field
+                  value={searchQ}
+                  onChange={setSearchQ}
+                  placeholder="Search Docker Hub"
+                  aria-label="Registry search"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void runSearch();
+                  }}
+                />
+              </div>
               <Button
                 variant="secondary"
-                onPress={() => void runSearch()}
-                isDisabled={searching || !searchQ.trim() || !dockerOk}
-                isPending={searching}
+                onClick={() => void runSearch()}
+                disabled={searching || !searchQ.trim() || !dockerOk}
               >
                 Search
               </Button>
             </div>
-            <div className={style({ display: "flex", flexDirection: "column", gap: 4 })}>
+            <div className="flex flex-col gap-1">
               {results.length === 0 ? (
-                <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
+                <span className="text-sm text-muted-foreground">
                   Search Hub for public images, then pull.
-                </Text>
+                </span>
               ) : (
                 results.map((r) => (
                   <div
                     key={r.name}
-                    className={style({
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      paddingX: 12,
-                      paddingY: 8,
-                      borderRadius: "lg",
-                      backgroundColor: "gray-100",
-                      minWidth: 0,
-                    })}
+                    className="flex min-w-0 items-center gap-2 rounded-lg bg-muted px-3 py-2"
                   >
-                    <div className={style({ flexGrow: 1, minWidth: 0 })}>
-                      <div
-                        className={style({
-                          display: "flex",
-                          flexWrap: "wrap",
-                          alignItems: "center",
-                          gap: 8,
-                        })}
-                      >
-                        <span className={style({ font: "body", fontWeight: "medium", truncate: true })}>
-                          {r.name}
-                        </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="truncate text-sm font-medium">{r.name}</span>
                         {r.isOfficial ? <StatusBadge tone="accent">official</StatusBadge> : null}
-                        <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
-                          ★ {r.starCount}
-                        </span>
+                        <span className="text-xs text-muted-foreground">★ {r.starCount}</span>
                       </div>
                       {r.description ? (
-                        <div
-                          className={style({
-                            font: "body-xs",
-                            color: "neutral-subdued",
-                            marginTop: 2,
-                            truncate: true,
-                          })}
-                          title={r.description}
-                        >
+                        <div className="mt-0.5 truncate text-xs text-muted-foreground" title={r.description}>
                           {r.description}
                         </div>
                       ) : null}
                     </div>
                     <Tip label={`Pull ${r.name}`}>
                       <Button
-                        size="S"
+                        size="sm"
                         variant="secondary"
-                        onPress={() => void pullRef(r.name)}
-                        isDisabled={pulling === r.name || !dockerOk}
-                        isPending={pulling === r.name}
+                        onClick={() => void pullRef(r.name)}
+                        disabled={pulling === r.name || !dockerOk}
                       >
                         Pull
                       </Button>
                     </Tip>
                     <Tip label="Run after pull">
-                      <Button
-                        size="S"
-                        variant="secondary"
-                        fillStyle="outline"
-                        onPress={() => openRunSheet(r.name)}
-                      >
+                      <Button size="sm" variant="secondary" onClick={() => openRunSheet(r.name)}>
                         Run
                       </Button>
                     </Tip>
@@ -326,7 +249,7 @@ export function BuildsPage() {
         description={tag.trim() || context.trim()}
         mono
         footer={
-          <Button variant="secondary" fillStyle="outline" onPress={() => setSheetOpen(false)}>
+          <Button variant="secondary" onClick={() => setSheetOpen(false)}>
             Close
           </Button>
         }
@@ -341,7 +264,7 @@ export function BuildsPage() {
         description="Live progress from the Docker engine"
         mono
         footer={
-          <Button variant="secondary" fillStyle="outline" onPress={() => setPullSheetOpen(false)}>
+          <Button variant="secondary" onClick={() => setPullSheetOpen(false)}>
             Close
           </Button>
         }

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { Divider, Tag, TagGroup, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { CopyButton } from "@/components/CopyButton";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 export function InspectFields({
   rows,
@@ -12,79 +12,25 @@ export function InspectFields({
   if (!visible.length) return null;
 
   return (
-    <dl
-      className={style({
-        backgroundColor: "layer-1",
-        borderRadius: "xl",
-        borderWidth: 1,
-        borderStyle: "solid",
-        borderColor: "gray-200",
-        overflow: "hidden",
-        margin: 0,
-      })}
-    >
+    <dl className="m-0 overflow-hidden rounded-2xl bg-card">
       {visible.map((r, i) => (
         <div key={r.label}>
-          {i > 0 ? <Divider size="S" /> : null}
-          <div
-            className={style({
-              display: "flex",
-              alignItems: "start",
-              justifyContent: "space-between",
-              gap: 12,
-              paddingX: 16,
-              paddingY: 8,
-            })}
-          >
+          {i > 0 ? <Separator /> : null}
+          <div className="flex items-start justify-between gap-3 px-3.5 py-2">
             <dt>
-              <Text
-                styles={style({
-                  font: "detail",
-                  color: "neutral-subdued",
-                  fontWeight: "medium",
-                })}
-              >
-                {r.label}
-              </Text>
+              <span className="text-xs font-medium text-muted-foreground">{r.label}</span>
             </dt>
-            <dd
-              className={style({
-                margin: 0,
-                minWidth: 0,
-                flexGrow: 1,
-                textAlign: "end",
-              })}
-            >
-              <span
-                className={style({
-                  display: "inline-flex",
-                  maxWidth: "full",
-                  alignItems: "center",
-                  justifyContent: "end",
-                  gap: 8,
-                })}
-              >
-                <Text
-                  styles={
+            <dd className="m-0 min-w-0 flex-1 text-end">
+              <span className="inline-flex max-w-full items-center justify-end gap-2">
+                <span
+                  className={
                     r.mono
-                      ? style({
-                          font: "code-xs",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          minWidth: 0,
-                        })
-                      : style({
-                          font: "body-sm",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          minWidth: 0,
-                        })
+                      ? "min-w-0 overflow-hidden font-mono text-xs"
+                      : "min-w-0 overflow-hidden text-sm"
                   }
                 >
                   {r.value}
-                </Text>
+                </span>
                 {r.copy ? <CopyButton value={r.copy} label="Copy" iconOnly /> : null}
               </span>
             </dd>
@@ -99,12 +45,12 @@ export function LabelChips({ labels }: { labels?: Record<string, string> | null 
   const entries = Object.entries(labels || {});
   if (!entries.length) return null;
   return (
-    <TagGroup aria-label="Labels" size="S">
+    <div className="flex flex-wrap gap-1.5" aria-label="Labels">
       {entries.map(([k, v]) => (
-        <Tag key={k} id={`${k}=${v}`} textValue={`${k}=${v}`}>
+        <Badge key={k} variant="secondary" className="max-w-full truncate font-mono text-[11px]">
           {k}={v}
-        </Tag>
+        </Badge>
       ))}
-    </TagGroup>
+    </div>
   );
 }

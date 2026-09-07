@@ -1,14 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  CustomDialog,
-  DialogContainer,
-  Heading,
-  SearchField,
-  Text,
-} from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import type { LucideIcon } from "lucide-react";
 import {
   Archive,
@@ -31,6 +23,9 @@ import { lucideProps } from "@/components/Icon";
 import { isTauriShell } from "@/lib/platform";
 import { useUIStore } from "@/stores/uiStore";
 import { containerName, shortId } from "@/lib/utils";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+
 
 type Action = {
   id: string;
@@ -269,145 +264,77 @@ export function CommandPalette({
   }, [q, filtered.length]);
 
   return (
-    <DialogContainer onDismiss={() => onOpenChange(false)}>
-      {open ? (
-        <CustomDialog size="M" padding="none" aria-label="Command palette">
-          <Heading
-            slot="title"
-            styles={style({
-              position: "absolute",
-              width: 1,
-              height: 1,
-              padding: 0,
-              margin: 0,
-              overflow: "hidden",
-              borderWidth: 0,
-            })}
-          >
-            Command palette
-          </Heading>
-          <div
-            className={style({
-              borderBottomWidth: 1,
-              borderStyle: "solid",
-              borderColor: "gray-200",
-              paddingX: 16,
-              paddingY: 12,
-            })}
-          >
-            <SearchField
-              autoFocus
-              aria-label="Search containers, images, volumes, Hub"
-              value={q}
-              onChange={setQ}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowDown") {
-                  e.preventDefault();
-                  setActive((i) => Math.min(filtered.length - 1, i + 1));
-                } else if (e.key === "ArrowUp") {
-                  e.preventDefault();
-                  setActive((i) => Math.max(0, i - 1));
-                } else if (e.key === "Enter") {
-                  e.preventDefault();
-                  filtered[active]?.run();
-                }
-              }}
-              placeholder="Search containers, Compose, images, volumes, Hub…"
-            />
-          </div>
-          <div
-            className={style({
-              maxHeight: 360,
-              overflowY: "auto",
-              padding: 8,
-            })}
-          >
-            {filtered.length === 0 ? (
-              <div className={style({ paddingX: 12, paddingY: 32, textAlign: "center" })}>
-                <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>No matches</Text>
-              </div>
-            ) : (
-              filtered.map((a, i) => {
-                const Icon = a.icon;
-                const selected = i === active;
-                return (
-                  <button
-                    key={a.id}
-                    type="button"
-                    onMouseEnter={() => setActive(i)}
-                    onClick={() => a.run()}
-                    className={
-                      selected
-                        ? style({
-                            display: "flex",
-                            width: "full",
-                            alignItems: "center",
-                            gap: 12,
-                            borderRadius: "lg",
-                            paddingX: 12,
-                            paddingY: 8,
-                            textAlign: "start",
-                            backgroundColor: "gray-200",
-                            borderStyle: "none",
-                            cursor: "pointer",
-                            color: "neutral",
-                          })
-                        : style({
-                            display: "flex",
-                            width: "full",
-                            alignItems: "center",
-                            gap: 12,
-                            borderRadius: "lg",
-                            paddingX: 12,
-                            paddingY: 8,
-                            textAlign: "start",
-                            backgroundColor: "transparent",
-                            borderStyle: "none",
-                            cursor: "pointer",
-                            color: "neutral",
-                          })
-                    }
-                  >
-                    <Icon {...lucideProps("S")} />
-                    <span
-                      className={style({
-                        minWidth: 0,
-                        flexGrow: 1,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      })}
-                    >
-                      <Text styles={style({ font: "ui", fontWeight: "medium" })}>{a.label}</Text>
-                      <span className={style({ display: "block", font: "detail", color: "neutral-subdued" })}>
-                        {a.group}
-                      </span>
-                    </span>
-                    {a.hint ? (
-                      <Text styles={style({ font: "detail", color: "neutral-subdued" })}>{a.hint}</Text>
-                    ) : null}
-                  </button>
-                );
-              })
-            )}
-          </div>
-          <div
-            className={style({
-              borderTopWidth: 1,
-              borderStyle: "solid",
-              borderColor: "gray-200",
-              paddingX: 16,
-              paddingY: 8,
-            })}
-          >
-            <Text styles={style({ font: "detail", color: "neutral-subdued" })}>
-              ↑↓ navigate · ↵ select · esc close
-              {hub.isFetching ? " · searching Hub…" : ""}
-            </Text>
-          </div>
-        </CustomDialog>
-      ) : null}
-    </DialogContainer>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="gap-0 overflow-hidden p-0 sm:max-w-lg"
+        showCloseButton={false}
+        aria-describedby={undefined}
+      >
+        <DialogHeader className="sr-only">
+          <DialogTitle>Command palette</DialogTitle>
+          <DialogDescription>Search containers, images, volumes, and Hub</DialogDescription>
+        </DialogHeader>
+        <div className="border-b border-border/60 px-4 py-3">
+          <Input
+            autoFocus
+            aria-label="Search containers, images, volumes, Hub"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setActive((i) => Math.min(filtered.length - 1, i + 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setActive((i) => Math.max(0, i - 1));
+              } else if (e.key === "Enter") {
+                e.preventDefault();
+                filtered[active]?.run();
+              }
+            }}
+            placeholder="Search containers, Compose, images, volumes, Hub…"
+          />
+        </div>
+        <div className="max-h-[360px] overflow-y-auto p-2">
+          {filtered.length === 0 ? (
+            <div className="px-3 py-8 text-center">
+              <span className="text-xs text-muted-foreground">No matches</span>
+            </div>
+          ) : (
+            filtered.map((a, i) => {
+              const Icon = a.icon;
+              const selected = i === active;
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => a.run()}
+                  className={
+                    selected
+                      ? "flex w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-muted px-3 py-2 text-start text-foreground"
+                      : "flex w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent px-3 py-2 text-start text-foreground hover:bg-muted/60"
+                  }
+                >
+                  <Icon {...lucideProps("S")} className="shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 overflow-hidden">
+                    <span className="text-sm font-medium">{a.label}</span>
+                    <span className="block text-xs text-muted-foreground">{a.group}</span>
+                  </span>
+                  {a.hint ? <span className="shrink-0 text-xs text-muted-foreground">{a.hint}</span> : null}
+                </button>
+              );
+            })
+          )}
+        </div>
+        <div className="border-t border-border/60 px-4 py-2">
+          <span className="text-xs text-muted-foreground">
+            ↑↓ navigate · ↵ select · esc close
+            {hub.isFetching ? " · searching Hub…" : ""}
+          </span>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

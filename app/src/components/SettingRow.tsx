@@ -1,6 +1,5 @@
 import { Children, type ReactNode } from "react";
-import { Divider, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { Separator } from "@/components/ui/separator";
 
 /** Section header + divided panel. */
 export function SettingSection({
@@ -13,39 +12,14 @@ export function SettingSection({
   children: ReactNode;
 }) {
   return (
-    <section className={style({ marginBottom: 32 })}>
-      <Text
-        styles={style({
-          font: "detail",
-          color: "neutral-subdued",
-          fontWeight: "bold",
-        })}
-      >
-        {title}
-      </Text>
+    <section className="mb-5">
+      <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{title}</span>
       {description ? (
-        <p
-          className={style({
-            marginTop: 4,
-            marginBottom: 12,
-            font: "body-xs",
-            color: "neutral-subdued",
-          })}
-        >
-          {description}
-        </p>
+        <p className="mt-1 mb-2 text-xs text-muted-foreground">{description}</p>
       ) : (
-        <div className={style({ marginBottom: 12 })} />
+        <div className="mb-2" />
       )}
-      <div
-        className={style({
-          backgroundColor: "layer-1",
-          borderRadius: "xl",
-          overflow: "hidden",
-        })}
-      >
-        {ChildrenWithDividers(children)}
-      </div>
+      <div className="overflow-hidden rounded-2xl bg-card">{ChildrenWithDividers(children)}</div>
     </section>
   );
 }
@@ -54,7 +28,7 @@ function ChildrenWithDividers(children: ReactNode) {
   const items = Children.toArray(children);
   return items.map((child, i) => (
     <div key={i}>
-      {i > 0 ? <Divider size="S" /> : null}
+      {i > 0 ? <Separator /> : null}
       {child}
     </div>
   ));
@@ -90,36 +64,17 @@ export function SettingRow({
   const below = action !== undefined ? children : undefined;
 
   return (
-    <div className={style({ paddingX: 20, paddingY: 16 })}>
-      <div
-        className={style({
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 16,
-        })}
-      >
-        <div className={style({ minWidth: 0, flexGrow: 1 })}>
+    <div className="px-4 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <label htmlFor={htmlFor}>
-            <Text styles={style({ font: "ui", fontWeight: "medium" })}>{heading}</Text>
+            <span className="text-sm font-medium">{heading}</span>
           </label>
-          {description ? (
-            <p
-              className={style({
-                marginTop: 2,
-                marginBottom: 0,
-                font: "body-xs",
-                color: "neutral-subdued",
-              })}
-            >
-              {description}
-            </p>
-          ) : null}
+          {description ? <p className="mt-0.5 mb-0 text-xs text-muted-foreground">{description}</p> : null}
         </div>
-        {right != null ? <div className={style({ flexShrink: 0, maxWidth: "full" })}>{right}</div> : null}
+        {right != null ? <div className="max-w-full shrink-0">{right}</div> : null}
       </div>
-      {below != null ? <div className={style({ marginTop: 12 })}>{below}</div> : null}
+      {below != null ? <div className="mt-2">{below}</div> : null}
     </div>
   );
 }

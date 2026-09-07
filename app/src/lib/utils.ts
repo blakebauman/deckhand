@@ -1,3 +1,5 @@
+export { cn } from "cn";
+
 export function shortId(id?: string, n = 12) {
   if (!id) return "";
   return id.length > n ? id.slice(0, n) : id;

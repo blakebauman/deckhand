@@ -2,22 +2,17 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { useEffect, useRef, useState } from "react";
 import "@xterm/xterm/css/xterm.css";
-import {
-  ActionButton,
-  StatusLight,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-  TooltipTrigger,
-} from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { RefreshCw } from "lucide-react";
 import { lucideProps } from "@/components/Icon";
+import { Tip } from "@/components/Tip";
+import { SegmentedControl } from "@/components/SegmentedControl";
+import { Button } from "@/components/ui/button";
 import {
   TerminalFrame,
   TerminalToolbarEnd,
   TerminalToolbarStart,
 } from "@/components/TerminalChrome";
+import { cn } from "@/lib/utils";
 
 type Shell = "sh" | "bash" | "ash";
 
@@ -152,7 +147,7 @@ export function ExecTerminal({
   }, [wsUrl, shell, nonce]);
 
   const statusVariant =
-    status === "open" ? "positive" : status === "connecting" ? "notice" : "neutral";
+    status === "open" ? "secondary" : status === "connecting" ? "notice" : "secondary";
   const statusLabel =
     status === "open" ? "Connected" : status === "connecting" ? "Connecting…" : "Disconnected";
 
@@ -162,59 +157,50 @@ export function ExecTerminal({
       toolbar={
         <>
           <TerminalToolbarStart>
-            <StatusLight size="S" variant={statusVariant} aria-label={statusLabel} />
-            <div className={style({ display: "flex", flexDirection: "column", minWidth: 0, gap: 2 })}>
-              <span className={["dh-terminal__title", style({ font: "ui-sm", fontWeight: "medium" })].join(" ")}>
+            <span
+              className={cn(
+                "size-2 rounded-full",
+                status === "open" ? "bg-emerald-500" : status === "connecting" ? "bg-amber-500" : "bg-red-500",
+              )}
+              aria-label={statusLabel}
+            />
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className={["dh-terminal__title", "text-sm font-medium"].join(" ")}>
                 {title}
               </span>
-              <span className={["dh-terminal__meta", style({ font: "detail-sm" })].join(" ")}>
+              <span className={["dh-terminal__meta", "text-xs"].join(" ")}>
                 {statusLabel} · {shell}
               </span>
             </div>
           </TerminalToolbarStart>
           <TerminalToolbarEnd>
-            <ToggleButtonGroup
+            <SegmentedControl
               aria-label="Shell"
-              selectionMode="single"
-              selectedKeys={[shell]}
-              onSelectionChange={(keys) => {
-                const next = [...keys][0] as Shell | undefined;
-                if (next) setShell(next);
-              }}
-              density="compact"
-              size="S"
-              staticColor="white"
-              isQuiet
-            >
-              <ToggleButton id="sh" aria-label="Shell: /bin/sh">
-                sh
-              </ToggleButton>
-              <ToggleButton id="bash" aria-label="Shell: /bin/bash">
-                bash
-              </ToggleButton>
-              <ToggleButton id="ash" aria-label="Shell: /bin/ash">
-                ash
-              </ToggleButton>
-            </ToggleButtonGroup>
-            <TooltipTrigger placement="bottom">
-              <ActionButton
+              value={shell}
+              onChange={setShell}
+              options={[
+                { id: "sh", label: "sh", "aria-label": "Shell: /bin/sh" },
+                { id: "bash", label: "bash", "aria-label": "Shell: /bin/bash" },
+                { id: "ash", label: "ash", "aria-label": "Shell: /bin/ash" },
+              ]}
+            />
+            <Tip label="Reconnect">
+              <Button
                 aria-label="Reconnect shell"
-                isQuiet
-                staticColor="white"
-                size="S"
-                onPress={() => setNonce((n) => n + 1)}
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setNonce((n) => n + 1)}
               >
                 <RefreshCw {...lucideProps("S")} />
-              </ActionButton>
-              <Tooltip>Reconnect</Tooltip>
-            </TooltipTrigger>
+              </Button>
+            </Tip>
           </TerminalToolbarEnd>
         </>
       }
     >
       <div
         ref={hostRef}
-        className={["dh-xterm-host", style({ minHeight: 0, flexGrow: 1 })].join(" ")}
+        className={["dh-xterm-host", "flex-1 min-h-0"].join(" ")}
         onClick={() => termRef.current?.focus()}
       />
     </TerminalFrame>

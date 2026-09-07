@@ -1,7 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { ActionMenu, Button, MenuItem, MenuSection, Slider, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
@@ -10,11 +8,16 @@ import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
 import { SettingRow } from "@/components/SettingRow";
 import { toast } from "@/components/Toaster";
-import { RowMenu } from "@/components/spectrum/RowMenu";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
+import { RowMenu } from "@/components/RowMenu";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useUIStore } from "@/stores/uiStore";
 import { copyText } from "@/routes/shared";
 import { K8sChrome } from "@/routes/k8s/K8sChrome";
+import { MoreActionsMenu } from "@/components/MoreActionsMenu";
+import { Button } from "@/components/ui/button";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Slider } from "@/components/ui/slider";
+
 
 function readyTone(ready: number, desired: number) {
   return ready > 0 && ready === desired ? "success" : "muted";
@@ -50,7 +53,7 @@ export function DeploymentsPage() {
 
   return (
     <K8sChrome>
-      <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
+      <div className="flex h-full min-h-0 w-full min-w-0 gap-5">
         <ListPane
           title="Deployments"
           loading={list.isLoading}
@@ -106,7 +109,7 @@ export function DeploymentsPage() {
                   </StatusBadge>
                 }
               >
-                <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+                <div className="min-w-0 text-sm font-medium truncate">
                   {d.metadata.name}
                 </div>
               </RowMenu>
@@ -118,19 +121,19 @@ export function DeploymentsPage() {
           empty={<DetailEmpty title="Select a deployment" description="Scale replicas or restart a deployment." />}
           header={
             row ? (
-              <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8 })}>
-                <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0, flexGrow: 1 })}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                   <DetailHeading>{row.metadata.name}</DetailHeading>
                   <StatusBadge tone={readyTone(ready, desired)}>
                     {ready}/{desired}
                   </StatusBadge>
                   <CopyButton value={row.metadata.name} label="Copy name" iconOnly />
                 </div>
-                <div className={style({ display: "flex", flexShrink: 0, alignItems: "center", gap: 8 })}>
+                <div className="flex shrink-0 items-center gap-2">
                   <Button
-                    size="S"
+                    size="sm"
                     variant="secondary"
-                    onPress={() =>
+                    onClick={() =>
                       api
                         .restartDeployment(namespace, row.metadata.name)
                         .then(() => {
@@ -142,57 +145,58 @@ export function DeploymentsPage() {
                   >
                     Restart
                   </Button>
-                  <ActionMenu aria-label="More deployment actions" isQuiet align="end" size="S">
-                    <MenuSection>
-                      <MenuItem
-                        id="scale-up"
-                        textValue="Scale +"
-                        onAction={() =>
-                          void api
-                            .scaleDeployment(namespace, row.metadata.name, desired + 1)
-                            .then(() => {
-                              toast.success("Scaled", { description: `${row.metadata.name} → ${desired + 1}` });
-                              qc.invalidateQueries({ queryKey: ["deployments"] });
-                            })
-                            .catch((e: any) => toast.error("Scale failed", { description: e?.message }))
-                        }
-                      >
-                        <Text slot="label">Scale +</Text>
-                      </MenuItem>
-                    </MenuSection>
-                    <MenuSection>
-                      <MenuItem id="delete" textValue="Delete" onAction={() => setConfirmDelete(true)}>
-                        <Text slot="label" styles={style({ color: "negative" })}>
-                          Delete…
-                        </Text>
-                      </MenuItem>
-                    </MenuSection>
-                  </ActionMenu>
+                  <MoreActionsMenu label="More deployment actions">
+                    <DropdownMenuItem
+                      onClick={() =>
+                        void api
+                          .scaleDeployment(namespace, row.metadata.name, desired + 1)
+                          .then(() => {
+                            toast.success("Scaled", {
+                              description: `${row.metadata.name} → ${desired + 1}`,
+                            });
+                            qc.invalidateQueries({ queryKey: ["deployments"] });
+                          })
+                          .catch((e: any) =>
+                            toast.error("Scale failed", { description: e?.message }),
+                          )
+                      }
+                    >
+                      Scale +
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive" onClick={() => setConfirmDelete(true)}>
+                      Delete…
+                    </DropdownMenuItem>
+                  </MoreActionsMenu>
                 </div>
               </div>
             ) : null
           }
         >
           {row ? (
-            <div className={style({ display: "flex", flexDirection: "column", gap: 16 })}>
-              <div className={style({ backgroundColor: "layer-1", borderRadius: "xl" })}>
+            <div className="flex flex-col gap-4">
+              <div className="bg-card rounded-2xl">
                 <SettingRow
                   title="Replicas"
                   description="Drag to scale; releases on commit"
-                  action={<span className={style({ font: "code-xs" })}>{replicas}</span>}
+                  action={<span className="font-mono text-xs">{replicas}</span>}
                 >
                   <Slider
                     aria-label="Replicas"
-                    minValue={0}
-                    maxValue={Math.max(20, replicas, row.spec?.replicas || 0)}
+                    min={0}
+                    max={Math.max(20, replicas, row.spec?.replicas || 0)}
                     step={1}
-                    value={replicas}
-                    onChange={setReplicas}
-                    onChangeEnd={(v) => {
+                    value={[replicas]}
+                    onValueChange={(v) => {
+                      const n = Array.isArray(v) ? Number(v[0]) : Number(v);
+                      setReplicas(n);
+                    }}
+                    onPointerUp={() => {
+                      const n = replicas;
                       void api
-                        .scaleDeployment(namespace, row.metadata.name, v)
+                        .scaleDeployment(namespace, row.metadata.name, n)
                         .then(() => {
-                          toast.success("Scaled", { description: `${row.metadata.name} → ${v}` });
+                          toast.success("Scaled", { description: `${row.metadata.name} → ${n}` });
                           qc.invalidateQueries({ queryKey: ["deployments"] });
                         })
                         .catch((e: any) => toast.error("Scale failed", { description: e?.message }));

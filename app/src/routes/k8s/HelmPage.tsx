@@ -1,19 +1,20 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Button, TextArea, TextField } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ListEmpty } from "@/components/ListPane";
 import { PageShell } from "@/components/PageShell";
-import { RowMenu } from "@/components/spectrum/RowMenu";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
-import { Tip } from "@/components/spectrum/Tip";
+import { RowMenu } from "@/components/RowMenu";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Tip } from "@/components/Tip";
 import { toast } from "@/components/Toaster";
 import { useUIStore } from "@/stores/uiStore";
 import { copyText } from "@/routes/shared";
 import { K8sChrome } from "@/routes/k8s/K8sChrome";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export function HelmPage() {
   const namespace = useUIStore((s) => s.namespace);
@@ -48,21 +49,21 @@ export function HelmPage() {
         description="Install and manage chart releases in the selected namespace."
         actions={
           <Tip label="Install a chart into this namespace">
-            <Button size="S" onPress={() => setInstallOpen(true)}>
+            <Button size="sm" onClick={() => setInstallOpen(true)}>
               Install
             </Button>
           </Tip>
         }
       >
-        <div className={style({ display: "flex", flexDirection: "column", gap: 4, maxWidth: 720 })}>
+        <div className="flex max-w-3xl flex-col gap-1">
           {list.isLoading ? (
-            <p className={style({ font: "body-sm", color: "neutral-subdued" })}>Loading releases…</p>
+            <p className="text-sm text-muted-foreground">Loading releases…</p>
           ) : releases.length === 0 ? (
             <ListEmpty
               title="No releases"
               description={`Nothing installed in “${namespace}” yet.`}
               action={
-                <Button size="S" onPress={() => setInstallOpen(true)}>
+                <Button size="sm" onClick={() => setInstallOpen(true)}>
                   Install chart
                 </Button>
               }
@@ -91,13 +92,13 @@ export function HelmPage() {
                   },
                 ]}
                 suffix={
-                  <StatusBadge tone={r.status === "deployed" ? "success" : "muted"}>{r.status}</StatusBadge>
+                  <StatusBadge tone={r.status === "deployed" ? "success" : "muted"}>
+                    {r.status}
+                  </StatusBadge>
                 }
               >
-                <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
-                  {r.name}
-                </div>
-                <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+                <div className="min-w-0 truncate text-sm font-medium">{r.name}</div>
+                <div className="min-w-0 truncate text-xs text-muted-foreground">
                   {r.chart} · rev {r.revision}
                 </div>
               </RowMenu>
@@ -114,14 +115,13 @@ export function HelmPage() {
         size="md"
         footer={
           <>
-            <Button variant="secondary" onPress={() => setInstallOpen(false)} isDisabled={installing}>
+            <Button variant="secondary" onClick={() => setInstallOpen(false)} disabled={installing}>
               Cancel
             </Button>
             <Button
-              variant="accent"
-              isDisabled={!name.trim() || !chart.trim() || installing}
-              isPending={installing}
-              onPress={async () => {
+              variant="default"
+              disabled={!name.trim() || !chart.trim() || installing}
+              onClick={async () => {
                 setInstalling(true);
                 try {
                   const res: any = await api.helmInstall({
@@ -148,20 +148,20 @@ export function HelmPage() {
           </>
         }
       >
-        <div className={style({ display: "flex", flexDirection: "column", gap: 16 })}>
-          <TextField label="Release name" value={name} onChange={setName} placeholder="demo" />
-          <TextField
-            label="Chart"
+        <div className="flex flex-col gap-4">
+          <Input aria-label="Release name" value={name} onChange={(e) => setName(e.target.value)} placeholder="demo" />
+          <Input
+            aria-label="Chart"
             value={chart}
-            onChange={setChart}
+            onChange={(e) => setChart(e.target.value)}
             placeholder="path or repo/chart"
           />
-          <TextArea
-            label="Values"
+          <Textarea
+            aria-label="Values"
             value={valuesYaml}
-            onChange={setValuesYaml}
+            onChange={(e) => setValuesYaml(e.target.value)}
             placeholder="values.yaml (optional)"
-            styles={style({ width: "full" })}
+            className="w-full"
           />
         </div>
       </GlassSheet>
@@ -173,7 +173,7 @@ export function HelmPage() {
         description={namespace}
         mono
         footer={
-          <Button variant="secondary" fillStyle="outline" onPress={() => setSheetOpen(false)}>
+          <Button variant="secondary" onClick={() => setSheetOpen(false)}>
             Close
           </Button>
         }

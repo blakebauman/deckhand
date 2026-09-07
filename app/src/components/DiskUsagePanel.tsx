@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, Checkbox, ProgressBar, ProgressCircle, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { Loader2 } from "lucide-react";
 import { api, type SystemPruneBody } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { HelpHint } from "@/components/HelpHint";
 import { toast } from "@/components/Toaster";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { formatBytes } from "@/lib/utils";
 import { useUIStore } from "@/stores/uiStore";
 
@@ -66,10 +69,10 @@ const defaultSelected: SystemPruneBody = {
 
 export function DiskUsagePanel({
   compact,
-  /** When true, omit the built-in title (parent card already labels it). */
   hideTitle,
 }: {
   compact?: boolean;
+  /** When true, omit the built-in title (parent card already labels it). */
   hideTitle?: boolean;
 }) {
   const qc = useQueryClient();
@@ -132,19 +135,15 @@ export function DiskUsagePanel({
   if (df.isLoading && !data) {
     return (
       <div
-        className={style({
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 12,
-          flexGrow: 1,
-          textAlign: "center",
-        })}
-        style={{ minHeight: compact ? 200 : 160 }}
+        className={
+          compact
+            ? "flex min-h-[120px] flex-1 flex-col items-center justify-center gap-2 text-center"
+            : "flex min-h-[120px] flex-1 flex-col items-center justify-center gap-2 text-center"
+        }
       >
-        <ProgressCircle aria-label="Measuring disk usage" isIndeterminate size="S" />
-        <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>Measuring disk usage…</Text>
+        <Loader2 aria-label="Measuring disk usage" className="size-4 animate-spin text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Measuring disk usage…</span>
+        <span className="text-xs text-muted-foreground">docker system df can take a while on large engines</span>
       </div>
     );
   }
@@ -152,192 +151,109 @@ export function DiskUsagePanel({
   if (df.isError) {
     return (
       <div
-        className={style({
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          flexGrow: 1,
-          textAlign: "center",
-          paddingX: 16,
-        })}
-        style={{ minHeight: compact ? 200 : 160 }}
+        className={
+          compact
+            ? "flex min-h-[180px] flex-1 flex-col items-center justify-center gap-1.5 px-4 text-center"
+            : "flex min-h-[140px] flex-1 flex-col items-center justify-center gap-1.5 px-4 text-center"
+        }
       >
-        <Text styles={style({ font: "title-sm" })}>Disk usage unavailable</Text>
-        <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
-          Is the Docker engine running?
-        </Text>
+        <span className="text-sm font-semibold">Disk usage unavailable</span>
+        <span className="text-sm text-muted-foreground">Is the Docker engine running?</span>
       </div>
     );
   }
 
   return (
-    <div
-      className={
-        compact
-          ? style({
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-              flexGrow: 1,
-              minHeight: 0,
-            })
-          : style({
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              flexGrow: 1,
-              minHeight: 0,
-            })
-      }
-    >
-      <div
-        className={style({
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "start",
-          justifyContent: "space-between",
-          gap: 12,
-          flexShrink: 0,
-        })}
-      >
-        <div className={style({ minWidth: 0 })}>
+    <div className={compact ? "flex min-h-0 flex-1 flex-col gap-2.5" : "flex min-h-0 flex-1 flex-col gap-3.5"}>
+      <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           {!hideTitle ? (
-            <div className={style({ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 })}>
-              <Text
-                styles={style({
-                  font: "detail",
-                  fontWeight: "medium",
-                  color: "neutral-subdued",
-                })}
-              >
-                Engine disk
-              </Text>
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">Engine disk</span>
               <HelpHint label="From docker system df — reclaimable is unused layers, stopped containers, and idle cache" />
             </div>
           ) : null}
-          <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 8 })}>
-            <Text styles={style({ font: "heading-lg", fontWeight: "bold" })}>
+          <div className="flex flex-wrap items-baseline gap-2">
+            <span className="text-xl font-semibold tracking-tight tabular-nums">
               {formatBytes(reclaimable)}
-            </Text>
-            <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>reclaimable</Text>
+            </span>
+            <span className="text-sm text-muted-foreground">reclaimable</span>
           </div>
         </div>
         {!compact ? (
           <Button
             variant="secondary"
-            fillStyle="outline"
-            size="S"
-            onPress={requestPrune}
-            isDisabled={pruning || selectedCount === 0}
-            isPending={pruning}
+            size="sm"
+            onClick={requestPrune}
+            disabled={pruning || selectedCount === 0}
           >
             Prune selected…
           </Button>
         ) : null}
       </div>
 
-      <div
-        className={
-          compact
-            ? style({
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                flexGrow: 1,
-                minHeight: 0,
-              })
-            : style({
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-                flexGrow: 1,
-                minHeight: 0,
-              })
-        }
-      >
+      <div className={compact ? "flex min-h-0 flex-1 flex-col gap-2" : "flex min-h-0 flex-1 flex-col gap-2.5"}>
         {rows.map((row) => {
           const size = data?.[row.key] || 0;
           const active = data?.[row.active] ?? 0;
           const total = data?.[row.total] ?? 0;
+          const pct = Math.round((size / max) * 100);
+          const id = `prune-${row.pruneKey}`;
           return (
-            <div key={row.key} className={style({ display: "flex", flexDirection: "column", gap: 4 })}>
-              <div
-                className={style({
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 8,
-                })}
-              >
-                <div className={style({ display: "flex", alignItems: "center", gap: 8, minWidth: 0 })}>
+            <div key={row.key} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <Checkbox
-                    isSelected={!!selected[row.pruneKey]}
-                    onChange={(next) => setSelected((s) => ({ ...s, [row.pruneKey]: next }))}
-                  >
+                    id={id}
+                    checked={!!selected[row.pruneKey]}
+                    onCheckedChange={(next) =>
+                      setSelected((s) => ({ ...s, [row.pruneKey]: !!next }))
+                    }
+                  />
+                  <Label htmlFor={id} className="cursor-pointer text-sm font-medium">
                     {row.label}
-                  </Checkbox>
+                  </Label>
                   <HelpHint label={row.tip} />
                 </div>
-                <div
-                  className={style({
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "end",
-                    flexShrink: 0,
-                    gap: 2,
-                  })}
-                >
-                  <Text styles={style({ font: "ui-sm", fontWeight: "medium" })}>{formatBytes(size)}</Text>
-                  <Text styles={style({ font: "detail-sm", color: "neutral-subdued" })}>
+                <div className="flex shrink-0 flex-col items-end gap-0.5">
+                  <span className="text-sm font-medium tabular-nums">{formatBytes(size)}</span>
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
                     {active}/{total} in use
-                  </Text>
+                  </span>
                 </div>
               </div>
-              <ProgressBar aria-label={`${row.label} size`} value={size} maxValue={max} size="S" />
+              <Progress value={pct} aria-label={`${row.label} size`} className="gap-0 [&>[data-slot=progress-track]]:h-1.5" />
             </div>
           );
         })}
       </div>
 
-      <div
-        className={style({
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          flexShrink: 0,
-        })}
-      >
-        <Checkbox
-          isSelected={selected.networks}
-          onChange={(networks) => setSelected((s) => ({ ...s, networks }))}
-        >
-          Unused networks
-        </Checkbox>
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="prune-networks"
+            checked={selected.networks}
+            onCheckedChange={(networks) => setSelected((s) => ({ ...s, networks: !!networks }))}
+          />
+          <Label htmlFor="prune-networks" className="cursor-pointer text-sm font-medium">
+            Unused networks
+          </Label>
+        </div>
         {compact ? (
           <Button
             variant="secondary"
-            fillStyle="outline"
-            size="S"
-            onPress={requestPrune}
-            isDisabled={pruning || selectedCount === 0}
-            isPending={pruning}
+            size="sm"
+            onClick={requestPrune}
+            disabled={pruning || selectedCount === 0}
           >
             Prune…
           </Button>
         ) : (
-          <Text styles={style({ font: "detail-sm", color: "neutral-subdued" })}>
-            {selectedCount} selected
-          </Text>
+          <span className="text-xs text-muted-foreground">{selectedCount} selected</span>
         )}
       </div>
 
-      {result ? (
-        <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>{result}</Text>
-      ) : null}
+      {result ? <span className="text-xs text-muted-foreground">{result}</span> : null}
 
       <ConfirmDialog
         open={confirm}

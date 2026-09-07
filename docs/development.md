@@ -24,7 +24,7 @@ bun install
 bun run dev          # build sidecar + Tauri + Vite
 ```
 
-`tauri:dev` starts Vite via `scripts/tauri-frontend-dev.sh`, which always uses this repo’s `tauri/` tree (never a sibling copy), checks that `app/` is the Spectrum 2 UI, and refuses to bind `:1420` if another project already owns it. The desktop shell prefers sidecar `127.0.0.1:7420` and falls back to an ephemeral port only if that bind fails.
+`tauri:dev` starts Vite via `scripts/tauri-frontend-dev.sh`, which always uses this repo’s `tauri/` tree (never a sibling copy), checks that `app/` is the Deckhand UI, and refuses to bind `:1420` if another project already owns it. The desktop shell prefers sidecar `127.0.0.1:7420` and falls back to an ephemeral port only if that bind fails.
 
 ### Split processes
 
@@ -110,11 +110,11 @@ Regular CI (`.github/workflows/ci.yml`) still only builds the sidecar + UI — n
 
 ## UI
 
-The React UI uses **Adobe Spectrum 2** via [`@react-spectrum/s2`](https://react-spectrum.adobe.com/getting-started).
+The React UI uses **shadcn/ui** with the **Maia** preset (`bbVJxYW`) and **Tailwind CSS v4**.
 
-- Style with the `style` / `iconStyle` macros (`with { type: 'macro' }`)
-- Vite is configured with `unplugin-parcel-macros` (must be first in plugins)
-- Do not add Radix, Tailwind, shadcn, or other component kits — see `.cursor/rules/spectrum-ui.mdc`
+- Primitives live under `app/src/components/ui/`
+- Style with Tailwind utilities and CSS variables in `app/src/index.css`
+- Do not add Adobe Spectrum or a second component kit — see `.cursor/rules/shadcn-ui.mdc`
 
 ## Related
 

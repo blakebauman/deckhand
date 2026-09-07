@@ -1,9 +1,9 @@
 import type { CSSProperties, ReactNode } from "react";
-import { Heading, Text, Tooltip, TooltipTrigger } from "@react-spectrum/s2";
 import { CloudOff } from "lucide-react";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { lucideProps } from "@/components/Icon";
 import { useWindowDragProps } from "@/components/TitleBarDragRegion";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 export function PageShell({
   title,
@@ -21,48 +21,17 @@ export function PageShell({
   const drag = useWindowDragProps();
 
   return (
-    <div className={[style({ minHeight: "full" }), className].filter(Boolean).join(" ")}>
-      <div
-        className={style({
-          display: "flex",
-          alignItems: "end",
-          justifyContent: "space-between",
-          gap: 16,
-          marginBottom: 24,
-        })}
-        {...drag}
-      >
+    <div className={cn("min-h-full", className)}>
+      <div className="mb-5 flex items-end justify-between gap-4" {...drag}>
         <div>
-          <Heading
-            styles={style({
-              font: "heading-xl",
-              margin: 0,
-            })}
-          >
-            {title}
-          </Heading>
+          <h1 className="m-0 text-2xl font-semibold tracking-tight">{title}</h1>
           {description ? (
-            <Text
-              styles={style({
-                font: "body-sm",
-                color: "neutral-subdued",
-                display: "block",
-                marginTop: 4,
-                maxWidth: 672,
-              })}
-            >
-              {description}
-            </Text>
+            <p className="mt-1 max-w-xl text-sm text-muted-foreground">{description}</p>
           ) : null}
         </div>
         {actions ? (
           <div
-            className={style({
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              flexShrink: 0,
-            })}
+            className="flex shrink-0 items-center gap-2"
             data-no-drag
             style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
           >
@@ -85,84 +54,16 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div
-      className={style({
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 12,
-        backgroundColor: "layer-1",
-        borderRadius: "xl",
-        paddingX: 32,
-        paddingY: 48,
-        textAlign: "center",
-        minHeight: 280,
-      })}
-    >
-      <div
-        className={style({
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          size: 44,
-          borderRadius: "full",
-          backgroundColor: "gray-100",
-          marginBottom: 4,
-        })}
-      >
+    <div className="flex min-h-[240px] flex-col items-center justify-center gap-3 rounded-2xl bg-card px-8 py-10 text-center">
+      <div className="mb-1 flex size-10 items-center justify-center rounded-full bg-muted">
         <CloudOff {...lucideProps("L")} />
       </div>
-      <Heading
-        styles={style({
-          font: "title-sm",
-          margin: 0,
-        })}
-      >
-        {title}
-      </Heading>
-      <Text
-        styles={style({
-          font: "body-sm",
-          color: "neutral-subdued",
-          maxWidth: 400,
-        })}
-      >
-        {description}
-      </Text>
-      {action ? <div className={style({ marginTop: 8 })}>{action}</div> : null}
+      <h2 className="m-0 text-sm font-semibold">{title}</h2>
+      <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
+      {action ? <div className="mt-1">{action}</div> : null}
     </div>
   );
 }
-
-const metricTile = style({
-  position: "relative",
-  overflow: "hidden",
-  backgroundColor: "layer-1",
-  borderRadius: "xl",
-  paddingX: 20,
-  paddingY: 20,
-  width: "full",
-  textAlign: "start",
-  borderWidth: 0,
-  borderStyle: "none",
-  outlineStyle: "none",
-  cursor: "pointer",
-});
-
-const metricTileStatic = style({
-  position: "relative",
-  overflow: "hidden",
-  backgroundColor: "layer-1",
-  borderRadius: "xl",
-  paddingX: 20,
-  paddingY: 20,
-  width: "full",
-  textAlign: "start",
-  borderWidth: 0,
-  borderStyle: "none",
-  outlineStyle: "none",
-});
 
 function MetricTileBody({
   label,
@@ -175,36 +76,9 @@ function MetricTileBody({
 }) {
   return (
     <>
-      <Text
-        styles={style({
-          font: "detail-sm",
-          color: "neutral-subdued",
-          display: "block",
-        })}
-      >
-        {label}
-      </Text>
-      <Text
-        styles={style({
-          font: "heading-xl",
-          display: "block",
-          marginTop: 8,
-        })}
-      >
-        {value}
-      </Text>
-      {hint ? (
-        <Text
-          styles={style({
-            font: "body-xs",
-            color: "neutral-subdued",
-            display: "block",
-            marginTop: 4,
-          })}
-        >
-          {hint}
-        </Text>
-      ) : null}
+      <span className="block text-xs text-muted-foreground">{label}</span>
+      <span className="mt-2 block text-3xl font-semibold tracking-tight">{value}</span>
+      {hint ? <span className="mt-1 block text-xs text-muted-foreground">{hint}</span> : null}
     </>
   );
 }
@@ -222,14 +96,15 @@ export function MetricTile({
   tip?: string;
   onClick?: () => void;
 }) {
-  // Never disable tipped tiles — disabled controls cannot host Spectrum tooltips.
   const tile = (
     <button
       type="button"
       aria-label={tip || label}
       onClick={onClick}
-      className={["dh-metric-tile", onClick ? metricTile : metricTileStatic].join(" ")}
-      style={onClick ? undefined : { cursor: "default" }}
+      className={cn(
+        "dh-metric-tile relative w-full overflow-hidden rounded-2xl bg-card px-5 py-5 text-start",
+        onClick ? "cursor-pointer" : "cursor-default",
+      )}
     >
       <MetricTileBody label={label} value={value} hint={hint} />
     </button>
@@ -238,9 +113,9 @@ export function MetricTile({
   if (!tip) return tile;
 
   return (
-    <TooltipTrigger>
-      {tile}
-      <Tooltip>{tip}</Tooltip>
-    </TooltipTrigger>
+    <Tooltip>
+      <TooltipTrigger render={tile} />
+      <TooltipContent>{tip}</TooltipContent>
+    </Tooltip>
   );
 }

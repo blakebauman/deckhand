@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { Picker, PickerItem } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { HelpHint } from "@/components/HelpHint";
 import { toast } from "@/components/Toaster";
 import { useUIStore } from "@/stores/uiStore";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function K8sChrome({ children }: { children: React.ReactNode }) {
   const namespace = useUIStore((s) => s.namespace);
@@ -13,32 +12,12 @@ export function K8sChrome({ children }: { children: React.ReactNode }) {
   const namespaces = useQuery({ queryKey: ["namespaces"], queryFn: api.namespaces });
 
   return (
-    <div
-      className={style({
-        display: "flex",
-        flexDirection: "column",
-        height: "full",
-        minHeight: 0,
-      })}
-    >
-      <div
-        className={style({
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 12,
-          flexShrink: 0,
-        })}
-      >
-        <Picker
-          aria-label="Kubernetes context"
-          size="S"
-          placeholder="Context"
-          styles={style({ minWidth: 160, maxWidth: 256 })}
-          value={contexts.data?.current ?? null}
-          onChange={(key) => {
-            const v = String(key);
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-3 flex shrink-0 flex-wrap items-center gap-3">
+        <Select
+          value={contexts.data?.current ?? undefined}
+          onValueChange={(v) => {
+            if (!v) return;
             void api
               .useContext(v)
               .then(() => {
@@ -48,29 +27,32 @@ export function K8sChrome({ children }: { children: React.ReactNode }) {
               .catch((e: any) => toast.error("Context switch failed", { description: e?.message }));
           }}
         >
-          {(contexts.data?.contexts || []).map((c: any) => (
-            <PickerItem key={c.name} id={c.name}>
-              {c.name}
-            </PickerItem>
-          ))}
-        </Picker>
-        <Picker
-          aria-label="Kubernetes namespace"
-          size="S"
-          placeholder="Namespace"
-          styles={style({ minWidth: 128, maxWidth: 192 })}
-          value={namespace}
-          onChange={(key) => setNamespace(String(key))}
-        >
-          {(namespaces.data || ["default"]).map((ns) => (
-            <PickerItem key={ns} id={ns}>
-              {ns}
-            </PickerItem>
-          ))}
-        </Picker>
+          <SelectTrigger aria-label="Kubernetes context" className="min-w-[160px] max-w-[256px]">
+            <SelectValue placeholder="Context" />
+          </SelectTrigger>
+          <SelectContent>
+            {(contexts.data?.contexts || []).map((c: any) => (
+              <SelectItem key={c.name} value={c.name}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={namespace} onValueChange={(key) => key && setNamespace(key)}>
+          <SelectTrigger aria-label="Kubernetes namespace" className="min-w-[128px] max-w-[192px]">
+            <SelectValue placeholder="Namespace" />
+          </SelectTrigger>
+          <SelectContent>
+            {(namespaces.data || ["default"]).map((ns) => (
+              <SelectItem key={ns} value={ns}>
+                {ns}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <HelpHint label="Context and namespace apply to every Kubernetes view in this mode" />
       </div>
-      <div className={style({ flexGrow: 1, minHeight: 0, minWidth: 0 })}>{children}</div>
+      <div className="min-h-0 min-w-0 flex-1">{children}</div>
     </div>
   );
 }

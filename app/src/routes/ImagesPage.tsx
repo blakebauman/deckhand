@@ -1,13 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { api, type ImageScanResult, type VolumeFileEntry } from "@/lib/api";
-import {
-  ActionMenu,
-  Button,
-  MenuItem,
-  MenuSection,
-  Text,
-} from "@react-spectrum/s2";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
 import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane";
@@ -15,15 +8,18 @@ import { GlassSheet, TerminalBlock } from "@/components/GlassSheet";
 import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
-import { Field } from "@/components/spectrum/Field";
-import { RowMenu } from "@/components/spectrum/RowMenu";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
-import { Tip } from "@/components/spectrum/Tip";
+import { Field } from "@/components/Field";
+import { RowMenu } from "@/components/RowMenu";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Tip } from "@/components/Tip";
 import { formatBytes, shortId } from "@/lib/utils";
 import { useUIStore } from "@/stores/uiStore";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 
 import { copyText } from "@/routes/shared";
+import { MoreActionsMenu } from "@/components/MoreActionsMenu";
+import { Button } from "@/components/ui/button";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+
 
 function imageTitle(img: { Id?: string; RepoTags?: string[] | null; RepoDigests?: string[] | null }) {
   if (img.RepoTags?.[0]) return img.RepoTags[0];
@@ -157,7 +153,7 @@ export function ImagesPage() {
   };
 
   return (
-    <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
+    <div className="flex h-full min-h-0 w-full min-w-0 gap-5">
       <ListPane
         title="Images"
         loading={list.isLoading}
@@ -167,7 +163,7 @@ export function ImagesPage() {
             description={q ? "Try another tag or ID." : "Pull a tag to get started on this engine."}
             action={
               q ? undefined : (
-                <Button size="S" onPress={() => setPullOpen(true)}>
+                <Button size="sm" onClick={() => setPullOpen(true)}>
                   Pull image
                 </Button>
               )
@@ -176,14 +172,14 @@ export function ImagesPage() {
         }
         search={{ value: q, onChange: setQ, placeholder: "Search images" }}
         actions={
-          <div className={style({ display: "flex", alignItems: "center", gap: 8 })} data-no-drag>
+          <div className="flex items-center gap-2" data-no-drag>
             <Tip label="Remove unused (dangling) images from the local engine">
-              <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setConfirmPrune(true)}>
+              <Button size="sm" variant="secondary" onClick={() => setConfirmPrune(true)}>
                 Prune
               </Button>
             </Tip>
             <Tip label="Pull an image from a registry">
-              <Button size="S" onPress={() => setPullOpen(true)}>
+              <Button size="sm" onClick={() => setPullOpen(true)}>
                 Pull
               </Button>
             </Tip>
@@ -218,17 +214,12 @@ export function ImagesPage() {
                   destructive: true,
                 },
               ]}
-              suffix={
-                untagged ? <StatusBadge tone="muted">dangling</StatusBadge> : null
-              }
+              suffix={untagged ? <StatusBadge tone="muted">dangling</StatusBadge> : null}
             >
-              <div
-                className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}
-                title={name}
-              >
+              <div className="min-w-0 truncate text-sm font-medium" title={name}>
                 {name}
               </div>
-              <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+              <div className="min-w-0 truncate text-xs text-muted-foreground">
                 {formatBytes(img.Size)}
                 {img.Id ? ` · ${imageShortId(img.Id)}` : ""}
               </div>
@@ -244,7 +235,7 @@ export function ImagesPage() {
             title="Select an image"
             description="Inspect tags and size, browse layers, scan vulns — or pull a new tag."
             action={
-              <Button size="S" onPress={() => setPullOpen(true)}>
+              <Button size="sm" onClick={() => setPullOpen(true)}>
                 Pull image
               </Button>
             }
@@ -252,76 +243,49 @@ export function ImagesPage() {
         }
       >
         {selectedImg ? (
-          <div className={style({ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 8 })}>
-            <div
-              className={style({
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 16,
-                minWidth: 0,
-              })}
-            >
-              <div className={style({ minWidth: 0, flexGrow: 1, display: "flex", flexDirection: "column", gap: 4 })}>
-                <div className={style({ display: "flex", alignItems: "center", gap: 8, minWidth: 0 })}>
+          <div className="flex flex-col gap-4 pb-2">
+            <div className="flex min-w-0 items-center justify-between gap-4">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <div className="flex min-w-0 items-center gap-2">
                   <DetailHeading>{title}</DetailHeading>
                   {dangling ? <StatusBadge tone="muted">dangling</StatusBadge> : null}
                 </div>
-                <div className={style({ display: "flex", alignItems: "center", gap: 8, minWidth: 0 })}>
-                  <div
-                    className={style({
-                      display: "inline-flex",
-                      flexShrink: 0,
-                      alignItems: "center",
-                      gap: 2,
-                    })}
-                  >
-                    <span className={style({ font: "code-xs", color: "neutral-subdued" })}>
+                <div className="flex min-w-0 items-center gap-2">
+                  <div className="inline-flex shrink-0 items-center gap-1">
+                    <span className="font-mono text-xs text-muted-foreground">
                       {imageShortId(selectedImg.Id)}
                     </span>
                     <CopyButton value={selectedImg.Id} label="Copy ID" iconOnly />
                   </div>
-                  <span className={style({ font: "code-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+                  <span className="min-w-0 truncate font-mono text-xs text-muted-foreground">
                     {formatBytes(selectedImg.Size)}
                     {extraTags.length ? ` · +${extraTags.length} tag${extraTags.length === 1 ? "" : "s"}` : ""}
                   </span>
                 </div>
               </div>
-              <div className={style({ display: "flex", flexShrink: 0, alignItems: "center", gap: 8 })}>
+              <div className="flex shrink-0 items-center gap-2">
                 {selectedImg.RepoTags?.[0] ? (
-                  <Button size="S" variant="accent" onPress={() => openRunSheet(selectedImg.RepoTags![0])}>
+                  <Button size="sm" variant="default" onClick={() => openRunSheet(selectedImg.RepoTags![0])}>
                     Run
                   </Button>
                 ) : null}
-                <ActionMenu aria-label="More image actions" isQuiet align="end" size="S">
-                  <MenuSection>
-                    <MenuItem
-                      id="browse"
-                      textValue="Browse files"
-                      onAction={() => {
-                        setBrowsing(true);
-                        setFilePath("");
-                      }}
-                    >
-                      <Text slot="label">Browse files</Text>
-                    </MenuItem>
-                    <MenuItem
-                      id="scan"
-                      textValue="Scan vulnerabilities"
-                      isDisabled={scanning}
-                      onAction={() => void runScan()}
-                    >
-                      <Text slot="label">{scanning ? "Scanning…" : "Scan vulns"}</Text>
-                    </MenuItem>
-                  </MenuSection>
-                  <MenuSection>
-                    <MenuItem id="remove" textValue="Remove" onAction={() => setConfirmRemove(true)}>
-                      <Text slot="label" styles={style({ color: "negative" })}>
-                        Remove…
-                      </Text>
-                    </MenuItem>
-                  </MenuSection>
-                </ActionMenu>
+                <MoreActionsMenu label="More image actions">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setBrowsing(true);
+                      setFilePath("");
+                    }}
+                  >
+                    Browse files
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled={scanning} onClick={() => void runScan()}>
+                    {scanning ? "Scanning…" : "Scan vulns"}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive" onClick={() => setConfirmRemove(true)}>
+                    Remove…
+                  </DropdownMenuItem>
+                </MoreActionsMenu>
               </div>
             </div>
 
@@ -346,40 +310,31 @@ export function ImagesPage() {
             />
 
             {scan ? (
-              <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                <div className={style({ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 })}>
-                  <div className={style({ font: "title-sm" })}>Vulnerability scan</div>
-                  <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between gap-2">
+                  <div className="text-sm font-semibold">Vulnerability scan</div>
+                  <div className="text-muted-foreground text-xs">
                     {scan.tool || "scanner"} · C{scan.critical} H{scan.high} M{scan.medium} L{scan.low}
                   </div>
                 </div>
                 {scan.error ? (
-                  <div className={style({ font: "body-sm", color: "neutral-subdued" })}>{scan.error}</div>
+                  <div className="text-muted-foreground text-sm">{scan.error}</div>
                 ) : null}
                 {(scan.findings || []).length === 0 && scan.ok ? (
-                  <div className={style({ font: "body-sm", color: "neutral-subdued" })}>No findings reported.</div>
+                  <div className="text-muted-foreground text-sm">No findings reported.</div>
                 ) : (
-                  <div className={style({ display: "flex", flexDirection: "column", gap: 4 })}>
+                  <div className="flex flex-col gap-1">
                     {(scan.findings || []).slice(0, 12).map((f) => (
                       <div
                         key={`${f.id}-${f.package}`}
-                        className={style({
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          paddingX: 12,
-                          paddingY: 8,
-                          borderRadius: "lg",
-                          backgroundColor: "gray-100",
-                          minWidth: 0,
-                        })}
+                        className="flex items-center gap-2 px-3 py-2 min-w-0 bg-muted rounded-lg"
                       >
                         <StatusBadge
                           tone={f.severity === "CRITICAL" || f.severity === "HIGH" ? "destructive" : "muted"}
                         >
                           {f.severity}
                         </StatusBadge>
-                        <span className={style({ font: "code-xs", truncate: true, minWidth: 0 })}>
+                        <span className="min-w-0 font-mono text-xs truncate">
                           {f.id}
                           {f.package ? ` · ${f.package}` : ""}
                         </span>
@@ -391,16 +346,15 @@ export function ImagesPage() {
             ) : null}
 
             {browsing ? (
-              <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
-                  <div className={style({ font: "title-sm", flexGrow: 1 })}>Files</div>
-                  <div className={style({ font: "code-xs", color: "neutral-subdued" })}>/{filePath || ""}</div>
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex-1 text-sm font-semibold">Files</div>
+                  <div className="font-mono text-xs text-muted-foreground">/{filePath || ""}</div>
                   <Button
-                    size="S"
+                    size="sm"
                     variant="secondary"
-                    fillStyle="outline"
-                    isDisabled={!filePath}
-                    onPress={() => {
+                    disabled={!filePath}
+                    onClick={() => {
                       const parts = filePath.replace(/\/+$/, "").split("/");
                       parts.pop();
                       setFilePath(parts.join("/"));
@@ -408,30 +362,23 @@ export function ImagesPage() {
                   >
                     Up
                   </Button>
-                  <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setBrowsing(false)}>
+                  <Button size="sm" variant="secondary" onClick={() => setBrowsing(false)}>
                     Close
                   </Button>
                 </div>
                 <div
-                  className={style({
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                    backgroundColor: "layer-1",
-                    borderRadius: "xl",
-                    padding: 8,
-                  })}
+                  className="flex flex-col gap-1 p-2 bg-card rounded-2xl"
                 >
                   {files.isLoading ? (
-                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0, padding: 8 })}>
+                    <p className="p-2 m-0 text-muted-foreground text-xs">
                       Loading…
                     </p>
                   ) : files.isError ? (
-                    <p className={style({ font: "body-xs", color: "negative", margin: 0, padding: 8 })}>
+                    <p className="p-2 m-0 text-destructive text-xs">
                       {(files.error as Error)?.message || "Failed to list files"}
                     </p>
                   ) : (files.data || []).length === 0 ? (
-                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0, padding: 8 })}>
+                    <p className="p-2 m-0 text-muted-foreground text-xs">
                       Empty directory
                     </p>
                   ) : (
@@ -443,30 +390,13 @@ export function ImagesPage() {
                         onClick={() => {
                           if (f.dir) setFilePath(f.path);
                         }}
-                        className={style({
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 8,
-                          paddingX: 12,
-                          paddingY: 8,
-                          borderRadius: "lg",
-                          borderStyle: "none",
-                          backgroundColor: {
-                            default: "transparent",
-                            ":hover": "gray-100",
-                          },
-                          cursor: "pointer",
-                          textAlign: "start",
-                          color: "neutral",
-                          width: "full",
-                        })}
+                        className="flex items-center justify-between gap-2 px-3 py-2 w-full bg-transparent hover:bg-muted text-foreground rounded-lg border-0 cursor-pointer text-start"
                       >
-                        <span className={style({ font: "code-xs", truncate: true, minWidth: 0 })}>
+                        <span className="min-w-0 font-mono text-xs truncate">
                           {f.name}
                           {f.dir ? "/" : ""}
                         </span>
-                        <span className={style({ font: "body-xs", color: "neutral-subdued", flexShrink: 0 })}>
+                        <span className="shrink-0 text-muted-foreground text-xs">
                           {f.dir ? "dir" : formatBytes(f.size)}
                         </span>
                       </button>
@@ -487,14 +417,13 @@ export function ImagesPage() {
         size="md"
         footer={
           <>
-            <Button variant="secondary" onPress={() => setPullOpen(false)}>
+            <Button variant="secondary" onClick={() => setPullOpen(false)}>
               Cancel
             </Button>
             <Button
-              variant="accent"
-              isDisabled={!ref.trim() || pulling}
-              isPending={pulling}
-              onPress={() => void runPull()}
+              variant="default"
+              disabled={!ref.trim() || pulling}
+              onClick={() => void runPull()}
             >
               Pull
             </Button>
@@ -511,7 +440,7 @@ export function ImagesPage() {
         description="Live progress from the Docker engine"
         mono
         footer={
-          <Button variant="secondary" fillStyle="outline" onPress={() => setSheetOpen(false)}>
+          <Button variant="secondary" onClick={() => setSheetOpen(false)}>
             Close
           </Button>
         }

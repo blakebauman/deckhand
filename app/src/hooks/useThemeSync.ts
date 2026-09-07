@@ -1,36 +1,32 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useUIStore, type ThemeMode } from "@/stores/uiStore";
 
-type ColorScheme = "light" | "dark";
-
-function resolveScheme(theme: ThemeMode): ColorScheme | undefined {
-  if (theme === "system") return undefined;
-  return theme;
+function resolveDark(theme: ThemeMode): boolean {
+  if (theme === "dark") return true;
+  if (theme === "light") return false;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
-/** Syncs html data-color-scheme for page.css and returns Provider colorScheme. */
-export function useThemeSync(): ColorScheme | undefined {
+/** Syncs `.dark` / `data-color-scheme` on <html> for Tailwind dark mode. */
+export function useThemeSync() {
   const theme = useUIStore((s) => s.theme);
-  const colorScheme = useMemo(() => resolveScheme(theme), [theme]);
 
   useEffect(() => {
     const root = document.documentElement;
 
-    const apply = (scheme: "light" | "dark" | null) => {
-      if (scheme) {
-        root.dataset.colorScheme = scheme;
-      } else {
-        delete root.dataset.colorScheme;
-      }
-      root.classList.remove("dark", "light");
+    const apply = () => {
+      const dark = resolveDark(theme);
+      root.classList.toggle("dark", dark);
+      root.dataset.colorScheme = dark ? "dark" : "light";
     };
 
-    if (theme === "system") {
-      apply(null);
-      return;
-    }
-    apply(theme);
-  }, [theme]);
+    apply();
 
-  return colorScheme;
+    if (theme !== "system") return;
+
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => apply();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [theme]);
 }

@@ -1,6 +1,4 @@
 import type { ReactNode } from "react";
-import { Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { CopyButton } from "@/components/CopyButton";
 
 /** Structured code/JSON panel with a quiet toolbar (inspect, VM logs, etc.). */
@@ -23,38 +21,16 @@ export function CodeBlock({
     <div
       className={[
         "dh-code-block",
-        style({
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          borderRadius: "xl",
-          borderWidth: 1,
-          borderStyle: "solid",
-          borderColor: "gray-300",
-          backgroundColor: "layer-1",
-          minWidth: 0,
-        }),
+        "flex flex-col min-w-0 overflow-hidden bg-card rounded-2xl min-w-0",
       ].join(" ")}
     >
       <div
-        className={style({
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          flexShrink: 0,
-          paddingX: 12,
-          paddingY: 8,
-          borderBottomWidth: 1,
-          borderStyle: "solid",
-          borderColor: "gray-200",
-          backgroundColor: "layer-2",
-        })}
+        className="flex items-center justify-between shrink-0 gap-2 px-3 py-2 bg-muted"
       >
-        <div className={style({ display: "flex", minWidth: 0, alignItems: "center", gap: 8 })}>
-          <Text styles={style({ font: "ui-sm", fontWeight: "medium" })}>{title}</Text>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-medium">{title}</span>
           {meta ? (
-            <Text styles={style({ font: "detail-sm", color: "neutral-subdued" })}>{meta}</Text>
+            <span className="text-muted-foreground text-xs">{meta}</span>
           ) : null}
         </div>
         <CopyButton value={hasContent ? value : ""} label="Copy" iconOnly />
@@ -63,15 +39,7 @@ export function CodeBlock({
         className={[
           "dh-code-block__body",
           hasContent ? "" : "is-muted",
-          style({
-            margin: 0,
-            paddingX: 16,
-            paddingY: 16,
-            font: "code-xs",
-            overflow: "auto",
-            whiteSpace: "pre-wrap",
-            overflowWrap: "anywhere",
-          }),
+          "px-4 py-4 m-0 overflow-auto font-mono text-xs",
         ]
           .filter(Boolean)
           .join(" ")}

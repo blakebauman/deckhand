@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
   <defs>
     <linearGradient id="tile" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FF2B2B"/>
-      <stop offset="48%" stop-color="#FF0000"/>
-      <stop offset="100%" stop-color="#C20000"/>
+      <stop offset="0%" stop-color="#BBA4FB"/>
+      <stop offset="48%" stop-color="#A88BFA"/>
+      <stop offset="100%" stop-color="#6C31E3"/>
     </linearGradient>
     <linearGradient id="sheen" x1="16" y1="0" x2="16" y2="18" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>

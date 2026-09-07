@@ -1,7 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Button, NumberField, Tabs, TabList, Tab, TabPanel } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api, type MicroVM } from "@/lib/api";
 import { CodeBlock } from "@/components/CodeBlock";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -11,12 +9,16 @@ import { GlassSheet } from "@/components/GlassSheet";
 import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
-import { Field } from "@/components/spectrum/Field";
-import { RowMenu } from "@/components/spectrum/RowMenu";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
-import { Tip } from "@/components/spectrum/Tip";
+import { RowMenu } from "@/components/RowMenu";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Tip } from "@/components/Tip";
 import { shortId } from "@/lib/utils";
 import { copyText } from "@/routes/shared";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 function stateTone(state?: string): "success" | "muted" | "warn" | "destructive" | "accent" {
   switch ((state || "").toLowerCase()) {
@@ -163,7 +165,7 @@ export function MicroVMsPage() {
   const running = isRunning(row?.state);
 
   return (
-    <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
+    <div className="flex h-full min-h-0 w-full min-w-0 gap-5">
       <ListPane
         title="VMs"
         loading={list.isLoading}
@@ -177,7 +179,7 @@ export function MicroVMsPage() {
             }
             action={
               q ? undefined : (
-                <Button size="S" onPress={() => setCreateOpen(true)}>
+                <Button size="sm" onClick={() => setCreateOpen(true)}>
                   Create
                 </Button>
               )
@@ -187,7 +189,7 @@ export function MicroVMsPage() {
         search={{ value: q, onChange: setQ, placeholder: "Search VMs" }}
         actions={
           <Tip label="Create a Firecracker microVM">
-            <Button size="S" onPress={() => setCreateOpen(true)}>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
               Create
             </Button>
           </Tip>
@@ -201,10 +203,8 @@ export function MicroVMsPage() {
             items={rowItems(vm)}
             suffix={<StatusBadge tone={stateTone(vm.state)}>{vm.state || "—"}</StatusBadge>}
           >
-            <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
-              {vm.name}
-            </div>
-            <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+            <div className="min-w-0 truncate text-sm font-medium">{vm.name}</div>
+            <div className="min-w-0 truncate text-xs text-muted-foreground">
               {vm.vcpu} vCPU · {vm.memoryMb} MB
               {vm.id ? ` · ${shortId(vm.id)}` : ""}
             </div>
@@ -219,7 +219,7 @@ export function MicroVMsPage() {
             title="Select a microVM"
             description="Inspect kernel and rootfs, start or stop the VM, or read console logs."
             action={
-              <Button size="S" variant="secondary" onPress={() => setCreateOpen(true)}>
+              <Button size="sm" variant="secondary" onClick={() => setCreateOpen(true)}>
                 Create microVM
               </Button>
             }
@@ -227,52 +227,41 @@ export function MicroVMsPage() {
         }
       >
         {row ? (
-          <div className={style({ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 8 })}>
-            <div
-              className={style({
-                display: "flex",
-                flexWrap: "wrap",
-                alignItems: "start",
-                justifyContent: "space-between",
-                gap: 12,
-              })}
-            >
-              <div className={style({ minWidth: 0, flexGrow: 1, display: "flex", flexDirection: "column", gap: 8 })}>
-                <div className={style({ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" })}>
+          <div className="flex flex-col gap-4 pb-2">
+            <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <div className="flex flex-wrap items-center gap-2">
                   <DetailHeading>{row.name}</DetailHeading>
                   <StatusBadge tone={stateTone(row.state)}>{row.state || "—"}</StatusBadge>
                 </div>
-                <div className={style({ font: "code-xs", color: "neutral-subdued" })}>
+                <div className="font-mono text-xs text-muted-foreground">
                   {shortId(row.id)}
                   {` · ${row.vcpu} vCPU · ${row.memoryMb} MB`}
                 </div>
               </div>
-              <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
+              <div className="flex flex-wrap gap-2">
                 <Button
-                  size="S"
+                  size="sm"
                   variant="secondary"
-                  fillStyle="outline"
-                  isDisabled={busy || running}
-                  onPress={() => void act(() => api.startVM(row.id), "Started")}
+                  disabled={busy || running}
+                  onClick={() => void act(() => api.startVM(row.id), "Started")}
                 >
                   Start
                 </Button>
                 <Button
-                  size="S"
+                  size="sm"
                   variant="secondary"
-                  fillStyle="outline"
-                  isDisabled={busy || !running}
-                  onPress={() => void act(() => api.stopVM(row.id), "Stopped")}
+                  disabled={busy || !running}
+                  onClick={() => void act(() => api.stopVM(row.id), "Stopped")}
                 >
                   Stop
                 </Button>
                 <CopyButton value={row.id} label="Copy ID" />
                 <Button
-                  size="S"
-                  variant="negative"
-                  fillStyle="outline"
-                  isDisabled={busy}
-                  onPress={() => setConfirmDestroy(true)}
+                  size="sm"
+                  variant="destructive"
+                  disabled={busy}
+                  onClick={() => setConfirmDestroy(true)}
                 >
                   Destroy
                 </Button>
@@ -281,42 +270,34 @@ export function MicroVMsPage() {
 
             <Tabs
               aria-label="MicroVM detail"
-              selectedKey={tab}
-              onSelectionChange={(k) => setTab(k as "inspect" | "logs")}
+              value={tab}
+              onValueChange={(k) => setTab(k as "inspect" | "logs")}
             >
-              <TabList>
-                <Tab id="inspect">Inspect</Tab>
-                <Tab id="logs">Logs</Tab>
-              </TabList>
-              <TabPanel id="inspect">
-                <div className={style({ display: "flex", flexDirection: "column", gap: 16, paddingTop: 16 })}>
-                  <InspectFields
-                    rows={[
-                      { label: "State", value: row.state },
-                      { label: "vCPU", value: String(row.vcpu) },
-                      { label: "Memory", value: `${row.memoryMb} MB` },
-                      { label: "Kernel", value: row.kernel, mono: true, copy: row.kernel },
-                      { label: "Rootfs", value: row.rootfs, mono: true, copy: row.rootfs },
-                      { label: "ID", value: row.id, mono: true, copy: row.id },
-                    ]}
-                  />
-                </div>
-              </TabPanel>
-              <TabPanel id="logs">
-                <div className={style({ display: "flex", flexDirection: "column", gap: 12, paddingTop: 16 })}>
-                  <div className={style({ display: "flex", justifyContent: "end" })}>
-                    <Button
-                      size="S"
-                      variant="secondary"
-                      fillStyle="outline"
-                      isPending={logs.isFetching}
-                      onPress={() => void logs.refetch()}
-                    >
+              <TabsList>
+                <TabsTrigger value="inspect">Inspect</TabsTrigger>
+                <TabsTrigger value="logs">Logs</TabsTrigger>
+              </TabsList>
+              <TabsContent value="inspect" className="mt-3">
+                <InspectFields
+                  rows={[
+                    { label: "State", value: row.state },
+                    { label: "vCPU", value: String(row.vcpu) },
+                    { label: "Memory", value: `${row.memoryMb} MB` },
+                    { label: "Kernel", value: row.kernel, mono: true, copy: row.kernel },
+                    { label: "Rootfs", value: row.rootfs, mono: true, copy: row.rootfs },
+                    { label: "ID", value: row.id, mono: true, copy: row.id },
+                  ]}
+                />
+              </TabsContent>
+              <TabsContent value="logs" className="mt-3">
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-end">
+                    <Button size="sm" variant="secondary" onClick={() => void logs.refetch()}>
                       Refresh
                     </Button>
                   </div>
                   {logs.isError ? (
-                    <div className={style({ font: "body-sm", color: "neutral-subdued" })}>
+                    <div className="text-sm text-muted-foreground">
                       {(logs.error as Error)?.message || "Failed to load logs"}
                     </div>
                   ) : (
@@ -328,7 +309,7 @@ export function MicroVMsPage() {
                     />
                   )}
                 </div>
-              </TabPanel>
+              </TabsContent>
             </Tabs>
           </div>
         ) : null}
@@ -342,58 +323,68 @@ export function MicroVMsPage() {
         size="md"
         footer={
           <>
-            <Button variant="secondary" onPress={() => setCreateOpen(false)}>
+            <Button variant="secondary" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
             <Button
-              variant="accent"
-              isDisabled={!form.kernel.trim() || !form.rootfs.trim() || creating}
-              isPending={creating}
-              onPress={() => void createVM()}
+              variant="default"
+              disabled={!form.kernel.trim() || !form.rootfs.trim() || creating}
+              onClick={() => void createVM()}
             >
               Create
             </Button>
           </>
         }
       >
-        <div className={style({ display: "flex", flexDirection: "column", gap: 16 })}>
-          <Field
-            value={form.name}
-            onChange={(name) => setForm((f) => ({ ...f, name }))}
-            placeholder="name (optional)"
-            aria-label="VM name"
-          />
-          <Field
-            value={form.kernel}
-            onChange={(kernel) => setForm((f) => ({ ...f, kernel }))}
-            placeholder="/path/to/vmlinux"
-            aria-label="Kernel path"
-          />
-          <Field
-            value={form.rootfs}
-            onChange={(rootfs) => setForm((f) => ({ ...f, rootfs }))}
-            placeholder="/path/to/rootfs.ext4"
-            aria-label="Rootfs path"
-          />
-          <div
-            className={style({
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 12,
-            })}
-          >
-            <NumberField
-              label="vCPU"
-              value={form.vcpu}
-              onChange={(vcpu) => setForm((f) => ({ ...f, vcpu: vcpu || 1 }))}
-              minValue={1}
+        <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="vm-name">Name</Label>
+            <Input
+              id="vm-name"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="optional"
             />
-            <NumberField
-              label="Memory (MB)"
-              value={form.memoryMb}
-              onChange={(memoryMb) => setForm((f) => ({ ...f, memoryMb: memoryMb || 512 }))}
-              minValue={128}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="vm-kernel">Kernel</Label>
+            <Input
+              id="vm-kernel"
+              value={form.kernel}
+              onChange={(e) => setForm((f) => ({ ...f, kernel: e.target.value }))}
+              placeholder="/path/to/vmlinux"
             />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="vm-rootfs">Rootfs</Label>
+            <Input
+              id="vm-rootfs"
+              value={form.rootfs}
+              onChange={(e) => setForm((f) => ({ ...f, rootfs: e.target.value }))}
+              placeholder="/path/to/rootfs.ext4"
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="vm-vcpu">vCPU</Label>
+              <Input
+                id="vm-vcpu"
+                type="number"
+                min={1}
+                value={form.vcpu}
+                onChange={(e) => setForm((f) => ({ ...f, vcpu: Number(e.target.value) || 1 }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="vm-memory">Memory (MB)</Label>
+              <Input
+                id="vm-memory"
+                type="number"
+                min={128}
+                value={form.memoryMb}
+                onChange={(e) => setForm((f) => ({ ...f, memoryMb: Number(e.target.value) || 512 }))}
+              />
+            </div>
           </div>
         </div>
       </GlassSheet>

@@ -1,6 +1,4 @@
 import { useId, useMemo, useState, type PointerEvent } from "react";
-import { Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { useEasedNumber, useEasedSeries } from "@/hooks/useEasedSeries";
 
 const W = 280;
@@ -62,7 +60,7 @@ function monotonePath(pts: { x: number; y: number }[]): string {
 }
 
 /**
- * Lightweight live sparkline (no Vega). Spectrum color via style macro → currentColor.
+ * Lightweight live sparkline (no Vega). Series color via `currentColor` / tone.
  * Cheap enough to re-render on each Docker stats sample (~1 Hz).
  */
 export function LiveSparkline({
@@ -71,7 +69,7 @@ export function LiveSparkline({
   label = "Sample",
   height = 88,
   formatValue,
-  /** Spectrum style color token for the series */
+  /** Series tone — accent uses primary, neutral uses foreground. */
   tone = "neutral",
 }: {
   values: number[];
@@ -151,8 +149,8 @@ export function LiveSparkline({
     <div
       className={
         tone === "accent"
-          ? style({ position: "relative", width: "full", color: "accent" })
-          : style({ position: "relative", width: "full", color: "neutral" })
+          ? "relative w-full text-violet-500 dark:text-violet-300"
+          : "relative w-full text-foreground"
       }
       style={{ height }}
     >
@@ -161,7 +159,7 @@ export function LiveSparkline({
         width="100%"
         height="100%"
         preserveAspectRatio="none"
-        className={style({ overflow: "visible", display: "block" })}
+        className="block overflow-visible"
         onPointerMove={onMove}
         onPointerLeave={() => setHover(null)}
       >
@@ -189,7 +187,7 @@ export function LiveSparkline({
             cy={hover.y}
             r="3.5"
             fill="currentColor"
-            stroke="var(--spectrum-gray-50, #fff)"
+            stroke="var(--background)"
             strokeWidth="1.5"
             vectorEffect="non-scaling-stroke"
           />
@@ -197,33 +195,19 @@ export function LiveSparkline({
       </svg>
       {hover ? (
         <div
-          className={style({
-            position: "absolute",
-            top: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            paddingX: 8,
-            paddingY: 4,
-            borderRadius: "sm",
-            backgroundColor: "layer-2",
-            borderWidth: 1,
-            borderStyle: "solid",
-            borderColor: "gray-200",
-            pointerEvents: "none",
-          })}
+          className="pointer-events-none absolute top-0 flex flex-col gap-0.5 rounded-md bg-muted px-2 py-1"
           style={{
             left: `${Math.min(82, Math.max(0, (hover.x / W) * 100 - 8))}%`,
           }}
         >
-          <Text styles={style({ font: "detail-sm", color: "neutral-subdued" })}>
+          <span className="text-muted-foreground text-xs">
             {label} · {hover.i === n - 1 ? "now" : `−${n - 1 - hover.i}`}
-          </Text>
-          <Text styles={style({ font: "ui-sm", fontWeight: "medium" })}>
+          </span>
+          <span className="text-sm font-medium">
             {formatValue
               ? formatValue(hover.v)
               : `${hover.v.toFixed(unit === "%" ? 1 : 2)}${unit}`}
-          </Text>
+          </span>
         </div>
       ) : null}
     </div>

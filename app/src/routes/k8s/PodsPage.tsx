@@ -1,7 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ActionMenu, MenuItem, MenuSection, Tab, TabList, TabPanel, Tabs, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ConsolePanel } from "@/components/ConsolePanel";
@@ -10,11 +8,15 @@ import { DetailEmpty, DetailHeading, DetailPane } from "@/components/DetailPane"
 import { ExecTerminal } from "@/components/ExecTerminal";
 import { InspectFields } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
-import { RowMenu } from "@/components/spectrum/RowMenu";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
+import { RowMenu } from "@/components/RowMenu";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useUIStore } from "@/stores/uiStore";
 import { copyText } from "@/routes/shared";
 import { K8sChrome } from "@/routes/k8s/K8sChrome";
+import { MoreActionsMenu } from "@/components/MoreActionsMenu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 
 function phaseTone(phase?: string): "success" | "muted" | "destructive" {
   if (phase === "Running") return "success";
@@ -43,7 +45,7 @@ export function PodsPage() {
 
   return (
     <K8sChrome>
-      <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
+      <div className="flex h-full min-h-0 w-full min-w-0 gap-5">
         <ListPane
           title="Pods"
           loading={list.isLoading}
@@ -78,7 +80,7 @@ export function PodsPage() {
                 <StatusBadge tone={phaseTone(p.status?.phase)}>{p.status?.phase || "Unknown"}</StatusBadge>
               }
             >
-              <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+              <div className="min-w-0 text-sm font-medium truncate">
                 {p.metadata.name}
               </div>
             </RowMenu>
@@ -88,49 +90,45 @@ export function PodsPage() {
           selectionKey={selected}
           empty={<DetailEmpty title="Select a pod" description="Stream logs or exec into a pod in this namespace." />}
           header={
-            <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8 })}>
-              <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0, flexGrow: 1 })}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                 <DetailHeading>{selected}</DetailHeading>
                 <StatusBadge tone={phaseTone(phase)}>{phase}</StatusBadge>
                 <CopyButton value={selected || ""} label="Copy name" iconOnly />
               </div>
-              <ActionMenu aria-label="More pod actions" isQuiet align="end" size="S">
-                <MenuSection>
-                  <MenuItem id="delete" textValue="Delete" onAction={() => setConfirmDelete(true)}>
-                    <Text slot="label" styles={style({ color: "negative" })}>
-                      Delete…
-                    </Text>
-                  </MenuItem>
-                </MenuSection>
-              </ActionMenu>
+              <MoreActionsMenu label="More pod actions">
+                <DropdownMenuItem variant="destructive" onClick={() => setConfirmDelete(true)}>
+                  Delete…
+                </DropdownMenuItem>
+              </MoreActionsMenu>
             </div>
           }
         >
           <Tabs
             aria-label="Pod details"
-            selectedKey={podTab}
-            onSelectionChange={(key) => setPodTab(key as "logs" | "exec" | "inspect")}
+            value={podTab}
+            onValueChange={(key) => setPodTab(key as "logs" | "exec" | "inspect")}
           >
-            <TabList>
-              <Tab id="logs">Logs</Tab>
-              <Tab id="exec">Exec</Tab>
-              <Tab id="inspect">Inspect</Tab>
-            </TabList>
-            <TabPanel id="logs" styles={style({ marginTop: 12 })}>
+            <TabsList>
+              <TabsTrigger value="logs">Logs</TabsTrigger>
+              <TabsTrigger value="exec">Exec</TabsTrigger>
+              <TabsTrigger value="inspect">Inspect</TabsTrigger>
+            </TabsList>
+            <TabsContent value="logs" className="mt-3">
               <ConsolePanel
                 key={`${namespace}-${selected}-logs`}
                 url={api.podLogsUrl(namespace, selected!, true)}
                 title="Pod logs"
               />
-            </TabPanel>
-            <TabPanel id="exec" styles={style({ marginTop: 12 })}>
+            </TabsContent>
+            <TabsContent value="exec" className="mt-3">
               <ExecTerminal
                 key={`${namespace}-${selected}`}
                 wsUrl={api.podExecWsUrl(namespace, selected!)}
                 title="Pod shell"
               />
-            </TabPanel>
-            <TabPanel id="inspect" styles={style({ marginTop: 12 })}>
+            </TabsContent>
+            <TabsContent value="inspect" className="mt-3">
               {selectedPod ? (
                 <InspectFields
                   rows={[
@@ -156,7 +154,7 @@ export function PodsPage() {
                   ]}
                 />
               ) : null}
-            </TabPanel>
+            </TabsContent>
           </Tabs>
         </DetailPane>
       </div>

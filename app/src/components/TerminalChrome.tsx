@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 
 /** Shared dark console shell for logs, exec, and sheet output. */
 export function TerminalFrame({
@@ -17,34 +16,12 @@ export function TerminalFrame({
       className={[
         "dh-terminal",
         tall ? "dh-terminal--tall" : "",
-        style({
-          display: "flex",
-          flexDirection: "column",
-          flexGrow: 1,
-          overflow: "hidden",
-          borderRadius: "xl",
-          borderWidth: 1,
-          borderStyle: "solid",
-        }),
+        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl",
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      <div
-        className={[
-          "dh-terminal__toolbar",
-          style({
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-            flexShrink: 0,
-            paddingX: 12,
-            paddingY: 8,
-          }),
-        ].join(" ")}
-      >
+      <div className="dh-terminal__toolbar flex shrink-0 flex-wrap items-center justify-between gap-2 px-3 py-2">
         {toolbar}
       </div>
       {children}
@@ -53,25 +30,9 @@ export function TerminalFrame({
 }
 
 export function TerminalToolbarStart({ children }: { children: ReactNode }) {
-  return (
-    <div className={style({ display: "flex", minWidth: 0, alignItems: "center", gap: 8 })}>
-      {children}
-    </div>
-  );
+  return <div className="flex min-w-0 items-center gap-2">{children}</div>;
 }
 
 export function TerminalToolbarEnd({ children }: { children: ReactNode }) {
-  return (
-    <div
-      className={style({
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: "center",
-        gap: 4,
-        marginStart: "auto",
-      })}
-    >
-      {children}
-    </div>
-  );
+  return <div className="ms-auto flex flex-wrap items-center gap-1">{children}</div>;
 }

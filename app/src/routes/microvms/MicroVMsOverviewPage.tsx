@@ -1,11 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Button, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { EmptyState, MetricTile, PageShell } from "@/components/PageShell";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { HelpHint } from "@/components/HelpHint";
+import { Button } from "@/components/ui/button";
 
 export function MicroVMsOverviewPage() {
   const navigate = useNavigate();
@@ -26,7 +25,7 @@ export function MicroVMsOverviewPage() {
       description="Firecracker microVMs when KVM and the firecracker binary are available on Linux."
       actions={
         available ? (
-          <Button size="S" onPress={() => navigate({ to: "/microvms/vms" })}>
+          <Button size="sm" onClick={() => navigate({ to: "/microvms/vms" })}>
             Open VMs
           </Button>
         ) : null
@@ -38,26 +37,16 @@ export function MicroVMsOverviewPage() {
           description="Needs Linux with KVM and a firecracker binary on PATH. This mode stays hidden on macOS."
         />
       ) : (
-        <div className={style({ display: "flex", flexDirection: "column", gap: 24 })}>
-          <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-wrap items-center gap-2">
             <StatusBadge tone="success">Firecracker ready</StatusBadge>
-            <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>
+            <span className="text-xs text-muted-foreground">
               Create and manage microVMs from the VMs tab
-            </Text>
+            </span>
             <HelpHint label="Kernel and rootfs paths must exist on the host where the sidecar runs." />
           </div>
 
-          <div
-            className={style({
-              display: "grid",
-              gridTemplateColumns: {
-                default: "1fr",
-                sm: "1fr 1fr",
-                md: "1fr 1fr 1fr",
-              },
-              gap: 12,
-            })}
-          >
+          <div className="grid gap-3 sm:grid-cols-3">
             <MetricTile
               label="VMs"
               value={list.length}
@@ -86,7 +75,7 @@ export function MicroVMsOverviewPage() {
               title="No microVMs yet"
               description="Create one with a kernel and rootfs path — useful for isolated workloads on Linux hosts with KVM."
               action={
-                <Button size="S" onPress={() => navigate({ to: "/microvms/vms" })}>
+                <Button size="sm" onClick={() => navigate({ to: "/microvms/vms" })}>
                   Create microVM
                 </Button>
               }

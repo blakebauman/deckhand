@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { ActionButton, Text, Tooltip, TooltipTrigger } from "@react-spectrum/s2";
 import { Check, Copy } from "lucide-react";
 import { lucideProps } from "@/components/Icon";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 async function writeClipboard(text: string) {
   if (navigator.clipboard?.writeText) {
@@ -47,30 +49,30 @@ export function CopyButton({
   };
 
   const button = (
-    <ActionButton
+    <Button
       aria-label={copied ? copiedLabel : label}
-      isQuiet
-      isDisabled={!value}
-      staticColor={dark ? "white" : undefined}
-      onPress={() => void onCopy()}
+      variant="ghost"
+      size={iconOnly ? "icon-sm" : "sm"}
+      disabled={!value}
+      onClick={() => void onCopy()}
       data-no-drag
+      className={cn(dark && "text-white hover:bg-white/10 hover:text-white")}
     >
       {copied ? (
-        <Check {...lucideProps("S", { color: "var(--spectrum-positive-visual-color, #0e6e3c)" })} />
+        <Check {...lucideProps("S", { color: "#0e6e3c" })} />
       ) : (
         <Copy {...lucideProps("S")} />
       )}
-      {!iconOnly ? <Text>{copied ? copiedLabel : label}</Text> : null}
-    </ActionButton>
+      {!iconOnly ? <span>{copied ? copiedLabel : label}</span> : null}
+    </Button>
   );
 
-  // Disabled controls cannot host tooltips — omit tip when there is nothing to copy.
   if (!value) return button;
 
   return (
-    <TooltipTrigger delay={400} placement="bottom">
-      {button}
-      <Tooltip>{copied ? copiedLabel : label}</Tooltip>
-    </TooltipTrigger>
+    <Tooltip>
+      <TooltipTrigger render={button} />
+      <TooltipContent side="bottom">{copied ? copiedLabel : label}</TooltipContent>
+    </Tooltip>
   );
 }

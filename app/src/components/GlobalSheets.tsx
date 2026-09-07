@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@react-spectrum/s2";
 import { CommandPaletteHost } from "@/components/CommandPalette";
 import { DiskUsagePanel } from "@/components/DiskUsagePanel";
 import { GlassSheet } from "@/components/GlassSheet";
 import { RunContainerSheet } from "@/components/RunContainerSheet";
 import { useUIStore } from "@/stores/uiStore";
+import { Button } from "@/components/ui/button";
 
 /** App-wide run/prune sheets + ⌘K palette. */
 export function GlobalSheets() {
@@ -53,7 +53,7 @@ export function GlobalSheets() {
         description="Reclaim unused Docker storage"
         size="lg"
         footer={
-          <Button variant="secondary" onPress={() => closePrune()}>
+          <Button variant="secondary" onClick={() => closePrune()}>
             Close
           </Button>
         }

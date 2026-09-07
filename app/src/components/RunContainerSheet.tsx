@@ -1,22 +1,19 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Button,
-  Checkbox,
-  Divider,
-  Picker,
-  PickerItem,
-  Switch,
-  Text,
-  TextArea,
-  TextField,
-} from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api, type MountSpec, type RunContainerBody } from "@/lib/api";
 import { GlassSheet } from "@/components/GlassSheet";
 import { HelpHint } from "@/components/HelpHint";
 import { toast } from "@/components/Toaster";
 import { useUIStore } from "@/stores/uiStore";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+
 
 const emptyForm = {
   image: "nginx:alpine",
@@ -162,178 +159,165 @@ export function RunContainerSheet({
       size="lg"
       footer={
         <>
-          <Button variant="secondary" onPress={() => onOpenChange(false)} isDisabled={busy}>
+          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancel
           </Button>
           <Button
-            variant="accent"
-            onPress={() => void submit()}
-            isDisabled={busy || !form.image.trim()}
-            isPending={busy}
+            variant="default"
+            onClick={() => void submit()}
+            disabled={busy || !form.image.trim()}
           >
             {form.start ? "Run" : "Create"}
           </Button>
         </>
       }
     >
-      <div className={style({ display: "flex", flexDirection: "column", gap: 16 })}>
-        <TextField
-          label="Image"
-          contextualHelp={<HelpHint label="Registry reference, e.g. nginx:alpine or ghcr.io/org/app:tag" />}
-          value={form.image}
-          onChange={(image) => setForm({ ...form, image })}
-          placeholder="image:tag"
-          autoFocus
-        />
-        <div
-          className={style({
-            display: "grid",
-            gridTemplateColumns: {
-              default: "1fr",
-              sm: "1fr 1fr",
-            },
-            gap: 16,
-          })}
-        >
-          <TextField
-            label="Name"
-            contextualHelp={<HelpHint label="Optional container name" />}
-            value={form.name}
-            onChange={(name) => setForm({ ...form, name })}
-            placeholder="my-app"
-          />
-          <TextField
-            label="Ports"
-            contextualHelp={<HelpHint label="host:container, comma or newline separated (e.g. 8080:80)" />}
-            value={form.ports}
-            onChange={(ports) => setForm({ ...form, ports })}
-            placeholder="8080:80"
+      <div className="flex flex-col gap-3.5">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="run-image">Image</Label>
+          <Input
+            id="run-image"
+            value={form.image}
+            onChange={(e) => setForm({ ...form, image: e.target.value })}
+            placeholder="image:tag"
           />
         </div>
-        <TextField
-          label="Command"
-          contextualHelp={<HelpHint label="Passed to sh -c inside the container" />}
-          value={form.cmd}
-          onChange={(cmd) => setForm({ ...form, cmd })}
-          placeholder="optional override"
-        />
-        <TextArea
-          label="Environment"
-          contextualHelp={<HelpHint label="One KEY=value per line" />}
-          value={form.env}
-          onChange={(env) => setForm({ ...form, env })}
-          placeholder={"FOO=bar\nBAR=baz"}
-        />
-        <TextArea
-          label="Mounts"
-          contextualHelp={
-            <HelpHint label="One per line: /host:/container:ro or volname:/path (optional :ro / :rw)" />
-          }
-          value={form.mounts}
-          onChange={(mounts) => setForm({ ...form, mounts })}
-          placeholder={"/data:/app/data:ro\nmyvol:/var/lib/app"}
-        />
-        <TextArea
-          label="Labels"
-          contextualHelp={
-            <HelpHint label="One key=value per line. Domains: dev.deckhand.domains=api.local (optional dev.deckhand.http-port=80)" />
-          }
-          value={form.labels}
-          onChange={(labels) => setForm({ ...form, labels })}
-          placeholder={"dev.deckhand.domains=myapp.local"}
-        />
-        <div
-          className={style({
-            display: "grid",
-            gridTemplateColumns: {
-              default: "1fr",
-              sm: "1fr 1fr 1fr",
-            },
-            gap: 16,
-          })}
-        >
-          <TextField
-            label="Network"
-            contextualHelp={<HelpHint label="Attach to an existing Docker network" />}
-            value={form.network}
-            onChange={(network) => setForm({ ...form, network })}
-            placeholder="bridge"
+        <div className="grid gap-3.5 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="run-name">Name</Label>
+            <Input
+              id="run-name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="my-app"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="run-ports">Ports</Label>
+            <Input
+              id="run-ports"
+              value={form.ports}
+              onChange={(e) => setForm({ ...form, ports: e.target.value })}
+              placeholder="8080:80"
+            />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="run-cmd">Command</Label>
+          <Input
+            id="run-cmd"
+            value={form.cmd}
+            onChange={(e) => setForm({ ...form, cmd: e.target.value })}
+            placeholder="optional override"
           />
-          <TextField
-            label="Working directory"
-            contextualHelp={<HelpHint label="Container working directory (WORKDIR)" />}
-            value={form.workdir}
-            onChange={(workdir) => setForm({ ...form, workdir })}
-            placeholder="/app"
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="run-env">Environment</Label>
+          <Textarea
+            id="run-env"
+            value={form.env}
+            onChange={(e) => setForm({ ...form, env: e.target.value })}
+            placeholder={"FOO=bar\nBAR=baz"}
           />
-          <Picker
-            label="Restart policy"
-            value={form.restart || "no"}
-            onChange={(v) => setForm({ ...form, restart: v as RunContainerBody["restart"] })}
-          >
-            <PickerItem id="no">no</PickerItem>
-            <PickerItem id="always">always</PickerItem>
-            <PickerItem id="unless-stopped">unless-stopped</PickerItem>
-            <PickerItem id="on-failure">on-failure</PickerItem>
-          </Picker>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="run-mounts">Mounts</Label>
+          <Textarea
+            id="run-mounts"
+            value={form.mounts}
+            onChange={(e) => setForm({ ...form, mounts: e.target.value })}
+            placeholder={"/data:/app/data:ro\nmyvol:/var/lib/app"}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="run-labels">Labels</Label>
+          <Textarea
+            id="run-labels"
+            value={form.labels}
+            onChange={(e) => setForm({ ...form, labels: e.target.value })}
+            placeholder={"dev.deckhand.domains=myapp.local"}
+          />
+        </div>
+        <div className="grid gap-3.5 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="run-network">Network</Label>
+            <Input
+              id="run-network"
+              value={form.network}
+              onChange={(e) => setForm({ ...form, network: e.target.value })}
+              placeholder="bridge"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="run-workdir">Working directory</Label>
+            <Input
+              id="run-workdir"
+              value={form.workdir}
+              onChange={(e) => setForm({ ...form, workdir: e.target.value })}
+              placeholder="/app"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <Label htmlFor="run-restart">Restart policy</Label>
+            <Select
+              value={form.restart || "no"}
+              onValueChange={(v) =>
+                setForm({ ...form, restart: (v || "no") as RunContainerBody["restart"] })
+              }
+            >
+              <SelectTrigger id="run-restart" className="w-full">
+                <SelectValue placeholder="Restart policy" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no">no</SelectItem>
+                <SelectItem value="always">always</SelectItem>
+                <SelectItem value="unless-stopped">unless-stopped</SelectItem>
+                <SelectItem value="on-failure">on-failure</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div
-          className={style({
-            backgroundColor: "layer-2",
-            borderRadius: "xl",
-            padding: 16,
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-          })}
-        >
-          <div
-            className={style({
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-            })}
-          >
+        <div className="flex flex-col gap-3 rounded-2xl bg-muted p-3.5">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <Text styles={style({ font: "ui", fontWeight: "medium" })}>Start after create</Text>
-              <p
-                className={style({
-                  margin: 0,
-                  marginTop: 2,
-                  font: "body-xs",
-                  color: "neutral-subdued",
-                })}
-              >
+              <span className="text-sm font-medium">Start after create</span>
+              <p className="m-0 mt-0.5 text-xs text-muted-foreground">
                 Run immediately, or create in exited state
               </p>
             </div>
             <Switch
               aria-label="Start after create"
-              isSelected={form.start}
-              onChange={(start) => setForm({ ...form, start })}
+              checked={form.start}
+              onCheckedChange={(start) => setForm({ ...form, start })}
             />
           </div>
-          <Divider size="S" />
-          <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
-            <Checkbox isSelected={form.gpu} onChange={(gpu) => setForm({ ...form, gpu })}>
+          <Separator />
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="run-gpu"
+              checked={form.gpu}
+              onCheckedChange={(gpu) => setForm({ ...form, gpu: !!gpu })}
+            />
+            <Label htmlFor="run-gpu" className="cursor-pointer text-sm font-medium">
               Request GPU
-            </Checkbox>
+            </Label>
             <HelpHint label="Adds an NVIDIA DeviceRequest (docker run --gpus all)" />
           </div>
-          <Checkbox
-            isSelected={form.autoRemove}
-            onChange={(autoRemove) => setForm({ ...form, autoRemove })}
-            description="Delete the container when it exits (--rm)"
-          >
-            Auto-remove
-          </Checkbox>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="run-rm"
+              checked={form.autoRemove}
+              onCheckedChange={(autoRemove) => setForm({ ...form, autoRemove: !!autoRemove })}
+            />
+            <Label htmlFor="run-rm" className="cursor-pointer text-sm font-medium">
+              Auto-remove
+            </Label>
+            <HelpHint label="Delete the container when it exits (--rm)" />
+          </div>
         </div>
 
-        {error ? (
-          <Text styles={style({ font: "body-sm", color: "negative" })}>{error}</Text>
-        ) : null}
+        {error ? <span className="text-sm text-destructive">{error}</span> : null}
       </div>
     </GlassSheet>
   );

@@ -1,4 +1,9 @@
-/* App-only CSS. UI chrome uses @react-spectrum/s2 + style macros. */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
 
 html,
 body,
@@ -122,7 +127,6 @@ body {
   color: var(--dh-term-muted);
 }
 
-/* xterm host — match frame (#1b1b1b); xterm.css defaults viewport to #000 */
 .dh-xterm-host {
   min-height: 0;
   background: var(--dh-term-bg, #1b1b1b);
@@ -152,70 +156,11 @@ body {
   overflow-y: auto !important;
 }
 
-/* Status dock — top hairline only (Spectrum borderStyle paints every side). */
 .dh-status-dock {
-  border-top: 1px solid var(--spectrum-gray-300, #393939);
+  border-top: 1px solid var(--border);
   border-bottom: none;
   border-left: none;
   border-right: none;
-}
-
-/* Sidebar rail tooltips — wider than S2’s 160px default; match app chrome in dark. */
-.dh-rail-tooltip {
-  max-width: 240px !important;
-}
-
-html[data-color-scheme="dark"] .dh-rail-tooltip {
-  background-color: #2c2c2c !important;
-  color: #f5f5f5 !important;
-}
-
-html[data-color-scheme="dark"] .dh-rail-tooltip svg {
-  fill: #2c2c2c !important;
-}
-
-@media (prefers-color-scheme: dark) {
-  html:not([data-color-scheme="light"]) .dh-rail-tooltip {
-    background-color: #2c2c2c !important;
-    color: #f5f5f5 !important;
-  }
-
-  html:not([data-color-scheme="light"]) .dh-rail-tooltip svg {
-    fill: #2c2c2c !important;
-  }
-}
-
-/* Interactive chrome that uses native buttons + Spectrum tokens */
-button.dh-chip:hover,
-.dh-list-item:hover:not(.dh-list-item-selected) {
-  background-color: var(--s2-gray-100, rgba(128, 128, 128, 0.12));
-}
-
-button.dh-chip:focus-visible {
-  outline: 2px solid var(--spectrum-blue-800, #1473e6);
-  outline-offset: 2px;
-}
-
-/* Native metric tiles — kill UA button chrome */
-button.dh-metric-tile {
-  appearance: none;
-  -webkit-appearance: none;
-  border: none;
-  box-shadow: none;
-  transition: background-color 160ms ease, transform 160ms ease;
-}
-
-button.dh-metric-tile:hover {
-  background-color: var(--s2-gray-100, rgba(128, 128, 128, 0.1));
-}
-
-button.dh-metric-tile:active {
-  transform: scale(0.985);
-}
-
-button.dh-metric-tile:focus-visible {
-  outline: 2px solid var(--spectrum-blue-800, #1473e6);
-  outline-offset: 2px;
 }
 
 .dh-code-block__body {
@@ -223,7 +168,7 @@ button.dh-metric-tile:focus-visible {
 }
 
 .dh-code-block__body.is-muted {
-  color: var(--spectrum-gray-600, #6e6e6e);
+  color: var(--muted-foreground);
 }
 
 .dh-code-block__body::-webkit-scrollbar {
@@ -232,7 +177,7 @@ button.dh-metric-tile:focus-visible {
 }
 
 .dh-code-block__body::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--spectrum-gray-800, #2c2c2c) 22%, transparent);
+  background: color-mix(in srgb, var(--foreground) 22%, transparent);
   border-radius: 4px;
 }
 
@@ -240,7 +185,6 @@ button.dh-metric-tile:focus-visible {
   background: transparent;
 }
 
-/* Keep Lucide rail icons square inside circular sidebar hits (lucideProps M = 18) */
 aside nav button svg {
   width: 18px !important;
   height: 18px !important;
@@ -251,7 +195,6 @@ aside [role="group"] button svg {
   flex-shrink: 0;
 }
 
-/* Tauri titlebar drag helpers */
 [data-tauri-drag-region] {
   -webkit-app-region: drag;
 }
@@ -270,5 +213,129 @@ aside [role="group"] button svg {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Inter Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }

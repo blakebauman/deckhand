@@ -1,51 +1,13 @@
 import type { CSSProperties, ReactNode } from "react";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { TitleBarDragRegion } from "@/components/TitleBarDragRegion";
+import { cn } from "@/lib/utils";
 import { isTauriShell } from "@/lib/platform";
 
 /**
  * Reserved space under live content so scrollports end above the fixed dock
  * with a visible breathing gap (dock itself stays content-height).
- * Applied as inline padding-bottom — Spectrum style() can drop arbitrary clearance.
  */
 export const STATUS_DOCK_CLEARANCE = 96;
-
-const frameBase = style({
-  display: "flex",
-  flexDirection: "column",
-  height: "screen",
-  overflow: "hidden",
-  backgroundColor: "base",
-});
-
-const frameDesktop = style({
-  display: "flex",
-  flexDirection: "column",
-  height: "screen",
-  overflow: "hidden",
-  backgroundColor: "base",
-  paddingTop: 56,
-  boxSizing: "border-box",
-});
-
-const content = style({
-  position: "relative",
-  zIndex: 0,
-  minHeight: 0,
-  flexGrow: 1,
-  overflow: "hidden",
-  boxSizing: "border-box",
-});
-
-/** Content-sized dock — top hairline only (avoid borderStyle painting all sides). */
-const dock = style({
-  position: "fixed",
-  insetX: 0,
-  bottom: 0,
-  zIndex: 40,
-  backgroundColor: "layer-1",
-  paddingY: 12,
-});
 
 export function AppFrame({
   children,
@@ -57,17 +19,23 @@ export function AppFrame({
   const desktop = isTauriShell();
 
   return (
-    <div className={desktop ? frameDesktop : frameBase} style={{ boxSizing: "border-box" }}>
+    <div
+      className={cn(
+        "flex h-screen flex-col overflow-hidden bg-background",
+        desktop && "box-border pt-14",
+      )}
+      style={{ boxSizing: "border-box" }}
+    >
       {desktop ? <TitleBarDragRegion /> : null}
       <div
-        className={content}
+        className="relative z-0 min-h-0 flex-1 overflow-hidden box-border"
         style={dockSlot ? { paddingBottom: STATUS_DOCK_CLEARANCE } : undefined}
       >
         {children}
       </div>
       {dockSlot ? (
         <div
-          className={["dh-status-dock", dock].join(" ")}
+          className="dh-status-dock fixed end-0 bottom-0 start-20 z-40 bg-card py-3"
           style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
           data-no-drag
         >

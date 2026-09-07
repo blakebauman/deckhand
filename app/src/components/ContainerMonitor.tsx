@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { Badge, Heading, InlineAlert, Content, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
-import { Pause } from "lucide-react";
+import { Loader2, Pause } from "lucide-react";
 import { lucideProps } from "@/components/Icon";
 import { api, type ContainerStats } from "@/lib/api";
 import { LiveSparkline } from "@/components/charts/LiveSparkline";
@@ -9,13 +7,13 @@ import { MetricCard, WaveBars } from "@/components/charts/MetricChart";
 import { useEasedNumber } from "@/hooks/useEasedSeries";
 import { useLiveStats } from "@/hooks/useLiveStats";
 import { formatBytes } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
-/** Live runtime metrics (docker stats / cgroup) — SVG sparklines, not Vega. */
+/** Live runtime metrics (docker stats / cgroup) — SVG sparklines. */
 export function ContainerMonitor({ containerId, running }: { containerId: string; running?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const { sampleLabel, hist, pushSample } = useLiveStats(!!running);
-  // Match sparkline tip duration so headline spikes land with the chart.
   const cpuEased = useEasedNumber(sampleLabel?.cpu ?? 0, 280);
   const memEased = useEasedNumber(sampleLabel?.mem ?? 0, 280);
   const netEased = useEasedNumber(sampleLabel?.netRate ?? 0, 280);
@@ -84,99 +82,49 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
 
   if (!running) {
     return (
-      <div
-        className={style({
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 12,
-          backgroundColor: "layer-1",
-          borderRadius: "xl",
-          borderWidth: 1,
-          borderStyle: "solid",
-          borderColor: "gray-200",
-          paddingX: 32,
-          paddingY: 40,
-          minHeight: 280,
-          textAlign: "center",
-        })}
-      >
-        <div
-          className={style({
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            size: 44,
-            borderRadius: "full",
-            backgroundColor: "gray-100",
-          })}
-        >
-          <Pause {...lucideProps("L")} />
+      <div className="flex min-h-[220px] flex-col items-center justify-center gap-2.5 rounded-2xl bg-card px-8 py-10 text-center">
+        <div className="mb-1 flex size-10 items-center justify-center rounded-full bg-muted">
+          <Pause {...lucideProps("M")} className="text-muted-foreground" />
         </div>
-        <Text styles={style({ font: "title-sm" })}>Container stopped</Text>
-        <Text styles={style({ font: "body-sm", color: "neutral-subdued", maxWidth: 320 })}>
+        <span className="text-sm font-semibold">Container stopped</span>
+        <span className="max-w-sm text-sm text-muted-foreground">
           Start it to stream CPU, memory, network, and block I/O from cgroups.
-        </Text>
+        </span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <InlineAlert variant="negative">
-        <Heading>Stats unavailable</Heading>
-        <Content>{error}</Content>
-      </InlineAlert>
+      <div className="rounded-2xl bg-muted/60 px-4 py-3">
+        <p className="m-0 text-sm font-semibold">Stats unavailable</p>
+        <p className="m-0 mt-1 text-sm text-muted-foreground">{error}</p>
+      </div>
     );
   }
 
   if (!connected || !sampleLabel) {
     return (
-      <div
-        className={style({
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 16,
-          backgroundColor: "layer-1",
-          borderRadius: "xl",
-          borderWidth: 1,
-          borderStyle: "solid",
-          borderColor: "gray-200",
-          paddingX: 24,
-          paddingY: 32,
-          minHeight: 280,
-        })}
-      >
+      <div className="flex min-h-[220px] flex-col items-center justify-center gap-3.5 rounded-2xl bg-card px-6 py-8 text-center">
         <WaveBars values={[0.2, 0.45, 0.3, 0.7, 0.4, 0.55, 0.85, 0.35, 0.5, 0.65, 0.4, 0.6]} max={1} />
-        <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-3.5 animate-spin" aria-hidden />
           Connecting to stats stream…
-        </Text>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={style({ display: "flex", flexDirection: "column", gap: 16 })}>
-      <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
-        <Badge variant="positive">Live</Badge>
-        <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>
-          Docker stats stream · updates ~1s
-        </Text>
+    <div className="flex flex-col gap-3.5">
+      <div className="flex items-center gap-2">
+        <Badge variant="secondary" className="h-5 px-1.5 text-[11px]">
+          Live
+        </Badge>
+        <span className="text-xs text-muted-foreground">Docker stats stream · ~1s</span>
       </div>
 
-      <div
-        className={style({
-          display: "grid",
-          gridTemplateColumns: {
-            default: "1fr",
-            lg: "1fr 1fr",
-          },
-          gap: 12,
-        })}
-      >
+      <div className="grid gap-3 md:grid-cols-2">
         <MetricCard label="CPU" value={`${cpuEased.toFixed(1)}%`} hint="cgroup usage">
           <LiveSparkline values={hist.cpu} unit="%" label="CPU" tone="accent" />
         </MetricCard>
@@ -189,16 +137,7 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
         </MetricCard>
       </div>
 
-      <div
-        className={style({
-          display: "grid",
-          gridTemplateColumns: {
-            default: "1fr",
-            lg: "1fr 1fr",
-          },
-          gap: 12,
-        })}
-      >
+      <div className="grid gap-3 md:grid-cols-2">
         <MetricCard
           label="Network"
           value={`${formatBytes(netEased)}/s`}
@@ -212,14 +151,7 @@ export function ContainerMonitor({ containerId, running }: { containerId: string
           />
         </MetricCard>
 
-        <div
-          className={style({
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 12,
-            minWidth: 0,
-          })}
-        >
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
           <MetricCard
             label="Block I/O"
             value={`${formatBytes(sampleLabel.blockRead)} R`}

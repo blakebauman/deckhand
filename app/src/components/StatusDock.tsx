@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Button, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api, subscribeDockerEvents } from "@/lib/api";
 import {
   parseDockerEvent,
@@ -12,42 +10,20 @@ import {
 } from "@/lib/dockerEvents";
 import { GlassSheet } from "@/components/GlassSheet";
 import { LogoMark } from "@/components/Logo";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
-import { Tip } from "@/components/spectrum/Tip";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Tip } from "@/components/Tip";
 import { StatusHalo } from "@/components/StatusHalo";
 import { useUIStore } from "@/stores/uiStore";
+import { Button } from "@/components/ui/button";
 
 const easeOutExpo = [0.16, 1, 0.3, 1] as const;
 const MAX_EVENTS = 40;
 
-const chipBtn = style({
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 8,
-  borderRadius: "default",
-  borderWidth: 0,
-  backgroundColor: "transparent",
-  paddingX: 12,
-  paddingY: 8,
-  cursor: "pointer",
-  color: "neutral",
-  minWidth: 0,
-});
+const chipBtn =
+  "dh-chip inline-flex min-w-0 cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-3 py-2 text-foreground";
 
-const eventChipBtn = style({
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 8,
-  borderRadius: "default",
-  borderWidth: 0,
-  backgroundColor: "transparent",
-  paddingX: 12,
-  paddingY: 8,
-  cursor: "pointer",
-  color: "neutral",
-  minWidth: 0,
-  maxWidth: "full",
-});
+const eventChipBtn =
+  "dh-chip inline-flex max-w-full min-w-0 cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-3 py-2 text-foreground";
 
 function RuntimeChip({
   label,
@@ -69,19 +45,10 @@ function RuntimeChip({
 
   return (
     <Tip label={tip} placement="top">
-      <button type="button" className={`dh-chip ${chipBtn}`} onClick={onClick}>
+      <button type="button" className={chipBtn} onClick={onClick}>
         <StatusHalo tone={tone} pulse={ok} size="sm" />
-        <Text styles={style({ font: "ui-sm" })}>{label}</Text>
-        {detail ? (
-          <Text
-            styles={style({
-              font: "code-xs",
-              color: "neutral-subdued",
-            })}
-          >
-            {detail}
-          </Text>
-        ) : null}
+        <span className="text-sm">{label}</span>
+        {detail ? <span className="font-mono text-xs text-muted-foreground">{detail}</span> : null}
       </button>
     </Tip>
   );
@@ -161,39 +128,19 @@ export function StatusDock() {
 
   return (
     <>
-      <div
-        className={style({
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          maxWidth: 1800,
-          marginX: "auto",
-          paddingEnd: 40,
-        })}
-        // 80 sidebar + 40 page pad — outside the Spectrum spacing scale
-        style={{ paddingInlineStart: 120 }}
-      >
-        <div
-          className={style({
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: 8,
-            minWidth: 0,
-          })}
-        >
+      <div className="mx-auto box-border flex w-full max-w-[1800px] items-center justify-between gap-3 px-6 md:px-8">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Tip label="Local-first Docker & Kubernetes desktop" placement="top">
             <button
               type="button"
-              className={`dh-chip ${chipBtn}`}
+              className={chipBtn}
               onClick={() => {
                 setMode("docker");
                 navigate({ to: "/" });
               }}
             >
               <LogoMark size={22} />
-              <Text styles={style({ font: "title-sm" })}>Deckhand</Text>
+              <span className="text-sm font-semibold">Deckhand</span>
             </button>
           </Tip>
           <RuntimeChip
@@ -232,22 +179,12 @@ export function StatusDock() {
             />
           ) : null}
         </div>
-        <div
-          className={style({
-            display: "flex",
-            minWidth: 0,
-            maxWidth: 480,
-            flexGrow: 1,
-            alignItems: "center",
-            justifyContent: "end",
-            gap: 8,
-          })}
-        >
+        <div className="flex max-w-[480px] min-w-0 flex-1 items-center justify-end gap-2">
           {latest ? (
             <Tip label="Open activity — recent engine events with detail" placement="top">
               <button
                 type="button"
-                className={`dh-chip ${eventChipBtn}`}
+                className={eventChipBtn}
                 onClick={() => setSheetOpen(true)}
               >
                 <motion.span
@@ -255,50 +192,18 @@ export function StatusDock() {
                   initial={reduceMotion ? false : { scale: 0.7, opacity: 0.35 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.4, ease: easeOutExpo }}
-                  className={style({ display: "inline-flex", flexShrink: 0 })}
+                  className="inline-flex shrink-0"
                 >
                   <StatusHalo tone={haloTone(latest.tone)} pulse size="sm" />
                 </motion.span>
-                <div
-                  className={style({
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "start",
-                    minWidth: 0,
-                    flexGrow: 1,
-                    gap: 2,
-                    overflow: "hidden",
-                  })}
-                >
-                  <div
-                    className={style({
-                      display: "flex",
-                      alignItems: "baseline",
-                      gap: 8,
-                      minWidth: 0,
-                      maxWidth: "full",
-                    })}
-                  >
-                    <Text styles={style({ font: "detail-sm", color: "neutral-subdued" })}>
-                      {latest.verb}
-                    </Text>
-                    <Text styles={style({ font: "detail-sm", color: "neutral-subdued" })}>
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5 overflow-hidden">
+                  <div className="flex max-w-full min-w-0 gap-2">
+                    <span className="text-xs text-muted-foreground">{latest.verb}</span>
+                    <span className="text-xs text-muted-foreground">
                       {relativeEventTime(latest.at, now)}
-                    </Text>
+                    </span>
                   </div>
-                  <span
-                    className={style({
-                      position: "relative",
-                      display: "block",
-                      font: "ui-sm",
-                      fontWeight: "medium",
-                      minWidth: 0,
-                      maxWidth: "full",
-                      width: "full",
-                      height: 18,
-                      overflow: "hidden",
-                    })}
-                  >
+                  <span className="relative block h-[18px] w-full min-w-0 overflow-hidden text-sm font-medium">
                     <AnimatePresence mode="popLayout" initial={false}>
                       <motion.span
                         key={latest.id}
@@ -314,14 +219,7 @@ export function StatusDock() {
                             : { opacity: 0, y: -8, filter: "blur(3px)" }
                         }
                         transition={{ duration: 0.32, ease: easeOutExpo }}
-                        className={style({
-                          position: "absolute",
-                          insetX: 0,
-                          top: 0,
-                          truncate: true,
-                          minWidth: 0,
-                          maxWidth: "full",
-                        })}
+                        className="absolute inset-x-0 top-0 max-w-full min-w-0 truncate"
                       >
                         {latest.subject}
                         {latest.image && latest.image !== latest.subject
@@ -347,19 +245,14 @@ export function StatusDock() {
             >
               <button
                 type="button"
-                className={`dh-chip ${chipBtn}`}
+                className={chipBtn}
                 aria-label="Activity idle"
                 onClick={() => dockerOk && setSheetOpen(true)}
               >
                 <StatusHalo tone="idle" size="sm" />
-                <Text
-                  styles={style({
-                    font: "ui-xs",
-                    color: "neutral-subdued",
-                  })}
-                >
+                <span className="text-sm text-muted-foreground">
                   {dockerOk ? "No activity" : "local-first"}
-                </Text>
+                </span>
               </button>
             </Tip>
           )}
@@ -373,63 +266,43 @@ export function StatusDock() {
         description="Recent Docker events — start, stop, images, and networks. Exec attach noise is filtered out."
         size="lg"
         footer={
-          <Button variant="secondary" onPress={() => setSheetOpen(false)}>
+          <Button variant="secondary" onClick={() => setSheetOpen(false)}>
             Close
           </Button>
         }
       >
         {events.length === 0 ? (
-          <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
+          <span className="text-sm text-muted-foreground">
             No recent activity yet. Start or stop a container to see it here.
-          </Text>
+          </span>
         ) : (
-          <div className={style({ display: "flex", flexDirection: "column", gap: 4 })}>
+          <div className="flex flex-col gap-1">
             {events.map((ev) => (
               <div
                 key={ev.id}
-                className={style({
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  paddingX: 12,
-                  paddingY: 8,
-                  borderRadius: "lg",
-                  backgroundColor: "gray-100",
-                  minWidth: 0,
-                })}
+                className="flex min-w-0 items-center gap-3 rounded-lg bg-muted px-3 py-2"
               >
-                <div
-                  className={style({
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                    flexGrow: 1,
-                    minWidth: 0,
-                  })}
-                >
-                  <div
-                    className={style({
-                      display: "flex",
-                      flexWrap: "wrap",
-                      alignItems: "center",
-                      gap: 8,
-                    })}
-                  >
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge tone={badgeTone(ev.tone)}>{ev.verb}</StatusBadge>
                     <StatusBadge tone="muted">{ev.type}</StatusBadge>
-                    <Text styles={style({ font: "detail-sm", color: "neutral-subdued" })}>
+                    <span className="text-xs text-muted-foreground">
                       {relativeEventTime(ev.at, now)}
-                    </Text>
+                    </span>
                   </div>
-                  <Text styles={style({ font: "ui-sm", fontWeight: "medium" })}>{ev.subject}</Text>
-                  <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
-                    {[ev.image && ev.image !== ev.subject ? ev.image : null, ev.exitCode != null && ev.exitCode !== "" ? `exit ${ev.exitCode}` : null, ev.containerId ? ev.containerId.slice(0, 12) : null]
+                  <span className="text-sm font-medium">{ev.subject}</span>
+                  <div className="text-xs text-muted-foreground">
+                    {[
+                      ev.image && ev.image !== ev.subject ? ev.image : null,
+                      ev.exitCode != null && ev.exitCode !== "" ? `exit ${ev.exitCode}` : null,
+                      ev.containerId ? ev.containerId.slice(0, 12) : null,
+                    ]
                       .filter(Boolean)
                       .join(" · ") || ev.detail}
                   </div>
                 </div>
                 {ev.containerId ? (
-                  <Button size="S" variant="secondary" fillStyle="outline" onPress={() => openContainer(ev)}>
+                  <Button size="sm" variant="secondary" onClick={() => openContainer(ev)}>
                     Open
                   </Button>
                 ) : null}

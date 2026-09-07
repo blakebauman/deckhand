@@ -1,55 +1,15 @@
-import { Heading, ProgressCircle, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { Loader2 } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 
 export function BootSplash({ message = "Starting sidecar…" }: { message?: string }) {
   return (
-    <div
-      className={style({
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 28,
-        height: "screen",
-        overflow: "hidden",
-        backgroundColor: "base",
-      })}
-    >
+    <div className="flex h-screen flex-col items-center justify-center gap-7 overflow-hidden bg-background">
       <LogoMark size={88} alt="Deckhand" />
-      <div
-        className={style({
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 12,
-          textAlign: "center",
-        })}
-      >
-        <Heading
-          styles={style({
-            font: "heading-lg",
-            margin: 0,
-          })}
-        >
-          Deckhand
-        </Heading>
-        <div
-          className={style({
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-          })}
-        >
-          <ProgressCircle aria-label={message} isIndeterminate size="S" />
-          <Text
-            styles={style({
-              font: "body-sm",
-              color: "neutral-subdued",
-            })}
-          >
-            {message}
-          </Text>
+      <div className="flex flex-col items-center gap-3 text-center">
+        <h1 className="m-0 text-2xl font-semibold tracking-tight">Deckhand</h1>
+        <div className="flex items-center gap-3">
+          <Loader2 className="size-4 animate-spin text-muted-foreground" aria-label={message} />
+          <span className="text-sm text-muted-foreground">{message}</span>
         </div>
       </div>
     </div>

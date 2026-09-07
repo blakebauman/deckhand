@@ -1,18 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" role="img" aria-labelledby="title desc">
   <title id="title">Deckhand mark</title>
-  <desc id="desc">Bold white anchor on Adobe red with subtle depth. Mark inspired by Lucide Icons (ISC).</desc>
+  <desc id="desc">Bold white anchor on Obsidian violet with subtle depth. Mark inspired by Lucide Icons (ISC).</desc>
   <defs>
     <linearGradient id="tile" x1="16" y1="8" x2="112" y2="120" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FF2B2B"/>
-      <stop offset="48%" stop-color="#FF0000"/>
-      <stop offset="100%" stop-color="#C20000"/>
+      <stop offset="0%" stop-color="#BBA4FB"/>
+      <stop offset="48%" stop-color="#A88BFA"/>
+      <stop offset="100%" stop-color="#6C31E3"/>
     </linearGradient>
     <linearGradient id="sheen" x1="64" y1="0" x2="64" y2="72" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>
       <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
     <filter id="glyphShadow" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="1.5" stdDeviation="1.2" flood-color="#4A0000" flood-opacity="0.32"/>
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.2" flood-color="#2E1560" flood-opacity="0.32"/>
     </filter>
   </defs>
 

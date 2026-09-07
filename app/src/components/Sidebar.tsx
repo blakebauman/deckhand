@@ -1,11 +1,4 @@
 import { useMatchRoute, useNavigate, useRouterState } from "@tanstack/react-router";
-import {
-  ActionButton,
-  Text,
-  Tooltip,
-  TooltipTrigger,
-} from "@react-spectrum/s2";
-import { Focusable } from "react-aria-components";
 import type { LucideIcon } from "lucide-react";
 import {
   Archive,
@@ -17,13 +10,13 @@ import {
   Database,
   FolderOpen,
   Globe,
+  Info,
   Layers,
   Monitor,
   Search,
   Settings,
   Table,
 } from "lucide-react";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { useEffect, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import { useUIStore, type AppMode } from "@/stores/uiStore";
 import { useQuery } from "@tanstack/react-query";
@@ -34,6 +27,8 @@ import { DockerMark, KubernetesMark, MicroVMMark } from "@/components/ModeMarks"
 import { APP_VERSION } from "@/lib/version";
 import { isTauriShell } from "@/lib/platform";
 import { modKeyLabel } from "@/lib/hotkeys";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 type NavItem = {
   to: string;
@@ -98,154 +93,20 @@ function modeFromPath(pathname: string): AppMode | null {
   return null;
 }
 
-const asideStyle = style({
-  position: "fixed",
-  insetY: 0,
-  start: 0,
-  zIndex: 30,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  gap: 20,
-  width: 80,
-  backgroundColor: "layer-1",
-  paddingTop: 20,
-  // Keep version chip above the in-flow status dock
-  paddingBottom: 96,
-});
+const railBtn =
+  "box-border flex size-11 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-0 p-0 text-foreground";
+const modeRailBtn =
+  "box-border flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 p-0";
 
-const asideStyleDesktop = style({
-  position: "fixed",
-  insetY: 0,
-  start: 0,
-  zIndex: 30,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  gap: 20,
-  width: 80,
-  backgroundColor: "layer-1",
-  paddingTop: 64,
-  paddingBottom: 96,
-});
-
-const navBtn = style({
-  boxSizing: "border-box",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-  width: 44,
-  height: 44,
-  borderRadius: "full",
-  borderWidth: 0,
-  padding: 0,
-  cursor: "pointer",
-  color: "neutral",
-  overflow: "hidden",
-  backgroundColor: {
-    default: "transparent",
-    ":hover": "gray-100",
-  },
-});
-
-const navBtnActive = style({
-  boxSizing: "border-box",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-  width: 44,
-  height: 44,
-  borderRadius: "full",
-  borderWidth: 0,
-  padding: 0,
-  cursor: "pointer",
-  color: "neutral",
-  overflow: "hidden",
-  backgroundColor: "gray-200",
-});
-
-const logoBtn = style({
-  boxSizing: "border-box",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-  width: 48,
-  height: 48,
-  borderRadius: "full",
-  borderWidth: 0,
-  padding: 0,
-  cursor: "pointer",
-  overflow: "hidden",
-  backgroundColor: {
-    default: "transparent",
-    ":hover": "gray-100",
-  },
-});
-
-const modeBtn = style({
-  boxSizing: "border-box",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-  width: 36,
-  height: 36,
-  borderRadius: "full",
-  borderWidth: 0,
-  padding: 0,
-  cursor: "pointer",
-  color: "neutral",
-  backgroundColor: {
-    default: "transparent",
-    ":hover": "gray-100",
-  },
-});
-
-const modeBtnActive = style({
-  boxSizing: "border-box",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-  width: 36,
-  height: 36,
-  borderRadius: "full",
-  borderWidth: 0,
-  padding: 0,
-  cursor: "pointer",
-  color: "white",
-  backgroundColor: "accent",
-});
-
-/**
- * Tooltip body for the icon rail.
- * Must inherit the Tooltip’s inverted text color — Spectrum `Text` / `neutral-*`
- * tokens follow the page scheme and read as grey-on-white in dark mode.
- */
 function RailTip({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div
-      className={style({
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        textAlign: "start",
-      })}
-    >
-      <span className={style({ font: "ui-sm", fontWeight: "bold" })}>{title}</span>
-      {hint ? (
-        <span className={style({ font: "detail-sm" })} style={{ opacity: 0.72 }}>
-          {hint}
-        </span>
-      ) : null}
+    <div className="flex flex-col gap-0.5 text-start">
+      <span className="text-sm font-semibold">{title}</span>
+      {hint ? <span className="text-xs opacity-72">{hint}</span> : null}
     </div>
   );
 }
 
-/** Icon-rail tooltips — Focusable so custom buttons work with TooltipTrigger. */
 function TipRight({
   title,
   hint,
@@ -258,13 +119,12 @@ function TipRight({
   const enabled = useUIStore((s) => s.sidebarTooltips);
   if (!enabled) return children;
   return (
-    <TooltipTrigger placement="end" delay={400} containerPadding={10} crossOffset={0}>
-      {/* Focusable child generics reject plain <button>; runtime merge is fine. */}
-      <Focusable>{children as never}</Focusable>
-      <Tooltip UNSAFE_className="dh-rail-tooltip">
+    <Tooltip>
+      <TooltipTrigger render={children} />
+      <TooltipContent side="right" className="max-w-60">
         <RailTip title={title} hint={hint} />
-      </Tooltip>
-    </TooltipTrigger>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -297,11 +157,16 @@ export function Sidebar() {
   const visibleModes = modes.filter((m) => m.id !== "microvms" || fcAvailable);
 
   return (
-    <aside className={isTauriShell() ? asideStyleDesktop : asideStyle}>
+    <aside
+      className={cn(
+        "fixed inset-y-0 start-0 z-30 flex w-20 flex-col items-center gap-5 bg-card pb-28",
+        isTauriShell() ? "pt-16" : "pt-5",
+      )}
+    >
       <TipRight title="Deckhand" hint="Open dashboard">
         <button
           type="button"
-          className={logoBtn}
+          className={cn(railBtn, "size-12 hover:bg-muted")}
           style={noDrag}
           aria-label="Deckhand, open dashboard"
           onClick={() => navigate({ to: "/" })}
@@ -311,15 +176,7 @@ export function Sidebar() {
       </TipRight>
 
       <div
-        className={style({
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 4,
-          padding: 4,
-          borderRadius: "pill",
-          backgroundColor: "gray-100",
-        })}
+        className="flex flex-col items-center gap-1 rounded-full bg-muted p-1"
         style={noDrag}
         role="group"
         aria-label="Runtime mode"
@@ -331,7 +188,10 @@ export function Sidebar() {
             <TipRight key={m.id} title={m.title} hint={m.hint}>
               <button
                 type="button"
-                className={selected ? modeBtnActive : modeBtn}
+                className={cn(
+                  modeRailBtn,
+                  selected ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-background/60",
+                )}
                 aria-label={m.title}
                 aria-pressed={selected}
                 onClick={() => switchMode(m.id)}
@@ -343,17 +203,7 @@ export function Sidebar() {
         })}
       </div>
 
-      <nav
-        className={style({
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 8,
-          flexGrow: 1,
-          paddingTop: 4,
-        })}
-        style={noDrag}
-      >
+      <nav className="flex flex-1 flex-col items-center gap-2 pt-1" style={noDrag}>
         {nav.map((item) => {
           const active = item.exact
             ? !!matchRoute({ to: item.to, fuzzy: false })
@@ -363,7 +213,7 @@ export function Sidebar() {
             <TipRight key={item.to + item.label} title={item.label} hint={item.hint}>
               <button
                 type="button"
-                className={active ? navBtnActive : navBtn}
+                className={cn(railBtn, active ? "bg-muted" : "hover:bg-muted/60")}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
                 onClick={() => navigate({ to: item.to })}
@@ -375,39 +225,35 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div
-        className={style({
-          marginTop: "auto",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 8,
-          paddingBottom: 4,
-        })}
-        style={noDrag}
-      >
+      <div className="mt-auto flex flex-col items-center gap-2 pb-1" style={noDrag}>
         <TipRight title="Command palette" hint={`${mod}K`}>
           <button
             type="button"
-            className={navBtn}
+            className={cn(railBtn, "hover:bg-muted/60")}
             aria-label={`Command palette (${mod}K)`}
             onClick={() => openCommandPalette()}
           >
             <Search {...lucideProps("M")} />
           </button>
         </TipRight>
-        <TipRight title={`Deckhand v${APP_VERSION}`}>
-          <ActionButton isQuiet aria-label={`Deckhand v${APP_VERSION}`}>
-            <Text
-              styles={style({
-                font: "detail-sm",
-                color: "neutral-subdued",
-              })}
-            >
-              v{APP_VERSION}
-            </Text>
-          </ActionButton>
-        </TipRight>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <button
+                type="button"
+                className={cn(railBtn, "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}
+                aria-label={`Deckhand version ${APP_VERSION}`}
+                onClick={() => navigate({ to: "/settings" })}
+              >
+                <Info {...lucideProps("M")} />
+              </button>
+            }
+          />
+          <TooltipContent side="right" className="max-w-none flex-col items-start py-2">
+            <span className="text-sm font-semibold">Deckhand</span>
+            <span className="font-mono text-xs opacity-90">v{APP_VERSION}</span>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </aside>
   );

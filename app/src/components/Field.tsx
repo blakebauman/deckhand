@@ -1,8 +1,8 @@
 import type { KeyboardEvent } from "react";
-import { TextArea, TextField } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
-/** Controlled string TextField with a familiar onChange(string) API. */
+/** Controlled string input with a familiar onChange(string) API. */
 export function Field({
   value,
   onChange,
@@ -19,14 +19,14 @@ export function Field({
   "aria-label"?: string;
 }) {
   return (
-    <TextField
+    <Input
       value={value}
-      onChange={onChange}
+      onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      isDisabled={isDisabled}
-      onKeyDown={onKeyDown as never}
+      disabled={isDisabled}
+      onKeyDown={onKeyDown}
       aria-label={ariaLabel || placeholder}
-      styles={style({ width: "full" })}
+      className="w-full"
     />
   );
 }
@@ -43,13 +43,13 @@ export function Area({
   isDisabled?: boolean;
 }) {
   return (
-    <TextArea
+    <Textarea
       value={value}
-      onChange={onChange}
+      onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      isDisabled={isDisabled}
+      disabled={isDisabled}
       aria-label={placeholder}
-      styles={style({ width: "full" })}
+      className="w-full"
     />
   );
 }

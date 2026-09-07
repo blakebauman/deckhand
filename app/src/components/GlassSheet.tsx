@@ -1,20 +1,19 @@
 import type { ReactNode } from "react";
 import {
-  ButtonGroup,
-  Content,
   Dialog,
-  DialogContainer,
-  Heading,
-  Header,
-  Text,
-} from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/CopyButton";
 
-const sizeMap = {
-  md: "M",
-  lg: "L",
-  xl: "XL",
+const sizeClass = {
+  md: "sm:max-w-lg",
+  lg: "sm:max-w-2xl",
+  xl: "sm:max-w-4xl",
 } as const;
 
 /** Overlay sheet for deploy output, logs, and exec results. */
@@ -38,43 +37,16 @@ export function GlassSheet({
   mono?: boolean;
 }) {
   return (
-    <DialogContainer onDismiss={() => onOpenChange(false)}>
-      {open ? (
-        <Dialog size={sizeMap[size]} isDismissible={!footer}>
-          {() => (
-            <>
-              <Heading slot="title">{title}</Heading>
-              {description ? (
-                <Header>
-                  <Text
-                    styles={style({
-                      font: "body-sm",
-                      color: "neutral-subdued",
-                    })}
-                  >
-                    {description}
-                  </Text>
-                </Header>
-              ) : null}
-              <Content>
-                <div
-                  className={
-                    mono
-                      ? style({
-                          font: "code-xs",
-                        })
-                      : undefined
-                  }
-                >
-                  {children}
-                </div>
-              </Content>
-              {footer ? <ButtonGroup>{footer}</ButtonGroup> : null}
-            </>
-          )}
-        </Dialog>
-      ) : null}
-    </DialogContainer>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={cn(sizeClass[size], "max-h-[85vh] overflow-hidden flex flex-col")} showCloseButton={!footer}>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {description ? <DialogDescription>{description}</DialogDescription> : null}
+        </DialogHeader>
+        <div className={cn("min-h-0 flex-1 overflow-y-auto", mono && "font-mono text-xs")}>{children}</div>
+        {footer ? <DialogFooter>{footer}</DialogFooter> : null}
+      </DialogContent>
+    </Dialog>
   );
 }
 

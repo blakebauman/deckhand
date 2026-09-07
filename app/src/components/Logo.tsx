@@ -1,9 +1,8 @@
-import { Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import markUrl from "@/assets/brand/mark.svg";
 import markMonoUrl from "@/assets/brand/mark-mono.svg";
+import { cn } from "@/lib/utils";
 
-/** Deckhand mark tile (Adobe red + white anchor). */
+/** Deckhand mark tile (Obsidian violet + white anchor). */
 export function LogoMark({
   size = 36,
   alt = "Deckhand",
@@ -21,13 +20,7 @@ export function LogoMark({
       width={size}
       height={size}
       draggable={false}
-      className={
-        className ??
-        style({
-          flexShrink: 0,
-          display: "block",
-        })
-      }
+      className={cn("block shrink-0", className)}
     />
   );
 }
@@ -48,49 +41,18 @@ export function LogoMarkMono({
       height={size}
       draggable={false}
       aria-hidden
-      className={
-        className ??
-        style({
-          flexShrink: 0,
-          display: "block",
-        })
-      }
+      className={cn("block shrink-0", className)}
     />
   );
 }
 
 export function LogoWordmark({ className }: { className?: string }) {
   return (
-    <div
-      className={
-        className ??
-        style({
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-        })
-      }
-    >
+    <div className={cn("flex items-center gap-3", className)}>
       <LogoMark size={36} />
       <div>
-        <Text
-          styles={style({
-            font: "title",
-            display: "block",
-          })}
-        >
-          Deckhand
-        </Text>
-        <Text
-          styles={style({
-            font: "detail-sm",
-            color: "neutral-subdued",
-            display: "block",
-            marginTop: 4,
-          })}
-        >
-          Local container ops
-        </Text>
+        <span className="block text-base font-semibold">Deckhand</span>
+        <span className="mt-1 block text-xs text-muted-foreground">Local container ops</span>
       </div>
     </div>
   );

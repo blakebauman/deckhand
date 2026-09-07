@@ -1,10 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { MetricTile, PageShell } from "@/components/PageShell";
-import { BreakdownPie, ChartPanel, RunningAreaChart } from "@/components/charts/SpectrumChartsPanel";
+import { BreakdownPie, ChartPanel, RunningAreaChart } from "@/components/charts/ChartsPanel";
 import { useMetricsStore } from "@/stores/metricsStore";
 import { useUIStore } from "@/stores/uiStore";
 import { K8sChrome } from "@/routes/k8s/K8sChrome";
@@ -52,18 +51,8 @@ export function K8sOverviewPage() {
   return (
     <K8sChrome>
       <PageShell title="Kubernetes" description="Namespace-scoped workload overview for the active context.">
-        <div className={style({ display: "flex", flexDirection: "column", gap: 24 })}>
-          <div
-            className={style({
-              display: "grid",
-              gridTemplateColumns: {
-                default: "1fr",
-                sm: "1fr 1fr",
-                md: "1fr 1fr 1fr",
-              },
-              gap: 12,
-            })}
-          >
+        <div className="flex flex-col gap-5">
+          <div className="grid gap-3 sm:grid-cols-3">
             <MetricTile
               label="Pods"
               value={podList.length}
@@ -87,16 +76,7 @@ export function K8sOverviewPage() {
             />
           </div>
 
-          <div
-            className={style({
-              display: "grid",
-              gridTemplateColumns: {
-                default: "1fr",
-                md: "1fr 1fr 1fr",
-              },
-              gap: 12,
-            })}
-          >
+          <div className="grid gap-3 lg:grid-cols-3">
             <ChartPanel title="Pod readiness" hint={`${runningPods} running`}>
               <RunningAreaChart data={readySeries} />
             </ChartPanel>

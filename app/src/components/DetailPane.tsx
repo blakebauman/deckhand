@@ -1,23 +1,11 @@
 import type { ReactNode } from "react";
-import { Heading, Text } from "@react-spectrum/s2";
 import { MousePointerClick } from "lucide-react";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { lucideProps } from "@/components/Icon";
+import { cn } from "@/lib/utils";
 
-/** Detail title — matches ListPaneTitle (heading-lg) for list/detail alignment. */
+/** Detail title — matches ListPaneTitle for list/detail alignment. */
 export function DetailHeading({ children }: { children: ReactNode }) {
-  return (
-    <Heading
-      styles={style({
-        font: "heading-lg",
-        margin: 0,
-        truncate: true,
-        minWidth: 0,
-      })}
-    >
-      {children}
-    </Heading>
-  );
+  return <h2 className="m-0 min-w-0 truncate text-lg font-semibold tracking-tight">{children}</h2>;
 }
 
 export function DetailEmpty({
@@ -33,59 +21,15 @@ export function DetailEmpty({
   icon?: ReactNode;
 }) {
   return (
-    <div
-      className={style({
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        flexGrow: 1,
-        minHeight: 224,
-        backgroundColor: "layer-1",
-        borderRadius: "xl",
-        paddingX: 32,
-        paddingY: 40,
-        textAlign: "center",
-      })}
-    >
-      <div
-        className={style({
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          size: 44,
-          marginBottom: 16,
-          borderRadius: "full",
-          borderWidth: 0,
-          backgroundColor: "gray-100",
-        })}
-      >
+    <div className="flex min-h-52 flex-1 flex-col items-center justify-center rounded-2xl bg-card/80 px-8 py-10 text-center">
+      <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-muted">
         {icon ?? <MousePointerClick {...lucideProps("L")} />}
       </div>
-      <Heading
-        styles={style({
-          font: "title-sm",
-          margin: 0,
-        })}
-      >
-        {title}
-      </Heading>
+      <h3 className="m-0 text-sm font-semibold">{title}</h3>
       {description ? (
-        <Text
-          styles={style({
-            font: "body-sm",
-            color: "neutral-subdued",
-            display: "block",
-            marginTop: 8,
-            maxWidth: 384,
-          })}
-        >
-          {description}
-        </Text>
+        <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">{description}</p>
       ) : null}
-      {action ? (
-        <div className={style({ marginTop: 16 })}>{action}</div>
-      ) : null}
+      {action ? <div className="mt-3">{action}</div> : null}
     </div>
   );
 }
@@ -113,60 +57,15 @@ export function DetailPane({
     );
 
   return (
-    <div
-      className={[
-        style({
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          minHeight: 0,
-          minWidth: 0,
-          flexGrow: 1,
-          paddingTop: 12,
-        }),
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
+    <div className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col pt-3", className)}>
       {!selectionKey ? (
-        <div
-          key="empty"
-          className={style({
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-            flexGrow: 1,
-          })}
-        >
+        <div key="empty" className="flex min-h-0 flex-1 flex-col">
           {emptyNode}
         </div>
       ) : (
-        <div
-          key={selectionKey}
-          className={style({
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-            flexGrow: 1,
-          })}
-        >
-          {header ? (
-            <div className={style({ flexShrink: 0, paddingBottom: 12, minWidth: 0 })}>{header}</div>
-          ) : null}
-          {/* Native overflow — Console/Exec need nested scroll. */}
-          <div
-            className={style({
-              minHeight: 0,
-              flexGrow: 1,
-              overflowY: "auto",
-              overflowX: "hidden",
-              paddingBottom: 40,
-              paddingEnd: 4,
-            })}
-          >
-            {children}
-          </div>
+        <div key={selectionKey} className="flex min-h-0 flex-1 flex-col">
+          {header ? <div className="min-w-0 shrink-0 pb-3">{header}</div> : null}
+          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-10 pe-1">{children}</div>
         </div>
       )}
     </div>

@@ -1,5 +1,4 @@
 import type { CSSProperties, MouseEvent } from "react";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 
 async function startWindowDrag() {
   try {
@@ -21,13 +20,7 @@ export function TitleBarDragRegion() {
   return (
     <div
       data-tauri-drag-region
-      className={style({
-        position: "fixed",
-        insetX: 0,
-        top: 0,
-        zIndex: 9999,
-        height: 56,
-      })}
+      className="fixed inset-x-0 top-0 z-[9999] h-14"
       style={{ WebkitAppRegion: "drag" } as CSSProperties}
       onMouseDown={(e) => {
         if (e.button !== 0) return;

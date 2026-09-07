@@ -8,7 +8,7 @@ const SIZE_PX: Record<IconSize, number> = {
   L: 22,
 };
 
-/** Stroke width tuned to sit next to Spectrum S2 chrome. */
+/** Stroke width tuned for Deckhand icon buttons and list chrome. */
 export const ICON_STROKE = 1.75;
 
 /** Shared Lucide props for Deckhand UI (size tokens + stroke). */

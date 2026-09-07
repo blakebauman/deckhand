@@ -1,13 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type VolumeFileEntry } from "@/lib/api";
-import {
-  ActionMenu,
-  Button,
-  MenuItem,
-  MenuSection,
-  Text,
-} from "@react-spectrum/s2";
 import { CodeBlock } from "@/components/CodeBlock";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
@@ -16,15 +9,18 @@ import { GlassSheet } from "@/components/GlassSheet";
 import { InspectFields, LabelChips } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
-import { Field } from "@/components/spectrum/Field";
-import { RowMenu } from "@/components/spectrum/RowMenu";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
-import { Tip } from "@/components/spectrum/Tip";
+import { Field } from "@/components/Field";
+import { RowMenu } from "@/components/RowMenu";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Tip } from "@/components/Tip";
 import { formatBytes } from "@/lib/utils";
 import { useUIStore } from "@/stores/uiStore";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 
 import { copyText } from "@/routes/shared";
+import { MoreActionsMenu } from "@/components/MoreActionsMenu";
+import { Button } from "@/components/ui/button";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+
 
 function driverTone(driver?: string): "info" | "muted" | "default" {
   switch ((driver || "").toLowerCase()) {
@@ -156,7 +152,7 @@ export function VolumesPage() {
   };
 
   return (
-    <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
+    <div className="flex h-full min-h-0 w-full min-w-0 gap-5">
       <ListPane
         title="Volumes"
         loading={list.isLoading}
@@ -166,7 +162,7 @@ export function VolumesPage() {
             description={q ? "Try another name or driver." : "Create a volume to persist container data."}
             action={
               q ? undefined : (
-                <Button size="S" onPress={() => setCreateOpen(true)}>
+                <Button size="sm" onClick={() => setCreateOpen(true)}>
                   Create volume
                 </Button>
               )
@@ -176,7 +172,7 @@ export function VolumesPage() {
         search={{ value: q, onChange: setQ, placeholder: "Search volumes" }}
         actions={
           <Tip label="Create a named Docker volume">
-            <Button size="S" data-no-drag onPress={() => setCreateOpen(true)}>
+            <Button size="sm" data-no-drag onClick={() => setCreateOpen(true)}>
               Create
             </Button>
           </Tip>
@@ -203,10 +199,10 @@ export function VolumesPage() {
             ]}
             suffix={<StatusBadge tone={driverTone(v.Driver)}>{v.Driver || "—"}</StatusBadge>}
           >
-            <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+            <div className="min-w-0 text-sm font-medium truncate">
               {v.Name}
             </div>
-            <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+            <div className="min-w-0 text-muted-foreground text-xs truncate">
               {v.UsageData?.Size != null && v.UsageData.Size >= 0
                 ? formatBytes(v.UsageData.Size)
                 : v.Mountpoint || "named volume"}
@@ -222,7 +218,7 @@ export function VolumesPage() {
             title="Select a volume"
             description="Inspect mountpoint and usage, browse files, or create a new named volume."
             action={
-              <Button size="S" onPress={() => setCreateOpen(true)}>
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
                 Create volume
               </Button>
             }
@@ -230,29 +226,16 @@ export function VolumesPage() {
         }
       >
         {insp ? (
-          <div className={style({ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 8 })}>
-            <div
-              className={style({
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 16,
-                minWidth: 0,
-              })}
-            >
-              <div className={style({ minWidth: 0, flexGrow: 1, display: "flex", flexDirection: "column", gap: 4 })}>
-                <div className={style({ display: "flex", alignItems: "center", gap: 8, minWidth: 0 })}>
+          <div className="flex flex-col gap-4 pb-2">
+            <div className="flex min-w-0 items-center justify-between gap-4">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <div className="flex min-w-0 items-center gap-2">
                   <DetailHeading>{displayName}</DetailHeading>
                   <StatusBadge tone={driverTone(insp.Driver)}>{insp.Driver || "—"}</StatusBadge>
                   <CopyButton value={displayName} label="Copy name" iconOnly />
                 </div>
                 <div
-                  className={style({
-                    font: "code-xs",
-                    color: "neutral-subdued",
-                    truncate: true,
-                    minWidth: 0,
-                  })}
+                  className="min-w-0 truncate font-mono text-xs text-muted-foreground"
                   title={insp.Mountpoint}
                 >
                   {[
@@ -264,55 +247,44 @@ export function VolumesPage() {
                     .join(" · ") || "—"}
                 </div>
               </div>
-              <div className={style({ display: "flex", flexShrink: 0, alignItems: "center", gap: 8 })}>
+              <div className="flex shrink-0 items-center gap-2">
                 <Button
-                  size="S"
+                  size="sm"
                   variant="secondary"
-                  onPress={() => {
+                  onClick={() => {
                     setBrowsing(true);
                     setFilePath("");
                   }}
                 >
                   Browse
                 </Button>
-                <ActionMenu aria-label="More volume actions" isQuiet align="end" size="S">
-                  <MenuSection>
-                    <MenuItem
-                      id="export"
-                      textValue="Export"
-                      onAction={() => {
-                        window.open(api.volumeExportUrl(selected!), "_blank", "noopener,noreferrer");
-                      }}
-                    >
-                      <Text slot="label">Export</Text>
-                    </MenuItem>
-                    <MenuItem id="import" textValue="Import" onAction={() => importRef.current?.click()}>
-                      <Text slot="label">Import…</Text>
-                    </MenuItem>
-                    <MenuItem
-                      id="clone"
-                      textValue="Clone"
-                      onAction={() => {
-                        setCloneDest(selected ? `${selected}-copy` : "");
-                        setCloneOpen(true);
-                      }}
-                    >
-                      <Text slot="label">Clone…</Text>
-                    </MenuItem>
-                  </MenuSection>
-                  <MenuSection>
-                    <MenuItem id="remove" textValue="Remove" onAction={() => setConfirmRemove(true)}>
-                      <Text slot="label" styles={style({ color: "negative" })}>
-                        Remove…
-                      </Text>
-                    </MenuItem>
-                  </MenuSection>
-                </ActionMenu>
+                <MoreActionsMenu label="More volume actions">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      window.open(api.volumeExportUrl(selected!), "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    Export
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => importRef.current?.click()}>Import…</DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setCloneDest(selected ? `${selected}-copy` : "");
+                      setCloneOpen(true);
+                    }}
+                  >
+                    Clone…
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive" onClick={() => setConfirmRemove(true)}>
+                    Remove…
+                  </DropdownMenuItem>
+                </MoreActionsMenu>
                 <input
                   ref={importRef}
                   type="file"
                   accept=".tar,.tar.gz,.tgz,application/x-tar,application/gzip"
-                  className={style({ display: "none" })}
+                  className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     e.target.value = "";
@@ -342,37 +314,30 @@ export function VolumesPage() {
             />
 
             {browsing ? (
-              <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
-                  <div className={style({ font: "title-sm", flexGrow: 1 })}>Files</div>
-                  <div className={style({ font: "code-xs", color: "neutral-subdued" })}>/{filePath || ""}</div>
-                  <Button size="S" variant="secondary" fillStyle="outline" isDisabled={!filePath} onPress={goUp}>
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex-1 text-sm font-semibold">Files</div>
+                  <div className="font-mono text-xs text-muted-foreground">/{filePath || ""}</div>
+                  <Button size="sm" variant="secondary" disabled={!filePath} onClick={goUp}>
                     Up
                   </Button>
-                  <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setBrowsing(false)}>
+                  <Button size="sm" variant="secondary" onClick={() => setBrowsing(false)}>
                     Close
                   </Button>
                 </div>
                 <div
-                  className={style({
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                    backgroundColor: "layer-1",
-                    borderRadius: "xl",
-                    padding: 8,
-                  })}
+                  className="flex flex-col gap-1 p-2 bg-card rounded-2xl"
                 >
                   {files.isLoading ? (
-                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0, padding: 8 })}>
+                    <p className="p-2 m-0 text-muted-foreground text-xs">
                       Loading…
                     </p>
                   ) : files.isError ? (
-                    <p className={style({ font: "body-xs", color: "negative", margin: 0, padding: 8 })}>
+                    <p className="p-2 m-0 text-destructive text-xs">
                       {(files.error as Error)?.message || "Failed to list files"}
                     </p>
                   ) : (files.data || []).length === 0 ? (
-                    <p className={style({ font: "body-xs", color: "neutral-subdued", margin: 0, padding: 8 })}>
+                    <p className="p-2 m-0 text-muted-foreground text-xs">
                       Empty directory
                     </p>
                   ) : (
@@ -382,30 +347,13 @@ export function VolumesPage() {
                         type="button"
                         disabled={!f.dir}
                         onClick={() => openDir(f)}
-                        className={style({
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 8,
-                          paddingX: 12,
-                          paddingY: 8,
-                          borderRadius: "lg",
-                          borderStyle: "none",
-                          backgroundColor: {
-                            default: "transparent",
-                            ":hover": "gray-100",
-                          },
-                          cursor: "pointer",
-                          textAlign: "start",
-                          color: "neutral",
-                          width: "full",
-                        })}
+                        className="flex items-center justify-between gap-2 px-3 py-2 w-full bg-transparent hover:bg-muted text-foreground rounded-lg border-0 cursor-pointer text-start"
                       >
-                        <span className={style({ font: "code-xs", truncate: true, minWidth: 0 })}>
+                        <span className="min-w-0 font-mono text-xs truncate">
                           {f.name}
                           {f.dir ? "/" : ""}
                         </span>
-                        <span className={style({ font: "body-xs", color: "neutral-subdued", flexShrink: 0 })}>
+                        <span className="shrink-0 text-muted-foreground text-xs">
                           {f.dir ? "dir" : formatBytes(f.size)}
                         </span>
                       </button>
@@ -415,32 +363,31 @@ export function VolumesPage() {
               </div>
             ) : null}
 
-            <div className={style({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 })}>
+            <div className="flex flex-wrap items-center gap-2">
               {labelCount + optionCount > 0 ? (
                 <Button
-                  size="S"
+                  size="sm"
                   variant="secondary"
-                  fillStyle="outline"
-                  onPress={() => setShowLabels((v) => !v)}
+                  onClick={() => setShowLabels((v) => !v)}
                 >
                   {showLabels ? "Hide labels" : `Labels (${labelCount + optionCount})`}
                 </Button>
               ) : null}
-              <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setShowRaw((v) => !v)}>
+              <Button size="sm" variant="secondary" onClick={() => setShowRaw((v) => !v)}>
                 {showRaw ? "Hide JSON" : "Inspect JSON"}
               </Button>
             </div>
             {showLabels ? (
-              <div className={style({ display: "flex", flexDirection: "column", gap: 12 })}>
+              <div className="flex flex-col gap-3">
                 {optionCount > 0 ? (
-                  <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                    <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Options</div>
+                  <div className="flex flex-col gap-2">
+                    <div className="text-muted-foreground text-xs">Options</div>
                     <LabelChips labels={insp.Options} />
                   </div>
                 ) : null}
                 {labelCount > 0 ? (
-                  <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                    <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Labels</div>
+                  <div className="flex flex-col gap-2">
+                    <div className="text-muted-foreground text-xs">Labels</div>
                     <LabelChips labels={insp.Labels} />
                   </div>
                 ) : null}
@@ -461,14 +408,13 @@ export function VolumesPage() {
         size="md"
         footer={
           <>
-            <Button variant="secondary" onPress={() => setCreateOpen(false)}>
+            <Button variant="secondary" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
             <Button
-              variant="accent"
-              isDisabled={!name.trim() || creating}
-              isPending={creating}
-              onPress={() => void createVolume()}
+              variant="default"
+              disabled={!name.trim() || creating}
+              onClick={() => void createVolume()}
             >
               Create
             </Button>
@@ -486,14 +432,13 @@ export function VolumesPage() {
         size="md"
         footer={
           <>
-            <Button variant="secondary" onPress={() => setCloneOpen(false)}>
+            <Button variant="secondary" onClick={() => setCloneOpen(false)}>
               Cancel
             </Button>
             <Button
-              variant="accent"
-              isDisabled={!cloneDest.trim() || cloneDest.trim() === selected || cloning}
-              isPending={cloning}
-              onPress={() => void cloneVolume()}
+              variant="default"
+              disabled={!cloneDest.trim() || cloneDest.trim() === selected || cloning}
+              onClick={() => void cloneVolume()}
             >
               Clone
             </Button>

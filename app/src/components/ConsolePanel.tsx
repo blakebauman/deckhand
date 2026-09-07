@@ -1,20 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActionButton,
-  SearchField,
-  StatusLight,
-  Tooltip,
-  TooltipTrigger,
-} from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { Download, Pause, Play, Trash2 } from "lucide-react";
 import { CopyButton } from "@/components/CopyButton";
 import { lucideProps } from "@/components/Icon";
+import { Tip } from "@/components/Tip";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   TerminalFrame,
   TerminalToolbarEnd,
   TerminalToolbarStart,
 } from "@/components/TerminalChrome";
+import { cn } from "@/lib/utils";
 
 /** Streaming console for container/pod logs. */
 export function ConsolePanel({
@@ -117,76 +113,71 @@ export function ConsolePanel({
       toolbar={
         <>
           <TerminalToolbarStart>
-            <StatusLight
-              size="S"
-              variant={error ? "negative" : live ? "positive" : "neutral"}
+            <span
+              className={cn(
+                "size-2 rounded-full",
+                error ? "bg-red-500" : live ? "bg-emerald-500" : "bg-muted-foreground/60",
+              )}
               aria-label={error ? "Error" : live ? "Live" : "Paused"}
             />
-            <div className={style({ display: "flex", flexDirection: "column", minWidth: 0, gap: 2 })}>
-              <span className={["dh-terminal__title", style({ font: "ui-sm", fontWeight: "medium" })].join(" ")}>
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className={["dh-terminal__title", "text-sm font-medium"].join(" ")}>
                 {title}
               </span>
-              <span className={["dh-terminal__meta", style({ font: "detail-sm" })].join(" ")}>
+              <span className={["dh-terminal__meta", "text-xs"].join(" ")}>
                 {error ? "Disconnected" : live ? "Live stream" : "Paused"}
                 {matchCount != null ? ` · ${matchCount} match${matchCount === 1 ? "" : "es"}` : ""}
               </span>
             </div>
           </TerminalToolbarStart>
           <TerminalToolbarEnd>
-            <SearchField
+            <Input
               aria-label="Filter logs"
               value={filter}
-              onChange={setFilter}
+              onChange={(e) => setFilter(e.target.value)}
               placeholder="Filter lines…"
-              size="S"
-              styles={style({ width: 180 })}
+              className="w-[180px]"
             />
             <CopyButton value={filter ? filtered : lines} label="Copy" iconOnly dark />
-            <TooltipTrigger placement="bottom">
-              <ActionButton
+            <Tip label="Download log">
+              <Button
                 aria-label="Download full log"
-                isQuiet
-                staticColor="white"
-                size="S"
-                isDisabled={!lines}
-                onPress={download}
+                variant="ghost"
+                size="icon-sm"
+                disabled={!lines}
+                onClick={download}
               >
                 <Download {...lucideProps("S")} />
-              </ActionButton>
-              <Tooltip>Download log</Tooltip>
-            </TooltipTrigger>
-            <TooltipTrigger placement="bottom">
-              <ActionButton
+              </Button>
+            </Tip>
+            <Tip label={live ? "Pause" : "Resume"}>
+              <Button
                 aria-label={live ? "Pause log stream" : "Resume log stream"}
-                isQuiet
-                staticColor="white"
-                size="S"
-                onPress={() => setLive((v) => !v)}
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setLive((v) => !v)}
               >
                 {live ? <Pause {...lucideProps("S")} /> : <Play {...lucideProps("S")} />}
-              </ActionButton>
-              <Tooltip>{live ? "Pause" : "Resume"}</Tooltip>
-            </TooltipTrigger>
-            <TooltipTrigger placement="bottom">
-              <ActionButton
+              </Button>
+            </Tip>
+            <Tip label="Clear">
+              <Button
                 aria-label="Clear logs"
-                isQuiet
-                staticColor="white"
-                size="S"
-                isDisabled={!lines}
-                onPress={() => setLines("")}
+                variant="ghost"
+                size="icon-sm"
+                disabled={!lines}
+                onClick={() => setLines("")}
               >
                 <Trash2 {...lucideProps("S")} />
-              </ActionButton>
-              <Tooltip>Clear</Tooltip>
-            </TooltipTrigger>
+              </Button>
+            </Tip>
           </TerminalToolbarEnd>
         </>
       }
     >
       {error ? (
         <div className="dh-terminal__banner">
-          <span className={["dh-terminal__banner-text", style({ font: "body-xs" })].join(" ")}>
+          <span className={["dh-terminal__banner-text", "text-xs"].join(" ")}>
             {error}
           </span>
         </div>
@@ -200,17 +191,7 @@ export function ConsolePanel({
         className={[
           "dh-terminal__body",
           isPlaceholder ? "is-muted" : "",
-          style({
-            minHeight: 0,
-            flexGrow: 1,
-            overflow: "auto",
-            paddingX: 16,
-            paddingY: 16,
-            margin: 0,
-            font: "code-xs",
-            whiteSpace: "pre-wrap",
-            overflowWrap: "anywhere",
-          }),
+          "flex-1 px-4 py-4 m-0 min-h-0 overflow-auto font-mono text-xs min-h-0",
         ]
           .filter(Boolean)
           .join(" ")}

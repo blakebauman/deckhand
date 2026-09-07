@@ -3,9 +3,9 @@
   <svg x="0" y="0" width="128" height="128" viewBox="0 0 128 128">
     <defs>
       <linearGradient id="tile" x1="16" y1="8" x2="112" y2="120" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#FF2B2B"/>
-        <stop offset="48%" stop-color="#FF0000"/>
-        <stop offset="100%" stop-color="#C20000"/>
+        <stop offset="0%" stop-color="#BBA4FB"/>
+        <stop offset="48%" stop-color="#A88BFA"/>
+        <stop offset="100%" stop-color="#6C31E3"/>
       </linearGradient>
       <linearGradient id="sheen" x1="64" y1="0" x2="64" y2="72" gradientUnits="userSpaceOnUse">
         <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>
@@ -29,6 +29,6 @@
   </svg>
   <g transform="translate(152 0)" fill="#0D0D0D">
     <text x="0" y="78" font-family="ui-sans-serif, system-ui, sans-serif" font-size="54" font-weight="650" letter-spacing="-0.035em">Deckhand</text>
-    <text x="2" y="104" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="500" letter-spacing="0.2em" fill="#FF0000">LOCAL CONTAINER OPS</text>
+    <text x="2" y="104" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="500" letter-spacing="0.2em" fill="#6C31E3">LOCAL CONTAINER OPS</text>
   </g>
 </svg>

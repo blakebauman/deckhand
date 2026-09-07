@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
-import { Tab, TabList, TabPanel, Tabs } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { ListEmpty, ListItem, ListPane } from "@/components/ListPane";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useUIStore } from "@/stores/uiStore";
 import { K8sChrome } from "@/routes/k8s/K8sChrome";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 type ResourceTab =
   | "services"
@@ -70,10 +70,8 @@ function ResourceList({
     >
       {filtered.map((item, i) => (
         <ListItem key={item?.metadata?.uid || `${nameOf(item)}-${i}`} active={false}>
-          <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
-            {nameOf(item)}
-          </div>
-          <div className={style({ marginTop: 4, minWidth: 0 })}>{renderMeta(item)}</div>
+          <div className="min-w-0 truncate text-sm font-medium">{nameOf(item)}</div>
+          <div className="mt-0.5 min-w-0">{renderMeta(item)}</div>
         </ListItem>
       ))}
     </ListPane>
@@ -142,24 +140,25 @@ export function K8sResourcesPage() {
 
   return (
     <K8sChrome>
-      <div className={style({ display: "flex", flexDirection: "column", height: "full", minHeight: 0, gap: 12 })}>
+      <div className="flex h-full min-h-0 flex-col gap-3">
         <Tabs
           aria-label="Kubernetes resources"
-          selectedKey={tab}
-          onSelectionChange={(k) => {
+          value={tab}
+          onValueChange={(k) => {
             setTab(String(k) as ResourceTab);
             setQ("");
           }}
+          className="flex h-full min-h-0 flex-col gap-3"
         >
-          <TabList>
+          <TabsList>
             {tabs.map((t) => (
-              <Tab key={t.id} id={t.id}>
+              <TabsTrigger key={t.id} value={t.id}>
                 {t.label}
-              </Tab>
+              </TabsTrigger>
             ))}
-          </TabList>
+          </TabsList>
 
-          <TabPanel id="services" styles={style({ marginTop: 12, height: "full", minHeight: 0 })}>
+          <TabsContent value="services" className="mt-3 h-full min-h-0">
             <ResourceList
               title="Services"
               loading={services.isLoading}
@@ -167,7 +166,7 @@ export function K8sResourcesPage() {
               q={q}
               onQ={setQ}
               renderMeta={(s) => (
-                <span className={style({ font: "code-xs", color: "neutral-subdued", truncate: true })}>
+                <span className="truncate font-mono text-xs text-muted-foreground">
                   {s.spec?.type || "ClusterIP"}
                   {" · "}
                   {s.spec?.clusterIP || "—"}
@@ -178,9 +177,9 @@ export function K8sResourcesPage() {
                 </span>
               )}
             />
-          </TabPanel>
+          </TabsContent>
 
-          <TabPanel id="ingresses" styles={style({ marginTop: 12, height: "full", minHeight: 0 })}>
+          <TabsContent value="ingresses" className="mt-3 h-full min-h-0">
             <ResourceList
               title="Ingresses"
               loading={ingresses.isLoading}
@@ -190,15 +189,15 @@ export function K8sResourcesPage() {
               renderMeta={(ing) => {
                 const hosts = (ing.spec?.rules || []).map((r: any) => r.host).filter(Boolean);
                 return (
-                  <span className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}>
+                  <span className="text-xs text-muted-foreground truncate">
                     {hosts.length ? hosts.join(", ") : "no hosts"}
                   </span>
                 );
               }}
             />
-          </TabPanel>
+          </TabsContent>
 
-          <TabPanel id="configmaps" styles={style({ marginTop: 12, height: "full", minHeight: 0 })}>
+          <TabsContent value="configmaps" className="mt-3 h-full min-h-0">
             <ResourceList
               title="ConfigMaps"
               loading={configmaps.isLoading}
@@ -208,16 +207,16 @@ export function K8sResourcesPage() {
               renderMeta={(cm) => {
                 const keys = Object.keys(cm.data || {});
                 return (
-                  <span className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}>
+                  <span className="text-xs text-muted-foreground truncate">
                     {keys.length} key{keys.length === 1 ? "" : "s"}
                     {keys.length ? `: ${keys.slice(0, 4).join(", ")}${keys.length > 4 ? "…" : ""}` : ""}
                   </span>
                 );
               }}
             />
-          </TabPanel>
+          </TabsContent>
 
-          <TabPanel id="secrets" styles={style({ marginTop: 12, height: "full", minHeight: 0 })}>
+          <TabsContent value="secrets" className="mt-3 h-full min-h-0">
             <ResourceList
               title="Secrets"
               loading={secrets.isLoading}
@@ -227,7 +226,7 @@ export function K8sResourcesPage() {
               renderMeta={(sec) => {
                 const keys = Object.keys(sec.data || sec.stringData || {});
                 return (
-                  <span className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}>
+                  <span className="text-xs text-muted-foreground truncate">
                     {sec.type || "Opaque"}
                     {" · "}
                     {keys.length
@@ -237,9 +236,9 @@ export function K8sResourcesPage() {
                 );
               }}
             />
-          </TabPanel>
+          </TabsContent>
 
-          <TabPanel id="nodes" styles={style({ marginTop: 12, height: "full", minHeight: 0 })}>
+          <TabsContent value="nodes" className="mt-3 h-full min-h-0">
             <ResourceList
               title="Nodes"
               loading={nodes.isLoading}
@@ -250,18 +249,18 @@ export function K8sResourcesPage() {
                 const ready = (n.status?.conditions || []).find((c: any) => c.type === "Ready");
                 const ok = ready?.status === "True";
                 return (
-                  <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" })}>
+                  <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge tone={ok ? "success" : "destructive"}>{ok ? "Ready" : "NotReady"}</StatusBadge>
-                    <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                    <span className="text-xs text-muted-foreground">
                       {n.status?.nodeInfo?.kubeletVersion || ""}
                     </span>
                   </div>
                 );
               }}
             />
-          </TabPanel>
+          </TabsContent>
 
-          <TabPanel id="events" styles={style({ marginTop: 12, height: "full", minHeight: 0 })}>
+          <TabsContent value="events" className="mt-3 h-full min-h-0">
             <ResourceList
               title="Events"
               loading={events.isLoading}
@@ -269,21 +268,21 @@ export function K8sResourcesPage() {
               q={q}
               onQ={setQ}
               renderMeta={(ev) => (
-                <div className={style({ display: "flex", flexDirection: "column", gap: 2 })}>
-                  <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-muted-foreground">
                     {ev.reason || ev.type || "Event"}
                     {" · "}
                     {ev.involvedObject?.kind}/{ev.involvedObject?.name || ev.involved || ""}
                   </span>
-                  <span className={style({ font: "body-xs", color: "neutral-subdued", truncate: true })}>
+                  <span className="text-xs text-muted-foreground truncate">
                     {ev.message || "—"}
                   </span>
                 </div>
               )}
             />
-          </TabPanel>
+          </TabsContent>
 
-          <TabPanel id="jobs" styles={style({ marginTop: 12, height: "full", minHeight: 0 })}>
+          <TabsContent value="jobs" className="mt-3 h-full min-h-0">
             <ResourceList
               title="Jobs"
               loading={jobs.isLoading}
@@ -291,15 +290,15 @@ export function K8sResourcesPage() {
               q={q}
               onQ={setQ}
               renderMeta={(j) => (
-                <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                <span className="text-xs text-muted-foreground">
                   completions {j.status?.succeeded ?? 0}/{j.spec?.completions ?? 1}
                   {j.status?.failed ? ` · failed ${j.status.failed}` : ""}
                 </span>
               )}
             />
-          </TabPanel>
+          </TabsContent>
 
-          <TabPanel id="cronjobs" styles={style({ marginTop: 12, height: "full", minHeight: 0 })}>
+          <TabsContent value="cronjobs" className="mt-3 h-full min-h-0">
             <ResourceList
               title="CronJobs"
               loading={cronjobs.isLoading}
@@ -307,16 +306,16 @@ export function K8sResourcesPage() {
               q={q}
               onQ={setQ}
               renderMeta={(cj) => (
-                <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                <span className="text-xs text-muted-foreground">
                   {cj.spec?.schedule || "—"}
                   {" · "}
                   {cj.spec?.suspend ? "suspended" : "active"}
                 </span>
               )}
             />
-          </TabPanel>
+          </TabsContent>
 
-          <TabPanel id="statefulsets" styles={style({ marginTop: 12, height: "full", minHeight: 0 })}>
+          <TabsContent value="statefulsets" className="mt-3 h-full min-h-0">
             <ResourceList
               title="StatefulSets"
               loading={statefulsets.isLoading}
@@ -324,12 +323,12 @@ export function K8sResourcesPage() {
               q={q}
               onQ={setQ}
               renderMeta={(ss) => (
-                <span className={style({ font: "body-xs", color: "neutral-subdued" })}>
+                <span className="text-xs text-muted-foreground">
                   {ss.status?.readyReplicas ?? 0}/{ss.spec?.replicas ?? 0} ready
                 </span>
               )}
             />
-          </TabPanel>
+          </TabsContent>
         </Tabs>
       </div>
     </K8sChrome>

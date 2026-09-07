@@ -1,14 +1,10 @@
 import type { ReactNode } from "react";
-import { Content, ContextualHelp, Heading } from "@react-spectrum/s2";
+import { Info } from "lucide-react";
+import { lucideProps } from "@/components/Icon";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
-const placementMap = {
-  top: "top",
-  right: "right",
-  bottom: "bottom",
-  left: "left",
-} as const;
-
-/** Small info affordance — Spectrum ContextualHelp next to labels. */
+/** Small info affordance next to labels. */
 export function HelpHint({
   label,
   title,
@@ -20,9 +16,23 @@ export function HelpHint({
   side?: "top" | "right" | "bottom" | "left";
 }) {
   return (
-    <ContextualHelp variant="info" placement={placementMap[side]} size="XS">
-      {title ? <Heading>{title}</Heading> : null}
-      <Content>{label}</Content>
-    </ContextualHelp>
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={title || "More info"}
+            className="size-6 text-muted-foreground"
+          >
+            <Info {...lucideProps("S")} />
+          </Button>
+        }
+      />
+      <PopoverContent side={side} className="max-w-xs text-sm">
+        {title ? <p className="mb-1 font-semibold">{title}</p> : null}
+        <div className="text-muted-foreground">{label}</div>
+      </PopoverContent>
+    </Popover>
   );
 }

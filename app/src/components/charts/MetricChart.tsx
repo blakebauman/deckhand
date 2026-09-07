@@ -1,11 +1,9 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useId, useMemo } from "react";
-import { Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-/** Animated bar waveform — Spectrum gray tokens via style macro. */
+/** Animated bar waveform for live metrics. */
 export function WaveBars({
   values,
   max,
@@ -20,28 +18,15 @@ export function WaveBars({
 
   return (
     <div
-      className={style({
-        display: "flex",
-        height: 56,
-        width: "full",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 2,
-      })}
+      className="flex h-14 w-full max-w-xs items-center justify-center gap-1"
     >
       {pads.map((v, i) => (
         <motion.div
           key={i}
-          className={style({
-            width: 3,
-            minWidth: 2,
-            flexGrow: 1,
-            borderRadius: "full",
-            backgroundColor: "gray-500",
-          })}
+          className="min-w-1 w-[3px] flex-1 rounded-full bg-foreground/35"
           animate={{
             height: `${Math.max(8, (v / peak) * 100)}%`,
-            opacity: 0.35 + (i / Math.max(pads.length, 1)) * 0.65,
+            opacity: 0.4 + (i / Math.max(pads.length, 1)) * 0.55,
           }}
           transition={{
             duration,
@@ -54,7 +39,7 @@ export function WaveBars({
   );
 }
 
-/** Smooth SVG area — inherits Spectrum `color: neutral` from wrapper. */
+/** Smooth SVG area sparkline. */
 export function AreaChart({
   values,
   max,
@@ -86,10 +71,10 @@ export function AreaChart({
   }, [values, max]);
 
   return (
-    <div className={style({ color: "neutral", width: "full" })}>
+    <div className="w-full text-foreground">
       <svg
         viewBox="0 0 240 72"
-        className={style({ height: 64, width: "full", overflow: "visible" })}
+        className="w-full h-16 overflow-visible"
         preserveAspectRatio="none"
       >
         <defs>
@@ -115,7 +100,7 @@ export function AreaChart({
   );
 }
 
-/** Circular utilization gauge — Spectrum neutral stroke. */
+/** Circular utilization gauge. */
 export function RingGauge({
   value,
   max = 100,
@@ -134,7 +119,7 @@ export function RingGauge({
   const offset = c - (pct / 100) * c;
 
   return (
-    <div className={style({ display: "flex", alignItems: "center", gap: 12, color: "neutral" })}>
+    <div className="flex items-center gap-3 text-foreground">
       <svg width="84" height="84" viewBox="0 0 84 84" style={{ transform: "rotate(-90deg)" }}>
         <circle cx="42" cy="42" r={r} fill="none" stroke="currentColor" strokeWidth="7" opacity={0.22} />
         <motion.circle
@@ -151,20 +136,16 @@ export function RingGauge({
         />
       </svg>
       <div>
-        <Text
-          styles={style({
-            font: "detail",
-            fontWeight: "medium",
-            color: "neutral-subdued",
-          })}
+        <span
+          className="text-muted-foreground text-xs font-medium"
         >
           {label}
-        </Text>
+        </span>
         <div>
-          <Text styles={style({ font: "heading-lg", fontWeight: "bold" })}>{pct.toFixed(0)}%</Text>
+          <span className="text-xl font-semibold tracking-tight font-bold">{pct.toFixed(0)}%</span>
         </div>
         {sub ? (
-          <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>{sub}</Text>
+          <span className="text-muted-foreground text-xs">{sub}</span>
         ) : null}
       </div>
     </div>
@@ -190,46 +171,16 @@ export function MetricCard({
     <div
       className={
         flat
-          ? style({
-              overflow: "hidden",
-              minWidth: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            })
-          : style({
-              backgroundColor: "layer-1",
-              overflow: "hidden",
-              borderRadius: "xl",
-              borderWidth: 1,
-              borderStyle: "solid",
-              borderColor: "gray-200",
-              paddingX: 16,
-              paddingY: 16,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-              minWidth: 0,
-            })
+          ? "flex min-w-0 flex-col gap-2 overflow-hidden"
+          : "flex min-w-0 flex-col gap-2 overflow-hidden rounded-2xl bg-card px-4 py-3.5"
       }
     >
-      <div
-        className={style({
-          display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          gap: 8,
-        })}
-      >
-        <Text styles={style({ font: "detail", fontWeight: "medium", color: "neutral-subdued" })}>
-          {label}
-        </Text>
-        {hint ? (
-          <Text styles={style({ font: "body-xs", color: "neutral-subdued" })}>{hint}</Text>
-        ) : null}
+      <div className="flex justify-between gap-2">
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
       </div>
-      <Text styles={style({ font: "title-lg", fontWeight: "bold" })}>{value}</Text>
-      {children ? <div className={style({ marginTop: 4, minWidth: 0 })}>{children}</div> : null}
+      <span className="text-lg font-semibold tracking-tight tabular-nums">{value}</span>
+      {children ? <div className="mt-0.5 min-w-0">{children}</div> : null}
     </div>
   );
 }

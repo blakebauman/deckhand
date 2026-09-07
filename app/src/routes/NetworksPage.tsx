@@ -1,8 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Button, Picker, PickerItem } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { CodeBlock } from "@/components/CodeBlock";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -12,14 +10,17 @@ import { GlassSheet } from "@/components/GlassSheet";
 import { InspectFields, LabelChips } from "@/components/InspectFields";
 import { ListEmpty, ListPane } from "@/components/ListPane";
 import { toast } from "@/components/Toaster";
-import { Field } from "@/components/spectrum/Field";
-import { RowMenu } from "@/components/spectrum/RowMenu";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
-import { Tip } from "@/components/spectrum/Tip";
+import { Field } from "@/components/Field";
+import { RowMenu } from "@/components/RowMenu";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Tip } from "@/components/Tip";
 import { shortId } from "@/lib/utils";
 import { useUIStore } from "@/stores/uiStore";
 
 import { copyText } from "@/routes/shared";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 function driverTone(driver?: string): "info" | "muted" | "accent" | "default" {
   switch ((driver || "").toLowerCase()) {
@@ -98,7 +99,7 @@ export function NetworksPage() {
   };
 
   return (
-    <div className={style({ display: "flex", height: "full", minHeight: 0, minWidth: 0, width: "full", gap: 24 })}>
+    <div className="flex h-full min-h-0 w-full min-w-0 gap-5">
       <ListPane
         title="Networks"
         loading={list.isLoading}
@@ -111,7 +112,7 @@ export function NetworksPage() {
         search={{ value: q, onChange: setQ, placeholder: "Search networks" }}
         actions={
           <Tip label="Create a Docker network">
-            <Button size="S" onPress={() => setCreateOpen(true)}>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
               Create
             </Button>
           </Tip>
@@ -139,10 +140,10 @@ export function NetworksPage() {
             ]}
             suffix={<StatusBadge tone={driverTone(n.Driver)}>{n.Driver || "—"}</StatusBadge>}
           >
-            <div className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+            <div className="min-w-0 text-sm font-medium truncate">
               {n.Name}
             </div>
-            <div className={style({ font: "body-xs", color: "neutral-subdued", truncate: true, minWidth: 0 })}>
+            <div className="min-w-0 text-muted-foreground text-xs truncate">
               {n.Scope || "local"}
               {n.Id ? ` · ${shortId(n.Id)}` : ""}
             </div>
@@ -157,7 +158,7 @@ export function NetworksPage() {
             title="Select a network"
             description="Inspect subnet, gateway, and attached containers — or create a new network."
             action={
-              <Button size="S" variant="secondary" onPress={() => setCreateOpen(true)}>
+              <Button size="sm" variant="secondary" onClick={() => setCreateOpen(true)}>
                 Create network
               </Button>
             }
@@ -165,29 +166,21 @@ export function NetworksPage() {
         }
       >
         {insp ? (
-          <div className={style({ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 8 })}>
-            <div
-              className={style({
-                display: "flex",
-                flexWrap: "wrap",
-                alignItems: "start",
-                justifyContent: "space-between",
-                gap: 12,
-              })}
-            >
-              <div className={style({ minWidth: 0, flexGrow: 1, display: "flex", flexDirection: "column", gap: 8 })}>
-                <div className={style({ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" })}>
+          <div className="flex flex-col gap-4 pb-2">
+            <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <div className="flex flex-wrap items-center gap-2">
                   <DetailHeading>{insp.Name || row?.Name}</DetailHeading>
                   <StatusBadge tone={driverTone(insp.Driver)}>{insp.Driver || "—"}</StatusBadge>
                 </div>
-                <div className={style({ font: "code-xs", color: "neutral-subdued" })}>
+                <div className="font-mono text-xs text-muted-foreground">
                   {shortId(insp.Id || selected || "")}
                   {insp.Scope ? ` · ${insp.Scope}` : ""}
                 </div>
               </div>
-              <div className={style({ display: "flex", flexWrap: "wrap", gap: 8 })}>
+              <div className="flex flex-wrap gap-2">
                 <CopyButton value={insp.Id || selected || ""} label="Copy ID" />
-                <Button size="S" variant="negative" onPress={() => setConfirmRemove(true)}>
+                <Button size="sm" variant="destructive" onClick={() => setConfirmRemove(true)}>
                   Remove
                 </Button>
               </div>
@@ -210,43 +203,30 @@ export function NetworksPage() {
               ]}
             />
 
-            <div className={style({ display: "flex", flexDirection: "column", gap: 12 })}>
-              <div className={style({ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 })}>
-                <div className={style({ font: "title-sm" })}>Attached containers</div>
-                <div className={style({ font: "body-xs", color: "neutral-subdued" })}>
+            <div className="flex flex-col gap-3">
+              <div className="flex justify-between gap-2">
+                <div className="text-sm font-semibold">Attached containers</div>
+                <div className="text-muted-foreground text-xs">
                   {detail.isLoading ? "Loading…" : `${attached.length}`}
                 </div>
               </div>
               {attached.length === 0 && !detail.isLoading ? (
-                <div className={style({ font: "body-sm", color: "neutral-subdued" })}>
+                <div className="text-muted-foreground text-sm">
                   Nothing attached. Point a container or Compose service at this network to see it here.
                 </div>
               ) : (
-                <div className={style({ display: "flex", flexDirection: "column", gap: 4 })}>
+                <div className="flex flex-col gap-1">
                   {attached.map(([id, c]) => (
                     <button
                       key={id}
                       type="button"
-                      className={style({
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        paddingX: 12,
-                        paddingY: 8,
-                        borderRadius: "lg",
-                        borderWidth: 0,
-                        textAlign: "start",
-                        cursor: "pointer",
-                        backgroundColor: "gray-100",
-                        color: "neutral",
-                      })}
+                      className="flex items-center justify-between gap-3 px-3 py-2 bg-muted text-foreground rounded-lg border-0 cursor-pointer text-start"
                       onClick={() => openContainer(id)}
                     >
-                      <span className={style({ font: "body", fontWeight: "medium", truncate: true, minWidth: 0 })}>
+                      <span className="min-w-0 text-sm font-medium truncate">
                         {c.Name || shortId(id)}
                       </span>
-                      <span className={style({ font: "code-xs", color: "neutral-subdued", flexShrink: 0 })}>
+                      <span className="shrink-0 font-mono text-xs text-muted-foreground">
                         {c.IPv4Address || c.IPv6Address || shortId(id)}
                       </span>
                     </button>
@@ -256,14 +236,14 @@ export function NetworksPage() {
             </div>
 
             {Object.keys(insp.Labels || {}).length ? (
-              <div className={style({ display: "flex", flexDirection: "column", gap: 8 })}>
-                <div className={style({ font: "body-xs", color: "neutral-subdued" })}>Labels</div>
+              <div className="flex flex-col gap-2">
+                <div className="text-muted-foreground text-xs">Labels</div>
                 <LabelChips labels={insp.Labels} />
               </div>
             ) : null}
 
             <div>
-              <Button size="S" variant="secondary" fillStyle="outline" onPress={() => setShowRaw((v) => !v)}>
+              <Button size="sm" variant="secondary" onClick={() => setShowRaw((v) => !v)}>
                 {showRaw ? "Hide JSON" : "Inspect JSON"}
               </Button>
             </div>
@@ -286,31 +266,30 @@ export function NetworksPage() {
         size="md"
         footer={
           <>
-            <Button variant="secondary" onPress={() => setCreateOpen(false)}>
+            <Button variant="secondary" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
-            <Button variant="accent" isDisabled={!name.trim() || creating} isPending={creating} onPress={() => void createNetwork()}>
+            <Button variant="default" disabled={!name.trim() || creating} onClick={() => void createNetwork()}>
               Create
             </Button>
           </>
         }
       >
-        <div className={style({ display: "flex", flexDirection: "column", gap: 16 })}>
+        <div className="flex flex-col gap-4">
           <Field value={name} onChange={setName} placeholder="my-network" aria-label="Network name" />
-          <Picker
-            label="Driver"
-            selectedKey={driver}
-            onSelectionChange={(k) => {
-              if (k) setDriver(String(k));
-            }}
-          >
-            <PickerItem id="bridge">bridge</PickerItem>
-            <PickerItem id="overlay">overlay</PickerItem>
-            <PickerItem id="macvlan">macvlan</PickerItem>
-            <PickerItem id="ipvlan">ipvlan</PickerItem>
-            <PickerItem id="host">host</PickerItem>
-            <PickerItem id="none">none</PickerItem>
-          </Picker>
+          <Select value={driver} onValueChange={(k) => k && setDriver(k)}>
+            <SelectTrigger aria-label="Driver" className="w-full">
+              <SelectValue placeholder="Driver" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="bridge">bridge</SelectItem>
+              <SelectItem value="overlay">overlay</SelectItem>
+              <SelectItem value="macvlan">macvlan</SelectItem>
+              <SelectItem value="ipvlan">ipvlan</SelectItem>
+              <SelectItem value="host">host</SelectItem>
+              <SelectItem value="none">none</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </GlassSheet>
 

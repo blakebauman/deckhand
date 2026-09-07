@@ -1,17 +1,16 @@
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Button, Text } from "@react-spectrum/s2";
-import { style } from "@react-spectrum/s2/style" with { type: "macro" };
 import { api } from "@/lib/api";
 import { DiskUsagePanel } from "@/components/DiskUsagePanel";
 import { GpuPanel } from "@/components/GpuPanel";
 import { HelpHint } from "@/components/HelpHint";
 import { EmptyState, PageShell } from "@/components/PageShell";
-import { ChartPanel, RunningAreaChart } from "@/components/charts/SpectrumChartsPanel";
-import { StatusBadge } from "@/components/spectrum/StatusBadge";
+import { ChartPanel, RunningAreaChart } from "@/components/charts/ChartsPanel";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useDockerReconnect } from "@/hooks/useDockerReconnect";
 import { useMetricsStore } from "@/stores/metricsStore";
+import { Button } from "@/components/ui/button";
 
 const jumpLinks = [
   { label: "Containers", to: "/containers" as const },
@@ -79,42 +78,28 @@ export function DashboardPage() {
             "Start Docker Desktop, Colima, or another engine, then retry attach."
           }
           action={
-            <div className={style({ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" })}>
-              <Button size="S" variant="accent" isPending={reconnecting} onPress={() => void reconnect()}>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button size="sm" variant="default" onClick={() => void reconnect()}>
                 Retry connection
               </Button>
-              <Button size="S" variant="secondary" onPress={() => navigate({ to: "/settings" })}>
+              <Button size="sm" variant="secondary" onClick={() => navigate({ to: "/settings" })}>
                 Open Settings
               </Button>
             </div>
           }
         />
       ) : (
-        <div className={style({ display: "flex", flexDirection: "column", gap: 32 })}>
-          <section
-            className={style({
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-            })}
-          >
-            <div
-              className={style({
-                display: "flex",
-                flexWrap: "wrap",
-                alignItems: "baseline",
-                justifyContent: "space-between",
-                gap: 12,
-              })}
-            >
-              <div className={style({ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 })}>
-                <div className={style({ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" })}>
-                  <Text styles={style({ font: "heading-lg", margin: 0 })}>
+        <div className="flex flex-col gap-5">
+          <section className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="m-0 text-xl font-semibold tracking-tight tabular-nums">
                     {running} running
-                  </Text>
+                  </span>
                   <StatusBadge tone="success">Connected</StatusBadge>
                 </div>
-                <Text styles={style({ font: "body-sm", color: "neutral-subdued" })}>
+                <span className="text-sm text-muted-foreground">
                   {engineName}
                   {` · ${totalContainers} total`}
                   {stopped ? ` · ${stopped} stopped` : ""}
@@ -122,16 +107,15 @@ export function DashboardPage() {
                   {dash.data?.images != null ? ` · ${dash.data.images} images` : ""}
                   {dash.data?.volumes != null ? ` · ${dash.data.volumes} volumes` : ""}
                   {dash.data?.networks != null ? ` · ${dash.data.networks} networks` : ""}
-                </Text>
+                </span>
               </div>
-              <div className={style({ display: "flex", flexWrap: "wrap", gap: 4 })}>
+              <div className="flex flex-wrap gap-1.5">
                 {jumpLinks.map((link) => (
                   <Button
                     key={link.to}
-                    size="S"
+                    size="sm"
                     variant="secondary"
-                    fillStyle="outline"
-                    onPress={() => navigate({ to: link.to })}
+                    onClick={() => navigate({ to: link.to })}
                   >
                     {link.label}
                   </Button>
@@ -143,36 +127,30 @@ export function DashboardPage() {
           <ChartPanel
             title="Running containers"
             hint="Hover for time · ~5s samples"
-            height={220}
+            height={200}
           >
             <RunningAreaChart data={runningSeries} />
           </ChartPanel>
 
-          <div
-            className={style({
-              display: "grid",
-              gridTemplateColumns: {
-                default: "1fr",
-                md: "1fr 1fr",
-              },
-              gap: 32,
-              alignItems: "start",
-            })}
-          >
-            <section className={style({ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 })}>
-              <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
-                <Text styles={style({ font: "title-sm", margin: 0 })}>GPUs</Text>
+          <div className="grid items-start gap-5 md:grid-cols-2">
+            <section className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-2xl bg-card">
+              <div className="flex items-center gap-2 px-5 pt-4 pb-2">
+                <span className="m-0 text-xs font-medium text-muted-foreground">GPUs</span>
                 <HelpHint label="Detected via nvidia-smi and the Docker NVIDIA runtime" />
               </div>
-              <GpuPanel />
+              <div className="min-w-0 px-5 pb-4">
+                <GpuPanel />
+              </div>
             </section>
 
-            <section className={style({ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 })}>
-              <div className={style({ display: "flex", alignItems: "center", gap: 8 })}>
-                <Text styles={style({ font: "title-sm", margin: 0 })}>Engine disk</Text>
+            <section className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-2xl bg-card">
+              <div className="flex items-center gap-2 px-5 pt-4 pb-2">
+                <span className="m-0 text-xs font-medium text-muted-foreground">Engine disk</span>
                 <HelpHint label="From docker system df — reclaim unused layers, stopped containers, and idle cache" />
               </div>
-              <DiskUsagePanel compact hideTitle />
+              <div className="min-w-0 px-5 pb-4">
+                <DiskUsagePanel compact hideTitle />
+              </div>
             </section>
           </div>
         </div>
