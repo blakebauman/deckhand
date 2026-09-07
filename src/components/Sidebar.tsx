@@ -210,6 +210,7 @@ export function Sidebar() {
         </button>
       </TipRight>
 
+      {/* biome-ignore lint/a11y/useSemanticElements: a button group is ARIA role="group"; <fieldset> is for form controls */}
       <div
         className="flex flex-col items-center gap-1 rounded-full bg-muted p-1"
         style={noDrag}

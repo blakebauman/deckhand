@@ -95,6 +95,7 @@ export function RunningAreaChart({ data }: { data: { i: number; t: string; runni
   }, [chartData]);
 
   const last = chartData[chartData.length - 1];
+  const srSummary = `Running containers over time. Latest ${last.running} at ${last.t}, ${chartData.length} samples.`;
   const stroke = scheme === "dark" ? "oklch(0.78 0.12 293)" : "oklch(0.52 0.18 293)";
   const grid = scheme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
 
@@ -104,7 +105,11 @@ export function RunningAreaChart({ data }: { data: { i: number; t: string; runni
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
         className="h-full w-full overflow-visible"
+        role="img"
+        aria-label={srSummary}
       >
+        {/* The title attribute above is a mouse tooltip; this is the accessible name. */}
+        <title>{srSummary}</title>
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={stroke} stopOpacity={0.28} />

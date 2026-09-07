@@ -45,12 +45,14 @@ export function LabelChips({ labels }: { labels?: Record<string, string> | null 
   const entries = Object.entries(labels || {});
   if (!entries.length) return null;
   return (
-    <div className="flex flex-wrap gap-1.5" aria-label="Labels">
+    <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0" aria-label="Labels">
       {entries.map(([k, v]) => (
-        <Badge key={k} variant="secondary" className="max-w-full truncate font-mono text-[11px]">
-          {k}={v}
-        </Badge>
+        <li key={k} className="max-w-full">
+          <Badge variant="secondary" className="max-w-full truncate font-mono text-[11px]">
+            {k}={v}
+          </Badge>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

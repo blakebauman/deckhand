@@ -1,3 +1,9 @@
+// biome-ignore-all lint/a11y/noStaticElementInteractions: three sites, all correct.
+// The row itself gates role, tabIndex, onKeyDown and onClick on `selectable`
+// together, which the rule cannot correlate across separate ternaries. The two
+// inner wrappers exist only to stop the row click reaching their children — the
+// checkbox and the menu trigger are the actual controls.
+
 import { MoreHorizontal } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -64,7 +70,7 @@ export function RowMenu({
     <div
       role={selectable ? "button" : undefined}
       tabIndex={selectable ? 0 : undefined}
-      onClick={onSelect}
+      onClick={selectable ? onSelect : undefined}
       onKeyDown={
         selectable
           ? (e) => {
