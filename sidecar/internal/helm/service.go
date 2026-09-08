@@ -44,6 +44,12 @@ func (s *Service) List(ctx context.Context, ns string, allNamespaces bool) ([]Re
 	if err != nil {
 		return nil, err
 	}
+	return parseReleaseList(out)
+}
+
+// parseReleaseList turns `helm list -o json` output into release summaries.
+// Split out from List so it can be exercised without a helm binary.
+func parseReleaseList(out string) ([]ReleaseSummary, error) {
 	var raw []map[string]any
 	if err := json.Unmarshal([]byte(out), &raw); err != nil {
 		return nil, err
@@ -53,7 +59,7 @@ func (s *Service) List(ctx context.Context, ns string, allNamespaces bool) ([]Re
 		result = append(result, ReleaseSummary{
 			Name:       str(item["name"]),
 			Namespace:  str(item["namespace"]),
-			Revision:   fmt.Sprint(item["revision"]),
+			Revision:   str(item["revision"]),
 			Status:     str(item["status"]),
 			Chart:      str(item["chart"]),
 			AppVersion: str(item["app_version"]),

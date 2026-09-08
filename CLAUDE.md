@@ -10,19 +10,29 @@ bun run dev              # build sidecar → Tauri dev (Vite on :1420)
 bun run dev:ui           # Vite UI only; pair with VITE_SIDECAR_URL
 bun run dev:sidecar      # go run the sidecar on 127.0.0.1:7420
 bun run build            # tsc --noEmit && vite build  (the UI typecheck gate)
+bun run lint             # biome check .          (the UI lint + format gate)
+bun run lint:fix         # biome check --write .  — fixes what CI's `biome ci .` would fail on
 bun run build:sidecar    # scripts/build-sidecar.sh → src-tauri/binaries/
 bun run version 0.1.0-x  # sync package.json + Cargo.toml
 bun run version:check    # fail if Cargo.toml ≠ root package.json version
 bun run tauri:build      # sidecar + installers (.dmg/.app, .deb/AppImage)
 
-cd sidecar && go build ./... && go vet ./...   # sidecar checks
+cd sidecar && go build ./... && go vet ./... && go test ./...   # sidecar checks
 ```
 
-There are **no tests yet** — 32 Go files, zero `*_test.go`, and no JS test runner. Verification
-is the build: `bun run build` for the UI, `go build ./... && go vet ./...` for the sidecar. CI
-(`.github/workflows/ci.yml`) runs exactly those plus `go test ./...` and `bun run version:check`.
-CI also gates `gofmt` on `sidecar/` — fix a failure with `gofmt -w sidecar/`. There is no
-formatter or linter configured for the TypeScript side; `tsc --noEmit` is the only gate there.
+The sidecar has Go tests; the frontend has **no test runner at all**. Coverage is deliberately
+partial — pure logic that is security-relevant or easy to get subtly wrong (`server/auth`,
+`k8s/resources` redaction, `audit`, `engine`, `compose`, `helm`, `domains/proxy`, and
+`docker/{client,run,stats,volume_ops}`). Anything needing a live daemon is untested, so add a
+`*_test.go` next to the logic you touch rather than assuming one exists. Where a method shells
+out and then parses the output, split the parser into its own function (`parseComposeLs`,
+`parseComposePs`, `parseReleaseList`) so it can be tested without a `docker` or `helm` binary.
+Verification for the UI is `bun run build` (typecheck) plus `bun run lint`; for the sidecar it is
+`go build ./... && go vet ./... && go test ./...`.
+
+CI (`.github/workflows/ci.yml`) runs exactly those, plus `bun run version:check`. It gates
+`gofmt` on `sidecar/` — fix a failure with `gofmt -w sidecar/` — and gates the TypeScript side
+with `biome ci .`, which checks lint *and* formatting; fix a failure with `bun run lint:fix`.
 
 xterm.js is code-split behind `ExecTerminalLazy` (~85 KB gzipped, the largest single dependency).
 Import that wrapper rather than `ExecTerminal` directly, or the terminal lands back in the initial
