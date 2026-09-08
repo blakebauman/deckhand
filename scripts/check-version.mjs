@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-/** Fail if Cargo.toml version ≠ root package.json (SoT). */
+/** Fail if Cargo.toml or Cargo.lock version ≠ root package.json (SoT). */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,4 +19,21 @@ if (match[1] !== pkg.version) {
   );
   process.exit(1);
 }
+// Cargo.lock carries its own copy of the crate version and is not touched by
+// `bun run version` — it only updates when cargo next runs. Releasing without
+// it needed a follow-up commit once already (0f1210d), so check it here.
+const lock = readFileSync(join(root, "src-tauri/Cargo.lock"), "utf8");
+const lockMatch = /^name = "deckhand"\nversion = "([^"]*)"/m.exec(lock);
+if (!lockMatch) {
+  console.error("No deckhand entry in Cargo.lock");
+  process.exit(1);
+}
+if (lockMatch[1] !== pkg.version) {
+  console.error(
+    `Version mismatch: package.json=${pkg.version} Cargo.lock=${lockMatch[1]}\n` +
+      `Run: cargo check --manifest-path src-tauri/Cargo.toml`,
+  );
+  process.exit(1);
+}
+
 console.log(`versions ok: ${pkg.version}`);
