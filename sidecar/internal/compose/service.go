@@ -64,6 +64,12 @@ func (s *Service) List(ctx context.Context) ([]Project, error) {
 	if err != nil {
 		return nil, err
 	}
+	return parseComposeLs(out)
+}
+
+// parseComposeLs turns `docker compose ls --format json` output into projects.
+// Split out from List so it can be exercised without a docker binary.
+func parseComposeLs(out string) ([]Project, error) {
 	out = strings.TrimSpace(out)
 	if out == "" || out == "null" {
 		return []Project{}, nil
@@ -239,6 +245,13 @@ func (s *Service) Services(ctx context.Context, req UpRequest) ([]ServiceInfo, e
 	if err != nil {
 		return nil, err
 	}
+	return parseComposePs(out)
+}
+
+// parseComposePs turns `docker compose ps --format json` output into services.
+// Docker emits either a JSON array or NDJSON depending on version, so both
+// shapes are handled; split out from Services to be testable without docker.
+func parseComposePs(out string) ([]ServiceInfo, error) {
 	out = strings.TrimSpace(out)
 	if out == "" || out == "null" {
 		return []ServiceInfo{}, nil
